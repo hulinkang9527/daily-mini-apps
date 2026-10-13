@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Daily Mini Apps · 每日一个有趣小应用</title>
+<style>
+  :root { --bg:#0f1420; --card:#1a2233; --line:#2a3650; --accent:#ffd166; --text:#e8edf7; --dim:#8fa0bf; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:"PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+  .wrap { max-width:760px; margin:0 auto; padding:3rem 1.2rem 4rem; }
+  header { text-align:center; margin-bottom:2.5rem; }
+  .logo { font-size:2.6rem; display:inline-block; animation:bob 3s ease-in-out infinite; }
+  @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  h1 { font-size:1.7rem; margin:.6rem 0 .3rem; }
+  .sub { color:var(--dim); font-size:.95rem; }
+  .rules { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1rem 1.2rem; font-size:.9rem; color:var(--dim); margin-bottom:2rem; }
+  .rules b { color:var(--accent); }
+  .apps { display:grid; gap:.8rem; }
+  .empty { text-align:center; padding:2.4rem 1rem; border:2px dashed var(--line); border-radius:12px; color:var(--dim); }
+  .empty .big { font-size:2rem; display:block; margin-bottom:.6rem; }
+  footer { margin-top:2.6rem; text-align:center; color:var(--dim); font-size:.8rem; }
+  a { color:var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="logo">🕹️</span>
+    <h1>Daily Mini Apps</h1>
+    <p class="sub">每天一个有趣小应用 · 自动生成 · 开箱即玩</p>
+  </header>
+
+  <div class="rules">
+    🕗 每晚 <b>20:00</b> 自动上新一个随机主题的小应用（小游戏 / 实用工具 / 创意玩物）
+    <br/>📱 手机电脑都能玩，单文件 HTML 无依赖
+  </div>
+
+  <div class="apps" id="apps">
+    <div class="empty">
+      <span class="big">🌙</span>
+      今晚 20:00 发布第一个小应用<br/><span style="font-size:.8rem">（本页会自动更新）</span>
+    </div>
+  </div>
+
+  <footer>
+    每天自动生成并发布到 GitHub · <a href="https://github.com/hulinkang9527/daily-mini-apps">仓库地址</a>
+  </footer>
+</div>
+<script>
+// 每日应用列表：由自动化流程每日更新
+const APPS = [];
+const box = document.getElementById('apps');
+if (APPS.length) {
+  box.innerHTML = APPS.map(a => '<a class="app" href="' + a.url + '" target="_blank" rel="noopener" style="display:block;text-decoration:none;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:1rem 1.2rem;color:var(--text)"><b style="color:var(--accent)">' + a.date + '</b> · ' + a.name + '</a>').join('');
+} else {
+  box.innerHTML = '<div class="empty"><span class="big">🌙</span>今晚 20:00 发布第一个小应用<br/><span style="font-size:.8rem">（本页会自动更新）</span></div>';
+}
+</script>
+</body>
+</html>
