@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#3B2A1A">
+<title>拆箱盲盒 · 今日份的快递</title>
+<style>
+:root{
+  --kraft:#C79A63;
+  --kraft-2:#B4854F;
+  --kraft-3:#9A6E3F;
+  --ink:#3B2A1A;
+  --ink-2:#6B5140;
+  --tape:#E9C46A;
+  --gold:#F4C24B;
+  --red:#C0392B;
+  --desk-1:#E7D7C0;
+  --desk-2:#D8C3A4;
+  --card:#FBF4E9;
+  --line:rgba(59,42,26,.18);
+  --sh:0 2px 0 rgba(59,42,26,.12);
+  --r-common:#8D8D8D;
+  --r-fine:#3E8FD0;
+  --r-rare:#9B5BD6;
+  --r-epic:#E8842B;
+  --r-legend:#D93A3A;
+  --r-hidden:#25B08A;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;overflow-x:hidden}
+body{
+  font-family:"PingFang SC","HarmonyOS Sans SC","Microsoft YaHei","Source Han Sans SC",system-ui,sans-serif;
+  color:var(--ink);
+  background:
+    radial-gradient(120% 90% at 50% -10%, #F3E7D3 0%, rgba(243,231,211,0) 60%),
+    repeating-linear-gradient(92deg, rgba(59,42,26,.035) 0 2px, rgba(59,42,26,0) 2px 7px),
+    linear-gradient(180deg,var(--desk-1) 0%, var(--desk-2) 100%);
+  background-attachment:fixed;
+  min-height:100vh;
+  min-height:100dvh;
+  padding:0 0 env(safe-area-inset-bottom);
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:560px;margin:0 auto;padding:0 16px 40px}
+
+/* ---------- 顶部：驿站挂牌 ---------- */
+.top{padding:22px 0 6px}
+.plate{
+  position:relative;
+  display:flex;align-items:center;gap:12px;
+  padding:12px 14px;
+  background:linear-gradient(180deg,#4B3524,#3B2A1A);
+  border-radius:6px;
+  box-shadow:var(--sh),inset 0 1px 0 rgba(255,255,255,.14);
+}
+.plate .no{
+  font:700 11px/1 ui-monospace,Menlo,Consolas,monospace;
+  letter-spacing:.16em;color:#D9BE8C;
+  border:1px solid rgba(217,190,140,.45);
+  padding:5px 7px;border-radius:3px;white-space:nowrap;
+}
+.plate h1{
+  margin:0;font-size:19px;font-weight:800;letter-spacing:.02em;color:#F6E9D2;
+  flex:1;min-width:0;
+}
+.plate h1 small{
+  display:block;font-size:11px;font-weight:500;letter-spacing:.14em;
+  color:#B99B6F;margin-top:4px;
+}
+.sound{
+  flex:0 0 auto;width:44px;height:44px;border-radius:8px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);
+  color:#EBD9BB;font-size:19px;cursor:pointer;display:grid;place-items:center;
+}
+.sound:active{transform:scale(.93)}
+
+/* 进度条 */
+.prog{margin:14px 2px 4px}
+.prog-bar{
+  height:10px;border-radius:6px;background:rgba(59,42,26,.14);
+  border:1px solid rgba(59,42,26,.18);overflow:hidden;position:relative;
+}
+.prog-fill{
+  height:100%;width:0%;border-radius:5px;
+  background:repeating-linear-gradient(115deg,#F4C24B 0 9px,#E0A82E 9px 18px);
+  transition:width .5s cubic-bezier(.2,.9,.3,1);
+}
+.prog-txt{
+  display:flex;justify-content:space-between;align-items:baseline;
+  margin-top:7px;font-size:12px;color:var(--ink-2);letter-spacing:.04em;
+}
+.prog-txt b{font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums}
+.hidden-hit{color:var(--r-hidden);font-weight:800}
+
+/* ---------- 舞台 ---------- */
+.stage{
+  position:relative;
+  margin-top:18px;
+  border-radius:10px;
+  background:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,0));
+  border:1px solid var(--line);
+  padding:8px 8px 4px;
+  overflow:hidden;
+}
+#fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5}
+.desk-line{
+  height:1px;margin:6px 6px 0;
+  background:repeating-linear-gradient(90deg,rgba(59,42,26,.28) 0 7px,rgba(59,42,26,0) 7px 14px);
+}
+
+/* 3D 箱子 */
+.scene{
+  position:relative;height:300px;
+  perspective:900px;perspective-origin:50% 42%;
+  display:grid;place-items:end center;
+  touch-action:manipulation;
+}
+.shadow{
+  position:absolute;bottom:26px;left:50%;transform:translateX(-50%);
+  width:172px;height:22px;border-radius:50%;
+  background:radial-gradient(ellipse at center,rgba(59,42,26,.34),rgba(59,42,26,0) 72%);
+  transition:transform .5s,opacity .5s;
+}
+.box{
+  position:relative;width:150px;height:112px;
+  transform-style:preserve-3d;
+  transform:translateY(0) rotateX(-14deg);
+  transition:transform .45s cubic-bezier(.34,1.4,.5,1),opacity .45s;
+  cursor:pointer;
+}
+.box.away{transform:translateY(-46px) scale(.86);opacity:0}
+/* 箱体四面 */
+.face{
+  position:absolute;
+  background:
+    repeating-linear-gradient(45deg,rgba(154,110,63,.16) 0 3px,rgba(154,110,63,0) 3px 9px),
+    linear-gradient(180deg,var(--kraft),var(--kraft-2));
+  border:1px solid rgba(110,78,45,.5);
+}
+.f-front{
+  left:0;bottom:0;width:150px;height:78px;
+  border-radius:0 0 5px 5px;
+  background:
+    linear-gradient(180deg,rgba(0,0,0,.10),rgba(0,0,0,0) 34%),
+    repeating-linear-gradient(45deg,rgba(154,110,63,.18) 0 3px,rgba(154,110,63,0) 3px 9px),
+    linear-gradient(180deg,var(--kraft),var(--kraft-2));
+}
+.f-front::after{
+  content:"易碎 FRAGILE";
+  position:absolute;left:0;right:0;bottom:9px;text-align:center;
+  font:600 8px/1 ui-monospace,Menlo,monospace;letter-spacing:.2em;
+  color:rgba(59,42,26,.5);
+}
+.f-side{
+  top:14px;width:15px;height:78px;
+  background:linear-gradient(90deg,var(--kraft-3),var(--kraft-2));
+}
+.f-left{left:0;transform:rotateY(90deg) translateZ(0);transform-origin:left center}
+.f-right{left:135px;transform:rotateY(-90deg) translateZ(0);transform-origin:right center}
+/* 箱盖（4 片） */
+.flap{
+  position:absolute;left:0;top:0;width:150px;height:34px;
+  transform-origin:top center;
+  background:
+    repeating-linear-gradient(45deg,rgba(154,110,63,.2) 0 3px,rgba(154,110,63,0) 3px 9px),
+    linear-gradient(180deg,#D6AE7B,var(--kraft-2));
+  border:1px solid rgba(110,78,45,.5);border-bottom:none;
+  transition:transform .6s cubic-bezier(.3,1.1,.4,1);
+}
+.flap-t{transform:rotateX(-90deg);transform-origin:top}
+.flap-b{transform:rotateX(90deg) translateZ(0);transform-origin:bottom;top:34px}
+.flap-l{
+  width:34px;height:78px;left:0;top:34px;
+  transform:rotateY(-90deg) translateZ(0);transform-origin:left;
+}
+.flap-r{
+  width:34px;height:78px;left:116px;top:34px;
+  transform:rotateY(90deg) translateZ(0);transform-origin:right;
+}
+.box.open .flap-t{transform:rotateX(-155deg) translateZ(6px)}
+.box.open .flap-b{transform:rotateX(155deg) translateZ(6px);top:34px}
+.box.open .flap-l{transform:rotateY(-158deg) translateZ(6px)}
+.box.open .flap-r{transform:rotateY(158deg) translateZ(6px)}
+.box.shake{animation:shake .42s cubic-bezier(.36,.07,.19,.97) 2}
+@keyframes shake{
+  10%,90%{transform:translateY(0) rotateX(-14deg) rotate(-1.5deg)}
+  20%,80%{transform:translateY(-5px) rotateX(-14deg) rotate(2.5deg)}
+  30%,50%,70%{transform:translateY(0) rotateX(-14deg) rotate(-2.5deg) translateX(-3px)}
+  40%,60%{transform:translateY(-3px) rotateX(-14deg) rotate(2deg) translateX(3px)}
+}
+/* 胶带 */
+.tape{
+  position:absolute;left:50%;top:16px;transform:translateX(-50%);
+  width:26px;height:84px;z-index:3;
+  background:linear-gradient(180deg,rgba(255,255,255,.34),rgba(0,0,0,.06)),var(--tape);
+  border-left:1px solid rgba(150,120,40,.35);border-right:1px solid rgba(150,120,40,.35);
+  transition:opacity .3s,transform .45s;
+}
+.tape.gone{opacity:0;transform:translateX(-50%) scaleY(.2) rotate(12deg)}
+/* 快递单 */
+.label{
+  position:absolute;right:-6px;bottom:6px;z-index:2;
+  width:70px;padding:6px 5px;
+  background:#FFFDF6;border:1px solid rgba(59,42,26,.3);border-radius:2px;
+  font:600 8px/1.5 ui-monospace,Menlo,monospace;color:var(--ink-2);
+  letter-spacing:.02em;box-shadow:0 1px 2px rgba(59,42,26,.2);
+  transform:rotate(-4deg);
+}
+.label b{display:block;font-size:9px;color:var(--ink);margin-bottom:2px}
+
+/* 光柱 */
+.beam{
+  position:absolute;left:50%;bottom:96px;transform:translateX(-50%);
+  width:96px;height:0;z-index:4;pointer-events:none;
+  background:linear-gradient(0deg,rgba(255,255,255,.85),rgba(255,255,255,0));
+  border-radius:50% 50% 0 0;filter:blur(6px);opacity:0;
+}
+.box.open ~ .beam{animation:beam .85s ease-out forwards}
+@keyframes beam{
+  0%{height:0;opacity:0;width:70px}
+  35%{opacity:.95}
+  100%{height:180px;opacity:0;width:190px}
+}
+/* 上升的物品 */
+.item{
+  position:absolute;left:50%;bottom:96px;transform:translateX(-50%) translateY(40px) scale(.4);
+  width:132px;height:132px;z-index:6;pointer-events:none;opacity:0;
+  display:grid;place-items:center;
+}
+.item.up{animation:pop 1.05s cubic-bezier(.2,1.3,.4,1) forwards}
+@keyframes pop{
+  0%{opacity:0;transform:translateX(-50%) translateY(52px) scale(.35) rotate(-14deg)}
+  45%{opacity:1;transform:translateX(-50%) translateY(-8px) scale(1.12) rotate(5deg)}
+  70%{transform:translateX(-50%) translateY(0) scale(1) rotate(-2deg)}
+  100%{opacity:1;transform:translateX(-50%) translateY(0) scale(1) rotate(0)}
+}
+.item .glyph{
+  font-size:66px;line-height:1;
+  filter:drop-shadow(0 8px 14px rgba(59,42,26,.34));
+}
+.item.ring{
+  border-radius:50%;
+  box-shadow:0 0 0 2px var(--rc),0 0 34px 6px var(--rg);
+}
+.tagline{
+  position:absolute;left:0;right:0;bottom:8px;text-align:center;z-index:7;
+  font:700 11px/1.4 ui-monospace,Menlo,monospace;letter-spacing:.22em;
+  color:var(--ink-2);opacity:0;transition:opacity .3s;
+}
+.tagline.show{opacity:.75}
+
+/* 提示 */
+.hint{
+  text-align:center;font-size:13px;color:var(--ink-2);
+  padding:2px 8px 12px;letter-spacing:.06em;
+}
+.hint b{color:var(--ink)}
+
+/* ---------- 结果卡 ---------- */
+.result{
+  margin-top:16px;border-radius:10px;overflow:hidden;
+  border:1px solid var(--line);background:var(--card);
+  box-shadow:var(--sh);
+  opacity:0;transform:translateY(14px);pointer-events:none;
+  transition:opacity .4s,transform .4s;
+}
+.result.show{opacity:1;transform:none;pointer-events:auto}
+.res-head{
+  padding:13px 15px;color:#fff;position:relative;overflow:hidden;
+}
+.res-head::after{
+  content:"";position:absolute;inset:0;
+  background:repeating-linear-gradient(45deg,rgba(255,255,255,.12) 0 7px,rgba(255,255,255,0) 7px 14px);
+}
+.res-head .lvl{position:relative;font:800 12px/1 ui-monospace,monospace;letter-spacing:.24em}
+.res-head .nm{position:relative;margin:7px 0 0;font-size:19px;font-weight:800;letter-spacing:.01em}
+.res-body{padding:15px}
+.res-body .big{
+  font-size:60px;line-height:1;text-align:center;margin:2px 0 10px;
+  filter:drop-shadow(0 5px 10px rgba(59,42,26,.22));
+}
+.res-desc{
+  margin:0 0 12px;font-size:14px;line-height:1.75;color:var(--ink-2);
+  text-align:center;
+}
+.res-desc b{color:var(--ink)}
+.stats{border-top:1px dashed var(--line);padding-top:11px;display:grid;gap:8px}
+.stat{display:flex;justify-content:space-between;font-size:13px}
+.stat span{color:var(--ink-2)}
+.stat b{font-variant-numeric:tabular-nums}
+.newflag{
+  display:inline-block;margin-top:10px;padding:3px 8px;border-radius:3px;
+  background:var(--gold);color:#5A3E12;font:800 10px/1.4 ui-monospace,monospace;letter-spacing:.14em;
+}
+
+/* ---------- 按钮 ---------- */
+.acts{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.btn{
+  flex:1 1 0;min-width:132px;min-height:50px;padding:0 14px;
+  border-radius:8px;border:1px solid rgba(59,42,26,.35);
+  background:linear-gradient(180deg,#FFF9EE,#EFE0CB);
+  color:var(--ink);font-family:inherit;font-size:15px;font-weight:700;
+  cursor:pointer;box-shadow:var(--sh);transition:transform .12s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.btn:active{transform:translateY(2px);box-shadow:none}
+.btn.dark{
+  background:linear-gradient(180deg,#4B3524,#3B2A1A);color:#F3E5CB;border-color:#2B1E13;
+}
+.btn.ghost{background:transparent;box-shadow:none;border-style:dashed}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+
+/* ---------- 图鉴 ---------- */
+.atlas{
+  margin-top:14px;border:1px solid var(--line);border-radius:10px;
+  background:rgba(255,255,255,.42);overflow:hidden;
+}
+.atlas summary{
+  list-style:none;cursor:pointer;min-height:52px;padding:0 15px;
+  display:flex;align-items:center;gap:9px;font-weight:700;font-size:15px;
+  user-select:none;
+}
+.atlas summary::-webkit-details-marker{display:none}
+.atlas summary .car{margin-left:auto;transition:transform .25s;font-size:12px;color:var(--ink-2)}
+.atlas[open] summary .car{transform:rotate(180deg)}
+.atlas summary .cnt{
+  font:700 11px/1 ui-monospace,monospace;letter-spacing:.08em;
+  background:rgba(59,42,26,.1);padding:5px 7px;border-radius:3px;color:var(--ink-2);
+}
+.atlas-in{padding:4px 13px 15px;display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+@media(min-width:480px){.atlas-in{grid-template-columns:repeat(4,1fr)}}
+@media(min-width:720px){.atlas-in{grid-template-columns:repeat(6,1fr)}}
+.cell{
+  border:1px solid var(--line);border-radius:8px;background:var(--card);
+  padding:9px 5px 8px;text-align:center;position:relative;overflow:hidden;
+}
+.cell.lock{background:rgba(59,42,26,.055);border-style:dashed}
+.cell .g{font-size:27px;line-height:1.15;display:block}
+.cell.lock .g{filter:grayscale(1) brightness(.62);opacity:.42}
+.cell .n{font-size:10.5px;line-height:1.35;margin-top:5px;color:var(--ink-2)}
+.cell.lock .n{color:rgba(59,42,26,.4)}
+.cell .q{
+  position:absolute;top:0;right:0;left:0;height:3px;
+}
+.cell .cnt{
+  position:absolute;top:3px;right:4px;font:700 9px/1.4 ui-monospace,monospace;
+  color:var(--ink-2);background:rgba(59,42,26,.09);border-radius:3px;padding:1px 3px;
+}
+.cell.rare-flash{animation:flash .8s ease-out}
+@keyframes flash{0%{box-shadow:0 0 0 0 rgba(244,194,75,.9)}100%{box-shadow:0 0 0 14px rgba(244,194,75,0)}}
+
+/* ---------- 浮层 ---------- */
+.foot{margin-top:20px;text-align:center;font-size:11.5px;color:var(--ink-2);line-height:1.9}
+.foot a{color:var(--ink);text-decoration:none;border-bottom:1px dashed rgba(59,42,26,.4)}
+
+.toast{
+  position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);
+  background:rgba(45,32,20,.95);color:#F6E9D2;
+  padding:12px 18px;border-radius:8px;font-size:14px;font-weight:600;
+  z-index:99;opacity:0;pointer-events:none;transition:opacity .28s,transform .28s;
+  max-width:88vw;text-align:center;line-height:1.5;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+.hidden-note{
+  margin-top:14px;border:2px dashed var(--r-hidden);border-radius:10px;
+  padding:13px 14px;background:rgba(37,176,138,.07);display:none;
+}
+.hidden-note.show{display:block}
+.hidden-note h3{margin:0 0 6px;font-size:14px;color:var(--r-hidden);letter-spacing:.06em}
+.hidden-note p{margin:0;font-size:13px;line-height:1.75;color:var(--ink-2)}
+
+.reset{
+  margin-top:16px;width:100%;min-height:46px;border-radius:8px;
+  border:1px dashed rgba(59,42,26,.35);background:transparent;color:var(--ink-2);
+  font-family:inherit;font-size:13px;cursor:pointer;
+}
+.reset:active{background:rgba(59,42,26,.06)}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div class="plate">
+      <span class="no" id="dstr">NO.——</span>
+      <h1>拆箱盲盒<small>SCARBOROUGH 拆箱驿站 · 每日一份</small></h1>
+      <button class="sound" id="snd" aria-label="音效开关">♪</button>
+    </div>
+
+    <div class="prog">
+      <div class="prog-bar"><div class="prog-fill" id="fill"></div></div>
+      <div class="prog-txt">
+        <span>图鉴进度 <b id="pnum">0/0</b></span>
+        <span>累计开箱 <b id="tot">0</b> 次</span>
+      </div>
+      <div class="prog-txt" style="margin-top:4px">
+        <span>今日战绩 <b id="today">尚未开箱</b></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <canvas id="fx"></canvas>
+    <div class="scene" id="scene">
+      <div class="shadow" id="shadow"></div>
+      <div class="box" id="box" role="button" tabindex="0" aria-label="点击拆箱">
+        <div class="face f-side f-left"></div>
+        <div class="face f-side f-right"></div>
+        <div class="face f-front"></div>
+        <div class="flap flap-t"></div>
+        <div class="flap flap-b"></div>
+        <div class="flap flap-l"></div>
+        <div class="flap flap-r"></div>
+        <div class="tape" id="tape"></div>
+        <div class="label"><b>SCARB</b>易碎<br>日 20:00</div>
+      </div>
+      <div class="beam"></div>
+      <div class="item" id="item"><span class="glyph" id="glyph"></span></div>
+      <div class="tagline" id="tag"></div>
+    </div>
+    <div class="desk-line"></div>
+    <p class="hint" id="hint">点一下箱子 · <b>拆开今日份惊喜</b></p>
+  </div>
+
+  <div class="result" id="result">
+    <div class="res-head" id="rhead">
+      <div class="lvl" id="rlvl">普通</div>
+      <h2 class="nm" id="rnm">—</h2>
+    </div>
+    <div class="res-body">
+      <div class="big" id="rglyph">📦</div>
+      <p class="res-desc" id="rdesc">—</p>
+      <div class="stats" id="rstats"></div>
+      <div style="text-align:center"><span class="newflag" id="rnew" style="display:none">首次入库 · NEW</span></div>
+    </div>
+  </div>
+
+  <div class="acts">
+    <button class="btn dark" id="again">再拆一个</button>
+    <button class="btn" id="share">复制今日战绩</button>
+  </div>
+
+  <details class="atlas" id="atlas">
+    <summary>📦 拆箱图鉴 <span class="cnt" id="acnt">0 / 0</span><span class="car">▼</span></summary>
+    <div class="atlas-in" id="grid"></div>
+  </details>
+
+  <div class="hidden-note" id="hnote">
+    <h3>🚜 隐藏藏品已解锁</h3>
+    <p>你在 200 次概率里撞见了「传家宝·拖拉机模型」——驿站老板说，全站只有一个人集齐过。剩下 35 件，继续拆。</p>
+  </div>
+
+  <button class="reset" id="reset">清空我的图鉴（本地）</button>
+
+  <div class="foot">
+    单文件自包含 · 数据仅存在你自己的浏览器里<br/>
+    <a href="index.html">← 返回全部小应用</a>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ================= 物品表 ================= */
+const R = {
+  common:{k:'common',label:'普通',c:'#8D8D8D',w:60,   quote:'能用的，都算好运气。'},
+  fine:  {k:'fine',  label:'优良',c:'#3E8FD0',w:25,   quote:'刚好够用，值得一晒。'},
+  rare:  {k:'rare',  label:'稀有',c:'#9B5BD6',w:10,   quote:'这一刻，多巴胺到位了。'},
+  epic:  {k:'epic',  label:'史诗',c:'#E8842B',w:4,    quote:'拆快递拆出了大富翁的快乐。'},
+  legend:{k:'legend',label:'传说',c:'#D93A3A',w:0.9,  quote:'这单白拆了，直接转给老板。'},
+  hidden:{k:'hidden',label:'隐藏',c:'#25B08A',w:0.1,  quote:'0.1%。你确定不是它自己走过来的？'}
+};
+const ITEMS = [
+  {n:'虚标 20000mAh 充电宝',e:'🔋',r:'common',d:'标称 20000，实用 3200。剩下一半用来给数据线反向供电。'},
+  {n:'麻辣烫赠品小菜',e:'🥬',r:'common',d:'碗底那勺花生米，捞了三次才上来。它是你今天唯一的维生素。'},
+  {n:'已过期的优惠券',e:'🎟️',r:'common',d:'有效期至去年 12 月 31 日。系统很诚实地把它发给了你。'},
+  {n:'义乌批发小皇冠',e:'👑',r:'common',d:'塑料镀金，掉漆速度按天计算。适合戴去开会。'},
+  {n:'掉漆保温杯',e:'🥤',r:'common',d:'装的水是温的，杯壁的漆是掉的。依然保温八小时，良心商家。'},
+  {n:'全外文说明书',e:'📄',r:'common',d:'第一页写着「请先阅读第 12 页」。第 12 页是空白。'},
+  {n:'一只袜子',e:'🧦',r:'common',d:'另一只据称在洗衣机里，已经三个月了。这只选择了自由。'},
+  {n:'报纸裹的蒜头',e:'🧄',r:'common',d:'剥开三层报纸，扑鼻而来。客服说这是「防腐包装」。'},
+  {n:'猫抓板',e:'🐱',r:'common',d:'为你家猫准备的。也可能为你准备。它已经在门口等着了。'},
+  {n:'廉价望远镜',e:'🔭',r:'common',d:'看远景糊，看月亮是个带毛边的饼。看自己倒是挺清晰。'},
+  {n:'赠品中筒袜',e:'🧦',r:'common',d:'三双装，颜色随机。到货全是灰色，这算不算一种稳定？'},
+  {n:'充电五件套',e:'📦',r:'common',d:'头、线、充电头、说明书、袋子。凑成一套五件套，实用价值约等于零。'},
+
+  {n:'手冲咖啡壶',e:'🫖',r:'fine',d:'细口鹅颈，注水不飞溅。早上七点终于有了点仪式感。'},
+  {n:'柑橘香薰蜡烛',e:'🕯️',r:'fine',d:'第一小时很好闻，第二小时像水果摊，第三小时像图书馆。'},
+  {n:'桌面小绿植',e:'🪴',r:'fine',d:'浇水的仪式感，比植物本身更有价值。已忘记它的名字第三周。'},
+  {n:'蓝牙音箱',e:'🔊',r:'fine',d:'低频很足，高音有点破。放爵士刚好，放古典像隔壁装修。'},
+  {n:'真无线耳机',e:'🎧',r:'fine',d:'降噪一般，但地铁上你终于听不见自己的呼吸声了。'},
+  {n:'折叠雨伞',e:'☂️',r:'fine',d:'晴雨两用。唯一的问题是从包里抽出来需要一点决心。'},
+  {n:'电煮锅',e:'🍲',r:'fine',d:'煮面、煮蛋、煮关东煮。深夜厨房的救命恩人，也是泡面伴侣。'},
+  {n:'机械键盘',e:'⌨️',r:'fine',d:'青轴段落感，一句话变成一场演讲。同事以为你在敲urgent。'},
+
+  {n:'胶片相机',e:'📷',r:'rare',d:'快门声很贵，一卷 36 张很贵。拍出来的模糊最有味道。'},
+  {n:'电动牙刷',e:'🪥',r:'rare',d:'从此你有了一个每天必须面对的敌人：早上七点。'},
+  {n:'空气炸锅',e:'🍟',r:'rare',d:'薯条成功率高到离谱，导致你一周吃了四次薯条。'},
+  {n:'复古游戏机',e:'🎮',r:'rare',d:'开机那声「叮」比任何手游音效都有仪式感。'},
+  {n:'天文望远镜',e:'🔭',r:'rare',d:'第一次看到土星环时，你叫出了声。凌晨两点的阳台很冷。'},
+  {n:'手工陶瓷杯',e:'🍵',r:'rare',d:'杯壁厚薄不均，握起来刚好贴手。每一只都是孤品。'},
+  {n:'瑰夏咖啡豆',e:'🫘',r:'rare',d:'茉莉、柑橘、一点点酒。喝第一口时你安静了三秒。'},
+
+  {n:'露营帐篷',e:'⛺',r:'epic',d:'搭了四十分钟，住了两晚。躺在里面看星星，值。'},
+  {n:'黑胶唱机',e:'🎙️',r:'epic',d:'针尖落下去那一秒，房间的时间轴被换掉了。'},
+  {n:'运动手表',e:'⌚',r:'epic',d:'它每天提醒你「还差 8000 步」。于是你开始恨楼梯。'},
+  {n:'航拍无人机',e:'🛸',r:'epic',d:'第一次升空就拍到了邻居晾的床单。你删了，没敢发。'},
+
+  {n:'客制化机械键盘',e:'🖱️',r:'legend',d:'花了两个月攒齐轴体。你终于拥有了一块「没有缺点」的键盘。'},
+  {n:'旁轴胶片相机',e:'📸',r:'legend',d:'快门声像叹气。每一张都是不可复制的意外。'},
+  {n:'猫的注意力',e:'🐈',r:'legend',d:'全世界最稀有的东西。获得概率极低，且不保证售后。'},
+
+  {n:'传家宝·拖拉机模型',e:'🚜',r:'hidden',d:'驿站老板的爷爷留下来的。他说他也是拆出来的。我们都不信。'}
+];
+const GROUPS = {};
+ITEMS.forEach(function(it){ (GROUPS[it.r] = GROUPS[it.r] || []).push(it); });
+const TOTAL = ITEMS.length;
+const HIDDEN_ITEM = ITEMS[ITEMS.length-1];
+
+/* ================= 状态 ================= */
+const KEY = 'scarborough_box_v1';
+const DSTR = (function(){
+  const d=new Date();
+  return String(d.getFullYear()).slice(2) + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
+})();
+const TODAY = (function(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+})();
+
+let S = { counts:{}, total:0, hidden:false, todayDate:'', todayLog:[], sound:true };
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw){
+      const o = JSON.parse(raw);
+      if(o && typeof o==='object'){
+        S.counts = o.counts || {};
+        S.total = o.total || 0;
+        S.hidden = !!o.hidden;
+        S.todayDate = o.todayDate || '';
+        S.todayLog = Array.isArray(o.todayLog) ? o.todayLog : [];
+        S.sound = o.sound !== false;
+      }
+    }
+  }catch(e){ /* 首次访问或隐私模式，忽略 */ }
+}
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
+}
+function rollover(){
+  if(S.todayDate !== TODAY){ S.todayDate = TODAY; S.todayLog = []; }
+}
+function gotCount(){ return Object.keys(S.counts).filter(function(k){return S.counts[k]>0;}).length; }
+
+/* ================= 音效 ================= */
+let AC = null;
+function ac(){
+  try{
+    if(!AC){
+      const C = window.AudioContext || window.webkitAudioContext;
+      if(!C) return null;
+      AC = new C();
+    }
+    if(AC.state === 'suspended'){ AC.resume(); }
+    return AC;
+  }catch(e){ return null; }
+}
+function tone(f, t0, dur, type, vol){
+  const a = ac(); if(!a || !S.sound) return;
+  try{
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(f, a.currentTime + t0);
+    g.gain.setValueAtTime(0.0001, a.currentTime + t0);
+    g.gain.exponentialRampToValueAtTime(vol || 0.16, a.currentTime + t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + t0 + dur);
+    o.connect(g); g.connect(a.destination);
+    o.start(a.currentTime + t0); o.stop(a.currentTime + t0 + dur + 0.03);
+  }catch(e){}
+}
+function tear(){
+  const a = ac(); if(!a || !S.sound) return;
+  try{
+    const len = Math.floor(a.sampleRate * 0.3);
+    const buf = a.createBuffer(1, len, a.sampleRate);
+    const ch = buf.getChannelData(0);
+    for(let i=0;i<len;i++){ ch[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 1.7); }
+    const src = a.createBufferSource(); src.buffer = buf;
+    const flt = a.createBiquadFilter(); flt.type='highpass'; flt.frequency.value=1400;
+    const g = a.createGain(); g.gain.value = 0.5;
+    src.connect(flt); flt.connect(g); g.connect(a.destination); src.start();
+  }catch(e){}
+}
+const SFX = {
+  common:function(){ tone(392,0,.13,'triangle',.13); },
+  fine:   function(){ tone(523,0,.13,'triangle',.14); tone(659,.09,.16,'triangle',.12); },
+  rare:   function(){ [523,659,784].forEach(function(f,i){ tone(f,i*.07,.2,'triangle',.15); }); },
+  epic:   function(){ [523,659,784,1046].forEach(function(f,i){ tone(f,i*.07,.26,'sawtooth',.09); }); },
+  legend: function(){ [523,659,784,1046,1318].forEach(function(f,i){ tone(f,i*.085,.34,'sine',.15); }); },
+  hidden: function(){ [392,523,659,784,1046,1318,1568].forEach(function(f,i){ tone(f,i*.065,.42,'triangle',.14); }); }
+};
+
+/* ================= DOM ================= */
+const $ = function(id){ return document.getElementById(id); };
+const elBox=$('box'), elTape=$('tape'), elItem=$('item'), elGlyph=$('glyph'),
+      elShadow=$('shadow'), elTag=$('tag'), elHint=$('hint'),
+      elRes=$('result'), elHead=$('rhead'), elLvl=$('rlvl'), elNm=$('rnm'),
+      elRGlyph=$('rglyph'), elRDesc=$('rdesc'), elRStats=$('rstats'), elRNew=$('rnew'),
+      elGrid=$('grid'), elACnt=$('acnt'), elFill=$('fill'), elPNum=$('pnum'),
+      elTot=$('tot'), elToday=$('today'), elNote=$('hnote'), elToast=$('toast');
+document.querySelector('.plate .no').textContent = 'NO.' + DSTR;
+
+let busy = false;
+
+function toast(msg){
+  elToast.textContent = msg;
+  elToast.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function(){ elToast.classList.remove('show'); }, 2100);
+}
+const wait = function(ms){ return new Promise(function(r){ setTimeout(r, ms); }); };
+
+/* ================= 抽卡 ================= */
+function pickRarityKey(){
+  const keys = ['common','fine','rare','epic','legend','hidden'];
+  let x = Math.random() * 100, acc = 0;
+  for(let i=0;i<keys.length;i++){
+    acc += R[keys[i]].w;
+    if(x < acc) return keys[i];
+  }
+  return 'common';
+}
+function roll(){
+  let key = pickRarityKey();
+  let pool = GROUPS[key];
+  if(!pool || !pool.length){ key = 'common'; pool = GROUPS.common; }
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+
+/* ================= 粒子 ================= */
+const fx = $('fx'), cx = fx.getContext('2d');
+let parts = [], rafId = 0;
+function sizeFx(){
+  const st = document.querySelector('.stage'), r = st.getBoundingClientRect();
+  fx.width = r.width; fx.height = r.height;
+}
+function confetti(color, n){
+  const w = fx.width, h = fx.height;
+  const ox = w/2, oy = h*0.42;
+  for(let i=0;i<(n||26);i++){
+    parts.push({
+      x:ox + (Math.random()-0.5)*70, y:oy,
+      vx:(Math.random()-0.5)*7.2, vy:-3.4-Math.random()*6.4,
+      g:0.19+Math.random()*0.1,
+      w:5+Math.random()*6, h:3+Math.random()*5,
+      a:Math.random()*Math.PI*2, va:(Math.random()-0.5)*0.32,
+      c: Math.random()<0.78 ? color : '#F4C24B',
+      life:1
+    });
+  }
+  if(!rafId) loop();
+}
+function loop(){
+  cx.clearRect(0,0,fx.width,fx.height);
+  parts = parts.filter(function(p){ return p.life > 0; });
+  for(let i=0;i<parts.length;i++){
+    const p = parts[i];
+    p.vy += p.g; p.x += p.vx; p.y += p.vy; p.a += p.va; p.life -= 0.0085;
+    cx.save(); cx.translate(p.x,p.y); cx.rotate(p.a);
+    cx.globalAlpha = Math.max(0, Math.min(1, p.life));
+    cx.fillStyle = p.c; cx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+    cx.restore();
+  }
+  if(parts.length){ rafId = requestAnimationFrame(loop); }
+  else { cx.clearRect(0,0,fx.width,fx.height); rafId = 0; }
+}
+
+/* ================= 渲染 ================= */
+function renderProgress(){
+  const g = gotCount();
+  elPNum.textContent = g + '/' + TOTAL;
+  elTot.textContent = S.total;
+  elACnt.textContent = g + ' / ' + TOTAL;
+  elFill.style.width = (g/TOTAL*100) + '%';
+
+  if(!S.todayLog.length){ elToday.textContent = '尚未开箱'; }
+  else {
+    const tally = {};
+    S.todayLog.forEach(function(k){ tally[k] = (tally[k]||0)+1; });
+    const partsTxt = Object.keys(tally).map(function(k){
+      return R[k].label + '×' + tally[k];
+    }).sort(function(a,b){
+      const order=['legend','hidden','epic','rare','fine','common'];
+      return order.indexOf(a.split('×')[0]) - order.indexOf(b.split('×')[0]);
+    });
+    const best = S.todayLog.some(function(k){return k==='legend'||k==='hidden';});
+    elToday.innerHTML = S.todayLog.length + ' 箱 · ' + partsTxt.join(' ') +
+      (best ? ' <span class="hidden-hit">✦出爆款了</span>' : '');
+  }
+  elNote.classList.toggle('show', !!S.hidden);
+}
+
+function renderAtlas(){
+  elGrid.innerHTML = '';
+  ITEMS.forEach(function(it){
+    const n = S.counts[it.n] || 0;
+    const cell = document.createElement('div');
+    cell.className = 'cell' + (n ? '' : ' lock');
+    const rc = R[it.r].c;
+    cell.innerHTML =
+      '<span class="q" style="background:' + (n ? rc : 'transparent') + '"></span>' +
+      '<span class="g">' + (n ? it.e : '❔') + '</span>' +
+      '<span class="n">' + (n ? it.n.replace(/</g,'&lt;') : '未解锁') + '</span>' +
+      (n > 1 ? '<span class="cnt">×' + n + '</span>' : '');
+    elGrid.appendChild(cell);
+  });
+}
+
+function renderResult(it, isNew){
+  const r = R[it.r];
+  const dark = it.r === 'legend' || it.r === 'hidden' || it.r === 'epic';
+  elHead.style.background = 'linear-gradient(135deg,' + r.c + ',' + shade(r.c,-26) + ')';
+  elHead.style.color = '#fff';
+  elLvl.textContent = '★ ' + r.label + ' 藏品';
+  elNm.textContent = it.n;
+  elRGlyph.textContent = it.e;
+  elRDesc.innerHTML = '<b>' + it.n + '</b>：' + it.d + '<br/><span style="opacity:.75">' + r.quote + '</span>';
+  elRStats.innerHTML =
+    '<div class="stat"><span>稀有度权重</span><b>' + r.w + '%</b></div>' +
+    '<div class="stat"><span>入库时间</span><b>' + TODAY + '</b></div>' +
+    '<div class="stat"><span>累计获得</span><b>×' + (S.counts[it.n] || 1) + '</b></div>' +
+    '<div class="stat"><span>今日第</span><b>' + S.todayLog.length + ' 箱</b></div>';
+  elRNew.style.display = isNew ? 'inline-block' : 'none';
+  elRes.classList.add('show');
+}
+function shade(hex, amt){
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if(!m) return hex;
+  const p = function(v){
+    let n = parseInt(v,16) + amt;
+    n = Math.max(0, Math.min(255, n));
+    return ('0' + n.toString(16)).slice(-2);
+  };
+  return '#' + p(m[1]) + p(m[2]) + p(m[3]);
+}
+
+function shareText(){
+  if(!S.todayLog.length) return '今天还没拆箱（' + TODAY + '）';
+  const tally = {};
+  S.todayLog.forEach(function(k){ tally[k] = (tally[k]||0)+1; });
+  const order = ['legend','hidden','epic','rare','fine','common'];
+  const txt = order.filter(function(k){return tally[k];})
+    .map(function(k){ return R[k].label + '×' + tally[k]; }).join(' ');
+  const g = gotCount();
+  let s = '📦 ' + TODAY + ' 拆箱 ' + S.todayLog.length + ' 次：' + txt + '\n';
+  s += '图鉴 ' + g + '/' + TOTAL;
+  if(S.hidden) s += '（含隐藏 🚜）';
+  s += '\nhttps://hulinkang9527.github.io/daily-mini-apps/' + TODAY + '.html';
+  return s;
+}
+
+/* ================= 主流程 ================= */
+async function openBox(){
+  if(busy) return;
+  busy = true;
+  elRes.classList.remove('show');
+  elNote.classList.remove('show');
+  elTag.classList.remove('show');
+  elItem.classList.remove('up','ring');
+  elItem.style.removeProperty('--rc');
+  elItem.style.removeProperty('--rg');
+  elGlyph.textContent = '';
+  elHint.innerHTML = '拆箱中… <b>别眨眼</b>';
+  sizeFx();
+  await wait(60);
+
+  const it = roll();
+  const r = R[it.r];
+  const isNew = !S.counts[it.n];
+
+  /* 1. 摇箱 + 撕胶带 */
+  elBox.classList.remove('away','open','shake');
+  void elBox.offsetWidth;
+  elBox.classList.add('shake');
+  tear();
+  await wait(560);
+  elBox.classList.remove('shake');
+  elTape.classList.add('gone');
+  tone(300, 0, .1, 'square', .08);
+
+  /* 2. 开盖 */
+  elBox.classList.add('open');
+  tone(180, 0, .22, 'sine', .13);
+  await wait(430);
+
+  /* 3. 上物品 */
+  elGlyph.textContent = it.e;
+  if(it.r === 'legend' || it.r === 'hidden' || it.r === 'epic' || it.r === 'rare'){
+    elItem.classList.add('ring');
+    elItem.style.setProperty('--rc', r.c);
+    elItem.style.setProperty('--rg', hexA(r.c, .42));
+  }
+  elItem.classList.add('up');
+  elTag.textContent = '★ ' + r.label;
+  elTag.classList.add('show');
+  if(SFX[it.r]) SFX[it.r]();
+  confetti(r.c, it.r==='hidden' ? 70 : it.r==='legend' ? 52 : it.r==='epic' ? 38 : it.r==='rare' ? 24 : 14);
+  await wait(560);
+
+  /* 4. 落库 */
+  S.counts[it.n] = (S.counts[it.n] || 0) + 1;
+  S.total += 1;
+  S.todayLog.push(it.r);
+  if(it.r === 'hidden') S.hidden = true;
+  save();
+  renderProgress();
+  renderAtlas();
+  renderResult(it, isNew);
+  elHint.innerHTML = '再点箱子 · <b>继续拆</b>';
+  busy = false;
+}
+function hexA(hex, a){
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if(!m) return hex;
+  return 'rgba(' + parseInt(m[1],16) + ',' + parseInt(m[2],16) + ',' + parseInt(m[3],16) + ',' + a + ')';
+}
+
+/* ================= 交互 ================= */
+elBox.addEventListener('click', openBox);
+elBox.addEventListener('keydown', function(e){
+  if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openBox(); }
+});
+$('again').addEventListener('click', function(){
+  elBox.classList.remove('away');
+  openBox();
+});
+$('share').addEventListener('click', function(){
+  const txt = shareText();
+  const ok = function(){ toast('已复制，去群里贴它 👌'); };
+  const bad = function(){ toast('复制失败，长按选中文本吧'); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(ok).catch(function(){
+      try{
+        const ta = document.createElement('textarea');
+        ta.value = txt; ta.style.position='fixed'; ta.style.opacity='0';
+        document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta); ok();
+      }catch(e){ bad(); }
+    });
+  } else {
+    try{
+      const ta = document.createElement('textarea');
+      ta.value = txt; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta); ok();
+    }catch(e){ bad(); }
+  }
+});
+$('snd').addEventListener('click', function(){
+  S.sound = !S.sound;
+  save();
+  this.textContent = S.sound ? '♪' : '✕';
+  this.style.opacity = S.sound ? '1' : '.55';
+  if(S.sound){ tone(660,0,.14,'sine',.14); }
+});
+$('reset').addEventListener('click', function(){
+  if(!confirm('清空本地图鉴与累计次数？此操作不可撤销。')) return;
+  S = { counts:{}, total:0, hidden:false, todayDate:TODAY, todayLog:[], sound:S.sound };
+  save();
+  renderProgress(); renderAtlas();
+  elRes.classList.remove('show');
+  elNote.classList.remove('show');
+  toast('图鉴已清空，从零开始拆');
+});
+window.addEventListener('resize', function(){ sizeFx(); clearTimeout(window._rz); window._rz = setTimeout(sizeFx, 120); });
+
+/* ================= 启动 ================= */
+load();
+rollover();
+save();
+renderProgress();
+renderAtlas();
+sizeFx();
+$('snd').style.opacity = S.sound ? '1' : '.55';
+$('snd').textContent = S.sound ? '♪' : '✕';
+if(gotCount() === 0){
+  elHint.innerHTML = '点一下箱子 · <b>拆开今日份惊喜</b>';
+} else {
+  elHint.innerHTML = '已入库 <b>' + gotCount() + '</b> 件 · 点箱子继续';
+}
+})();
+</script>
+</body>
+</html>
