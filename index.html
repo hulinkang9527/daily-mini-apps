@@ -49,7 +49,9 @@
 </div>
 <script>
 // 每日应用列表：由自动化流程每日更新
-const APPS = [];
+const APPS = [
+  {date:'2026-10-13', name:'今天吃点啥 · 大转盘', url:'2026-10-13.html'}
+];
 const box = document.getElementById('apps');
 if (APPS.length) {
   box.innerHTML = APPS.map(a => '<a class="app" href="' + a.url + '" target="_blank" rel="noopener" style="display:block;text-decoration:none;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:1rem 1.2rem;color:var(--text)"><b style="color:var(--accent)">' + a.date + '</b> · ' + a.name + '</a>').join('');
