@@ -40,7 +40,7 @@
   <div class="apps" id="apps">
     <div class="empty">
       <span class="big">🌙</span>
-      今晚 20:00 发布第一个小应用<br/><span style="font-size:.8rem">（本页会自动更新）</span>
+      今天的小应用还在路上<br/><span style="font-size:.8rem">（本页会自动更新）</span>
     </div>
   </div>
 
@@ -51,6 +51,7 @@
 <script>
 // 每日应用列表：由自动化流程每日更新
 const APPS = [
+  {date:'2026-10-16', name:'潜台词扫描仪', url:'2026-10-16.html'},
   {date:'2026-10-15', name:'摸鱼大作战 · 上班生存模拟器', url:'2026-10-15.html'},
   {date:'2026-10-14', name:'拆箱盲盒 · 今日份的快递', url:'2026-10-14.html'},
   {date:'2026-10-13', name:'今天吃点啥 · 大转盘', url:'2026-10-13.html'}
@@ -59,7 +60,7 @@ const box = document.getElementById('apps');
 if (APPS.length) {
   box.innerHTML = APPS.map(a => '<a class="app" href="' + a.url + '" target="_blank" rel="noopener" style="display:block;text-decoration:none;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:1rem 1.2rem;color:var(--text)"><b style="color:var(--accent)">' + a.date + '</b> · ' + a.name + '</a>').join('');
 } else {
-  box.innerHTML = '<div class="empty"><span class="big">🌙</span>今晚 20:00 发布第一个小应用<br/><span style="font-size:.8rem">（本页会自动更新）</span></div>';
+  box.innerHTML = '<div class="empty"><span class="big">🌙</span>今天的小应用还在路上<br/><span style="font-size:.8rem">（本页会自动更新）</span></div>';
 }
 </script>
 </body>

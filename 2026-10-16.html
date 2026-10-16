@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>潜台词扫描仪 · 一句话的真实含义</title>
+<meta name="description" content="输入一句话，扫描它的潜台词。同样的字，在职场、恋爱、朋友三个世界是三种意思。" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230d1f16'/%3E%3Cpath d='M8 34h8l5-14 7 26 6-18 5 10h17' fill='none' stroke='%237dffb0' stroke-width='4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E" />
+<style>
+:root{
+  --bg:#dfe3d4;          /* 报告卡纸 */
+  --bg2:#c9d0bd;
+  --ink:#1d2a20;         /* 主文字 */
+  --ink2:#4a5a4d;        /* 次文字 */
+  --ink3:#7c8a7c;        /* 弱文字 */
+  --line:#a9b4a1;
+  --line2:#8f9c88;
+  --crt:#0d1f16;         /* 示波器屏 */
+  --crt-line:#17382a;
+  --green:#7dffb0;
+  --amber:#ffb454;
+  --red:#ff6b6b;
+  --violet:#b79cff;
+  --paper-white:#eef0e6;
+  --shadow:rgba(29,42,32,.16);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Helvetica Neue",sans-serif;
+  background:
+    repeating-linear-gradient(0deg,rgba(29,42,32,.035) 0 1px,transparent 1px 26px),
+    linear-gradient(160deg,var(--bg) 0%,var(--bg2) 100%);
+  background-attachment:fixed;
+  color:var(--ink);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+.wrap{max-width:620px;margin:0 auto;padding:14px 14px 46px}
+
+/* ---------- 顶部仪器条 ---------- */
+.instr{
+  background:var(--crt);color:var(--green);
+  border-radius:12px;padding:10px 12px;
+  display:flex;align-items:center;gap:10px;
+  box-shadow:0 3px 0 var(--shadow),inset 0 0 0 1px rgba(125,255,176,.14);
+  position:relative;overflow:hidden;
+}
+.instr::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.24) 0 1px,transparent 1px 3px);
+}
+.instr .lamp{width:11px;height:11px;border-radius:50%;background:var(--red);flex:0 0 auto;box-shadow:0 0 9px var(--red)}
+.instr.on .lamp{background:var(--green);box-shadow:0 0 10px var(--green)}
+.instr .t{font-size:12.5px;letter-spacing:.4px;flex:1;min-width:0;font-family:ui-monospace,Consolas,Menlo,monospace}
+.instr .id{font-size:10.5px;opacity:.6;font-family:ui-monospace,Consolas,Menlo,monospace;white-space:nowrap}
+
+h1{font-size:25px;line-height:1.24;margin:20px 0 6px;letter-spacing:-.4px}
+h1 .em{background:linear-gradient(transparent 62%,var(--amber) 62%);padding:0 2px}
+.lede{font-size:13.5px;color:var(--ink2);line-height:1.65}
+
+/* ---------- 输入区 ---------- */
+.card{
+  background:var(--paper-white);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:16px;
+  margin-top:16px;
+  box-shadow:0 2px 0 var(--shadow);
+  position:relative;
+}
+.card.taped::before{
+  content:'';position:absolute;top:-9px;left:50%;transform:translateX(-50%) rotate(-1.4deg);
+  width:66px;height:19px;background:rgba(255,180,84,.42);
+  border:1px solid rgba(196,142,60,.5);border-radius:2px;
+}
+.sec-t{font-size:11px;letter-spacing:2.4px;color:var(--ink3);text-transform:uppercase;margin-bottom:10px;font-weight:700}
+textarea{
+  width:100%;min-height:112px;resize:vertical;
+  font-family:inherit;font-size:16px;line-height:1.65;color:var(--ink);
+  background:
+    repeating-linear-gradient(0deg,transparent 0 30px,rgba(45,70,55,.11) 30px 31px),
+    #f7f8f1;
+  border:1.5px solid var(--line2);border-radius:8px;
+  padding:12px 12px 12px;letter-spacing:.2px;
+}
+textarea:focus{outline:none;border-color:var(--ink2);background-color:#fbfcf6}
+textarea::placeholder{color:#a6b0a0}
+.hint{font-size:11.5px;color:var(--ink3);margin-top:7px;line-height:1.6}
+
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px}
+.chip{
+  min-height:34px;padding:7px 12px;font-size:12.5px;line-height:1.3;
+  background:#fff;border:1.5px solid var(--line2);border-radius:999px;
+  color:var(--ink2);cursor:pointer;font-family:inherit;
+  display:inline-flex;align-items:center;transition:transform .1s;
+}
+.chip:active{transform:scale(.95)}
+
+.btn{
+  width:100%;min-height:50px;margin-top:14px;
+  font-family:inherit;font-size:16.5px;font-weight:800;letter-spacing:1.5px;
+  border:none;border-radius:9px;cursor:pointer;
+  background:var(--ink);color:var(--green);
+  box-shadow:0 4px 0 #0d1710;transition:transform .1s,box-shadow .1s;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+}
+.btn:active{transform:translateY(4px);box-shadow:0 0 0 #0d1710}
+.btn.ghost{background:transparent;color:var(--ink2);border:1.5px solid var(--line2);box-shadow:none;font-weight:700}
+.btn.ghost:active{transform:scale(.98);box-shadow:none;background:rgba(29,42,32,.05)}
+.btn.mini{min-height:44px;font-size:14px;letter-spacing:.6px;margin-top:0;width:auto;flex:1;padding:0 12px}
+
+/* ---------- 扫描屏 ---------- */
+#screenScan{display:none}
+.scanbox{background:var(--crt);border-radius:14px;padding:22px 18px;box-shadow:0 3px 0 var(--shadow),inset 0 0 0 1px rgba(125,255,176,.14);position:relative;overflow:hidden;min-height:290px}
+.scanbox::after{content:'';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.26) 0 1px,transparent 1px 3px)}
+.scanbox .ttl{color:var(--green);font-family:ui-monospace,Consolas,Menlo,monospace;font-size:12px;letter-spacing:2px;margin-bottom:14px}
+.typeline{color:var(--green);font-family:ui-monospace,Consolas,Menlo,monospace;font-size:14.5px;line-height:1.75;min-height:96px;word-break:break-all}
+.typeline .cur{display:inline-block;width:8px;height:16px;background:var(--green);vertical-align:-3px;animation:blink .7s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.wave{height:52px;margin:14px 0 6px}
+.wave svg{width:100%;height:100%;display:block}
+.steps{list-style:none;margin-top:12px;display:grid;gap:7px}
+.steps li{color:#4f7d64;font-family:ui-monospace,Consolas,Menlo,monospace;font-size:12.5px;display:flex;align-items:center;gap:9px;transition:color .25s}
+.steps li .m{width:14px;height:14px;border:1.5px solid #3c6650;border-radius:3px;flex:0 0 auto;position:relative}
+.steps li.act{color:var(--green)}
+.steps li.act .m{border-color:var(--green);box-shadow:0 0 8px rgba(125,255,176,.5)}
+.steps li.fin{color:#9fe8c1}
+.steps li.fin .m{border-color:var(--green);background:var(--green)}
+.steps li.fin .m::after{content:'';position:absolute;left:4px;top:.5px;width:4px;height:8px;border:solid #0d1f16;border-width:0 2px 2px 0;transform:rotate(42deg)}
+.bar{height:6px;background:#1a3a2b;border-radius:99px;overflow:hidden;margin-top:14px}
+.bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--amber));transition:width .18s linear}
+
+/* ---------- 报告 ---------- */
+#report{display:none}
+.verdict{
+  background:var(--crt);color:var(--green);border-radius:14px;padding:18px;
+  box-shadow:0 3px 0 var(--shadow);position:relative;overflow:hidden;
+}
+.verdict::after{content:'';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.24) 0 1px,transparent 1px 3px)}
+.verdict .k{font-family:ui-monospace,Consolas,Menlo,monospace;font-size:11px;letter-spacing:2px;opacity:.65}
+.verdict .big{font-size:17px;line-height:1.6;margin-top:9px;font-weight:700;color:#dcffe9}
+.verdict .big b{color:var(--amber)}
+
+.src{
+  margin-top:14px;background:#1a3a2b;border-left:3px solid var(--green);
+  padding:9px 11px;border-radius:0 7px 7px 0;
+  font-size:14px;color:#c8f0da;line-height:1.6;word-break:break-word;
+}
+
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.met{background:var(--paper-white);border:1px solid var(--line);border-radius:11px;padding:12px;box-shadow:0 2px 0 var(--shadow)}
+.met .nm{font-size:11.5px;color:var(--ink3);display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.met .nm b{font-size:17px;color:var(--ink);font-family:ui-monospace,Consolas,Menlo,monospace}
+.met .tr{height:7px;background:#dde2d3;border-radius:99px;margin-top:9px;overflow:hidden}
+.met .tr>i{display:block;height:100%;width:0;border-radius:99px;transition:width .7s cubic-bezier(.2,.9,.3,1)}
+.met .cm{font-size:11px;color:var(--ink2);margin-top:7px;line-height:1.5;min-height:2.9em}
+.g0{background:#6f9a7e}.g1{background:var(--amber)}.g2{background:var(--red)}.g3{background:var(--violet)}
+.rk.安全{color:#3f7d54}
+.rk.低危{color:#7a8a3f}
+.rk.中等{color:var(--amber)}
+.rk.高危{color:var(--red)}
+
+.tabs{display:flex;gap:6px;margin-top:14px;background:#cdd4c1;padding:4px;border-radius:11px;border:1px solid var(--line)}
+.tab{
+  flex:1;min-height:44px;border:none;border-radius:8px;background:transparent;
+  font-family:inherit;font-size:13.5px;font-weight:700;color:var(--ink2);cursor:pointer;
+  transition:background .18s,color .18s;
+}
+.tab.on{background:var(--paper-white);color:var(--ink);box-shadow:0 2px 0 var(--shadow)}
+
+.tp{background:var(--paper-white);border:1px solid var(--line);border-radius:12px;margin-top:11px;overflow:hidden;box-shadow:0 2px 0 var(--shadow)}
+.tp .row{padding:13px 14px;border-bottom:1px dashed var(--line)}
+.tp .row:last-child{border-bottom:none}
+.tp .lb{font-size:10.5px;letter-spacing:1.8px;color:var(--ink3);font-weight:700;margin-bottom:5px}
+.tp .tx{font-size:14.5px;line-height:1.72;color:var(--ink)}
+.tp .tx.emo{color:#8a3b3b}
+.tp .tx.act{color:var(--ink2)}
+.tp .tx.big{font-size:16.5px;font-weight:700;line-height:1.6}
+
+.reps{display:grid;gap:8px;margin-top:10px}
+.rep{
+  display:flex;align-items:center;gap:11px;width:100%;
+  min-height:52px;padding:10px 13px;text-align:left;
+  background:#fff;border:1.5px solid var(--line2);border-radius:10px;
+  font-family:inherit;font-size:14px;color:var(--ink);cursor:pointer;
+}
+.rep:active{transform:scale(.985)}
+.rep .tg{flex:0 0 auto;font-size:10.5px;font-weight:800;letter-spacing:.6px;padding:4px 8px;border-radius:6px;background:#e5ead9;color:var(--ink2)}
+.rep .tx{flex:1;min-width:0;line-height:1.45}
+.rep.done{background:#e8f5e9;border-color:#7aa87f}
+
+.easter{
+  margin-top:14px;border:2px dashed var(--amber);border-radius:12px;padding:14px;
+  background:rgba(255,180,84,.09);
+}
+.easter .h{font-size:11.5px;font-weight:800;letter-spacing:1.6px;color:#9a6a1c;display:flex;align-items:center;gap:7px}
+.easter .b{font-size:14px;line-height:1.75;margin-top:8px;color:var(--ink)}
+.easter.off{display:none}
+
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:16px}
+.stats{margin-top:14px;text-align:center;font-size:11.5px;color:var(--ink3);line-height:1.8}
+footer{text-align:center;margin-top:22px;font-size:11px;color:var(--ink3);line-height:1.8}
+.toast{
+  position:fixed;left:50%;bottom:26px;transform:translate(-50%,16px);
+  background:var(--ink);color:var(--green);font-size:13.5px;
+  padding:11px 20px;border-radius:10px;opacity:0;pointer-events:none;
+  transition:opacity .22s,transform .22s;z-index:50;max-width:86vw;text-align:center;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.fadein{animation:fi .3s ease both}
+@keyframes fi{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+@media (max-width:380px){
+  h1{font-size:21px}
+  .metrics{grid-template-columns:1fr}
+  .acts{grid-template-columns:1fr}
+  .verdict .big{font-size:15.5px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 仪器顶栏 -->
+  <div class="instr on" id="instr">
+    <span class="lamp"></span>
+    <span class="t" id="instrT">SUBTEXT-SCAN X1 · 就绪</span>
+    <span class="id" id="instrId">NO.SC-0000</span>
+  </div>
+
+  <h1>潜台词<span class="em">扫描仪</span></h1>
+  <p class="lede">把你要发出去（或刚收到）的那句话丢进来。同一串字，在<b>职场</b>、<b>恋爱</b>、<b>朋友</b>三个世界里是三种完全不同的意思——这仪器只负责把话扒光。</p>
+
+  <!-- 输入屏 -->
+  <section id="screenInput">
+    <div class="card taped">
+      <div class="sec-t">待检样本</div>
+      <textarea id="ta" placeholder="例：都行，你看着办吧" maxlength="120" autocomplete="off"></textarea>
+      <div class="hint" id="cnt">0 / 120 字 · 支持整句、整段，或只有两个字的回话</div>
+      <div class="chips" id="chips"></div>
+      <button class="btn" id="go">▶  开始扫描</button>
+    </div>
+    <div class="stats">已扫描 <b id="scanN">0</b> 句 · 这台仪器第 <b id="dayN">1</b> 天开机</div>
+    <footer>纯前端运行，不上传任何内容 · 扫描结果只在你这台设备上</footer>
+  </section>
+
+  <!-- 扫描屏 -->
+  <section id="screenScan">
+    <div class="scanbox">
+      <div class="ttl" id="scanTtl">SCANNING…</div>
+      <div class="typeline" id="type"></div>
+      <div class="wave"><svg id="wave" viewBox="0 0 300 52" preserveAspectRatio="none"></svg></div>
+      <ul class="steps" id="steps">
+        <li><span class="m"></span><span>切分语义单元</span></li>
+        <li><span class="m"></span><span>匹配语气词库 v2</span></li>
+        <li><span class="m"></span><span>比对三个世界</span></li>
+        <li><span class="m"></span><span>生成潜台词报告</span></li>
+      </ul>
+      <div class="bar"><i id="prog"></i></div>
+    </div>
+    <div class="acts">
+      <button class="btn mini ghost" id="skip">跳过动画</button>
+      <button class="btn mini ghost" id="back2">返回修改</button>
+    </div>
+  </section>
+
+  <!-- 报告屏 -->
+  <section id="report"></section>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   一、词库
+   ============================================================ */
+var LEX = {
+  fuyan:  ['随便','都行','无所谓','都可以','你决定','你看着办','听你的','随便你','你说了算','我无所谓'],
+  lengdan:['嗯','哦','啊','额','喔','噢','呵','呵呵','是吗','好巧','行吧','知道了','收到','嗯嗯','OK','ok','嗯呐'],
+  huibi:  ['再说','改天','有空','下次','晚点','回头','待会','以后','看情况','尽量','争取','找时间','有机会'],
+  fangyu: ['不是','没有','别','别闹','你想多了','不是这个意思','我没别的意思','不至于','算了吧','不用了'],
+  shengwen:['想你','爱你','宝贝','宝宝','亲亲','抱抱','可爱','好看','喜欢你','么么','心动','好甜','辛苦啦','谢谢','心疼'],
+  shitan: ['在吗','在么','干嘛呢','吃了吗','睡了吗','忙吗','怎么不回','为什么不','是不是','你觉得呢','怎么了','啥情况'],
+  beize:  ['你为什么','你怎么','总是','老是','从来','又','都怪你','你看看你','怪你','你从来'],
+  chengnuo:['一定','肯定','必须','保证','马上','立刻','这就','这就办','包在我身上','绝对'],
+  gongzuo:['开会','加班','汇报','方案','项目','老板','需求','对接','文档','周报','排期','评审','客户'],
+  shijian:['今天','明天','周末','晚上','下午','中午','几点','周六','周日','下周','早上','傍晚'],
+  tuigan:['加油','冲','你可以的','我相信你','支持你','辛苦了','稳住'],
+  lihao:  ['你好','在吗','早上好','晚安','新年快乐','生日快乐','恭喜','祝福','辛苦了']
+};
+
+/* 意图模板：潜台词 / 对方此刻心理 / 建议动作 */
+var TPL = {
+  fuyan:{
+    work:{a:'「你定，我执行；出事别来找我。」',b:'在转移决策责任，也在保护自己不被追问。',c:'自己把方案写成一页纸发过去，别让她口头拍板。'},
+    love:{a:'「你选的我都不满意，但我懒得挑。」',b:'在等你自己猜到正确答案。迟到一小时就算不及格。',c:'别问「去哪」，直接给两个具体选项+时间地点。'},
+    frnd:{a:'「都行」=「我没主意，但你得带我走。」',b:'在等你主动规划，评估你会不会安排。',c:'直接甩三个地点让她选，别问「你想去哪」。'}
+  },
+  lengdan:{
+    work:{a:'「我听到了，但我不想展开。」',b:'心里已经在打腹稿，或者已经放弃沟通了。',c:'别追问，换个异步渠道把事推到下一步。'},
+    love:{a:'「嗯」=「我情绪没了。」',b:'不是累了就是在憋着，八成和刚才某件事有关。',c:'别要「你说」，改问「是我哪句让你不舒服了」。'},
+    frnd:{a:'「哦」=「我懂了，但我不想聊了。」',b:'情绪在往下走，强聊只会更糟。',c:'隔一小时再发个无关痛痒的图，别解释。'}
+  },
+  huibi:{
+    work:{a:'「现在不方便 / 这事我不想接。」',b:'怕承诺了做不到，或者优先级里你排得很后。',c:'当场要一个具体时间点，拿不到就默认不接。'},
+    love:{a:'「再说」=「我不想为这件事付出。」',b:'真很想做的事，她会直接定时间。',c:'把「改天」换成「周六下午三点」，逼出真实答案。'},
+    frnd:{a:'「有空」=「不会有了。」',b:'如果真想来，她会给具体时间而不是形容词。',c:'别等了。下次直接发「今晚九点老地方？」。'}
+  },
+  fangyu:{
+    work:{a:'「我不是那个意思」=「我们先别展开。」',b:'已经在心里复盘过一遍，怕说多错多。',c:'给她一个台阶：「那我们按 X 走。」'},
+    love:{a:'「你想多了」=「这次我不接这个话题。」',b:'不是嫌你烦，是不想在这个节点继续消耗。',c:'别追，间隔一天，用行动而不是解释。'},
+    frnd:{a:'「没有没有」=「确实有，但算了。」',b:'她已经原谅了，只是不想显得在意。',c:'轻轻揭穿一次，反而显得你懂她。'}
+  },
+  shengwen:{
+    work:{a:'「私下我跟你关系不一般。」',b:'在用软化剂包装真实诉求，后面多半跟着一个要求。',c:'顺势问「所以你希望我做什么」。'},
+    love:{a:'「想你」=「我想黏着你，快来找我。」',b:'情绪浓度真实，是明确的和好/推进信号。',c:'别回文字，直接打电话或发定位。'},
+    frnd:{a:'「今天状态不错，因为想到你。」',b:'正向情绪在线，是最容易顺势约出来的窗口。',c:'趁现在就说「那出来」，明天他会重新缩回去。'}
+  },
+  shitan:{
+    work:{a:'「你在不在」=「我有事要问，而且已经在组织措辞了。」',b:'有真实诉求，可能不太好开口。',c:'回「在，说」——别问「怎么了」，先开口。'},
+    love:{a:'「你有空吗」=「有件事我拿不准该不该问你。」',b:'大概率不是闲聊，是想被安慰或想要一个承诺。',c:'先给情绪再给方案：「我猜你在想XXX，对吗」。'},
+    frnd:{a:'「吃了吗」=「我想找你说话，但先铺垫一下。」',b:'有事，或者单纯想你了。',c:'接「吃完了，正想找你」把球打回去。'}
+  },
+  beize:{
+    work:{a:'「你做的事我不认可。」',b:'已经积累了一段时间，不是临时起意。',c:'认下来，先解决具体那件事，别解释动机。'},
+    love:{a:'「你需要我提醒你吗」=「我等了很久。」',b:'委屈值已经超标，只差一个正式的道歉。',c:'道歉要具体：说清你错在哪、怎么改，不要说「对不起我最近太忙」。'},
+    frnd:{a:'「你还记得吗，你欠我的。」',b:'旧账又被翻出来了，说明还惦记着你。',c:'认账+立刻兑一个小承诺，比解释有效十倍。'}
+  },
+  chengnuo:{
+    work:{a:'「我马上做」=「我答应了，但别催我。」',b:'已经接下来了，接下来看有没有人卡他。',c:'约一个自检时间点，别指望他主动汇报。'},
+    love:{a:'「我会做，但我希望被看到。」',b:'期待后续互动，长期没回应会明显失落。',c:'做完立刻汇报，哪怕只发张截图。'},
+    frnd:{a:'「我记下了。」=「你最好别指望我主动提醒。」',b:'会做到，但需要一个理由去行动。',c:'定个双方都记得的日期，或者你来做那个提醒。'}
+  },
+  zhongxing:{
+    work:{a:'「收到，无异议。」',b:'真的无异议，或者懒得吵。',c:'别当默认同意，主动确认一次关键决策。'},
+    love:{a:'「好的。」=「我接受，但我没被说服。」',b:'在等你换个方式再讲一遍。',c:'补一句你的想法，哪怕只说一句。'},
+    frnd:{a:'「嗯嗯。」=「我听到了，就这样吧。」',b:'注意力已经不在这里了。',c:'换个话题，别指望这个话题还有下文。'}
+  }
+};
+
+var ZHITOU = {
+  fuyan:['「我不同意这个方案，但我不想吵，所以你说啥是啥。」','「你定可以，但出事我不背锅。」','「你直接说你真正想要什么，我懒得猜。」'],
+  lengdan:['「我现在不想聊。」','「我没生气，我只是懒得回应。」','「你这条消息我看了，但没兴趣展开。」'],
+  huibi:['「我现在不想答应这件事。」','「别等我了，改天不会有。」','「给我一个具体日期，否则我默认这次不去。」'],
+  fangyu:['「我不是那个意思，但我不解释。」','「行吧，那我们就聊到这儿。」','「你有别的意见可以直接说，别替我总结。」'],
+  shengwen:['「我想你了，我们见一面吧。」','「我今天心情不错，因为想到你。」','「我很在意你，比你以为的更在意。」'],
+  shitan:['「我有事想问你，现在方便吗？」','「你是不是生气了？直说，别让我猜。」','「我想找你聊聊，不是闲聊。」'],
+  beize:['「你之前那件事我一直记着。」','「我觉得你做得不对，说出来吧。」','「我不满意，但不是气话。」'],
+  chengnuo:['「我会做，但我需要你配合。」','「我答应了，请给我时间，也请看着我做完。」','「你可以随时来问我进度。」'],
+  zhongxing:['「我没意见，但也没热情。」','「我听到了，就这样吧。」','「随便，你决定，我配合。」']
+};
+
+/* 彩蛋：命中关键词会多一条隐藏批注 */
+var EASTER = [
+  {k:'呵呵', t:'「呵呵」在中文语用学里不是笑，是把聊天频道关掉的体面说法。这两个字一出现，后面的话最好一句都别接。'},
+  {k:'随便', t:'「随便」是中文社交里最高效的两个字，也是最贵的两个字——它的真实含义永远是「我已经放弃沟通了」。'},
+  {k:'都行', t:'「都行」的真实含义是「我不同意，但我更不想承担不同意之后的责任」。'},
+  {k:'在吗', t:'「在吗」是中文里最古老的试探句式。它翻译过来只有一句：我想确认你还愿不愿意跟我说话。'},
+  {k:'没事', t:'「没事」是中文里效率最高的两个字，它成功地把一次对话压缩成了零。'},
+  {k:'还行', t:'「还行」在中文评价体系里的位置很尴尬：它既不是夸奖，也不是批评，是明确的不想展开。'},
+  {k:'呵呵哒', t:'检测到高浓度阴阳怪气。建议立刻停止回复，并保留聊天记录。'}
+];
+
+var SAMPLES = ['都行，你看着办吧','在吗','哈哈哈哈哈哈哈哈哈','我没事','这周末有空吗','算了，不用了','呵呵','我想你了','你怎么又不回我','好的'];
+
+var SCENES = [
+  {id:'work', name:'职场'},
+  {id:'love', name:'恋爱'},
+  {id:'frnd', name:'朋友'}
+];
+
+/* ============================================================
+   二、分析引擎（纯函数，可被测试直接调用）
+   ============================================================ */
+function countIn(text, arr){ var n=0; for(var i=0;i<arr.length;i++){ if(text.indexOf(arr[i])>-1) n++; } return n; }
+
+function analyze(raw){
+  var t = String(raw==null?'':raw).trim();
+  var keys = [];
+  for(var key in LEX){ if(Object.prototype.hasOwnProperty.call(LEX,key)) keys.push(key); }
+  var h = {};
+  for(var i=0;i<keys.length;i++){ h[keys[i]] = countIn(t, LEX[keys[i]]); }
+
+  var len = t.replace(/\s/g,'').length;
+  var exclaim = (t.match(/[!！]/g)||[]).length;
+  var quest   = (t.match(/[?？]/g)||[]).length;
+  var dots    = (t.match(/\.{2,}|…{1,}/g)||[]).length;
+  var niCount = (t.match(/你/g)||[]).length;
+  var hanzi   = (t.match(/[一-龥]/g)||[]).length;
+
+  /* 重复字符爆发：哈哈/啊啊/哦哦…中文里这是「尴尬缓冲垫」，
+     是紧张不是开心，所以要记在冷淡+试探上，而不是升温词上。 */
+  var burst = 0, bm;
+  bm = t.match(/(哈|呵|嘻|嘿|啊|哦|喔|噢|嗯|呀|哈){2,}/g);
+  if(bm) for(var bi=0;bi<bm.length;bi++) burst += Math.floor(bm[bi].length/2);
+  /* 单字成串（如「？？」「！！！」）也算 */
+  var burst2 = 0, b2 = t.match(/([^\s，。！？、,.!?])\1{2,}/g);
+  if(b2) for(var bj=0;bj<b2.length;bj++) burst2 += Math.min(3, Math.floor(b2[bj].length/2));
+
+  var heat = 0;      // 情绪浓度
+  var cold = 0;      // 冷淡度
+  var probe= 0;      // 试探浓度
+  var risk = 0;      // 危险信号
+
+  heat += h.shengwen*13 + h.tuigan*7 + h.fangyu*4;
+  heat += exclaim*9;
+  cold += h.fuyan*11 + h.lengdan*9 + h.huibi*10 + h.fangyu*5;
+  probe+= h.shitan*12 + h.gongzuo*3;
+  probe+= quest*9 + dots*7;
+  risk += h.beize*12 + h.chengnuo*5;
+
+  /* 重复爆发：笑得越重复，越说明在掩饰尴尬 */
+  cold  += Math.min(30, burst*4 + burst2*6);
+  probe += Math.min(18, burst*3 + burst2*4);
+
+  /* 长度修正：越短越可疑，除非是升温或工作类 */
+  if(len<=2){ cold+=22; probe+=12; }
+  else if(len<=5){ cold+=12; probe+=6; }
+  else if(len<=9){ cold+=4; }
+  if(len>34){ heat+=10; probe+=4; }
+
+  /* 有称呼（你/您/名字）会降低攻击性 */
+  if(niCount>=2 && h.shengwen>0) risk-=8;
+  if(h.tuigan>0) risk-=10;
+
+  heat = clamp(heat); cold = clamp(cold); probe = clamp(probe); risk = clamp(risk);
+
+  /* 主导维度 */
+  var dim='zhongxing', best=0;
+  var order=['fuyan','lengdan','huibi','fangyu','shengwen','shitan','beize','chengnuo'];
+  for(var i2=0;i2<order.length;i2++){
+    var k=order[i2];
+    if(h[k]>0 && h[k]>best){ best=h[k]; dim=k; }
+  }
+  if(best===0){ dim = cold>=probe&&cold>0 ? 'lengdan' : (heat>0?'shengwen':(risk>0?'beize':'zhongxing')); }
+
+  var easter=null;
+  for(var j=0;j<EASTER.length;j++){
+    if(t.indexOf(EASTER[j].k)>-1){ easter=EASTER[j]; break; }
+  }
+
+  return {
+    raw:t, len:len, hanzi:hanzi, hits:h, burst:burst+burst2,
+    heat:heat, cold:cold, probe:probe, risk:risk,
+    dim:dim, easter:easter,
+    empty: len===0
+  };
+}
+
+function clamp(v){ v = Math.round(v); return v<0?0:(v>100?100:v); }
+
+function hash(str){
+  var h=2166136261>>>0;
+  for(var i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h,16777619)>>>0; }
+  return h>>>0;
+}
+function pick(arr, seed){ return arr[seed % arr.length]; }
+
+/* 生成一个场景的解读 */
+function decode(a, sceneId){
+  var d = a.dim;
+  var set = TPL[d] && TPL[d][sceneId] ? TPL[d][sceneId] : TPL.zhongxing[sceneId];
+  var hsh = hash(a.raw + '|' + sceneId + '|' + d);
+  var rp  = pick(ZHITOU[d], hsh);
+  return {raw:a.raw, implicit:set.a, mind:set.b, action:set.c, direct:rp};
+}
+
+/* 表面意思描述 */
+function surfaceText(a){
+  if(a.empty) return '空样本。';
+  var parts=[];
+  parts.push(a.len+' 字');
+  if(a.burst>=3) parts.push('检测到重复字符爆发（尴尬缓冲垫）');
+  if(a.hits.gongzuo) parts.push('含工作词汇');
+  if(a.hits.shijian) parts.push('提及时间');
+  if(a.hits.shengwen) parts.push('带升温词');
+  var s = parts.join(' · ');
+  if(a.hits.chengnuo) s += ' · 有承诺性表述';
+  if(a.hits.beize) s += ' · 有归因性表述';
+  return s;
+}
+
+/* 危险等级 */
+function riskLevel(r){
+  if(r>=70) return {t:'高危', c:'g2'};
+  if(r>=45) return {t:'中等', c:'g1'};
+  if(r>=22) return {t:'低危', c:'g0'};
+  return {t:'安全', c:'g0'};
+}
+function lvlColor(v){
+  if(v>=70) return 'g2';
+  if(v>=45) return 'g1';
+  if(v>=20) return 'g3';
+  return 'g0';
+}
+function lvName(v){
+  if(v>=70) return '高';
+  if(v>=45) return '中';
+  if(v>=20) return '偏低';
+  return '低';
+}
+
+/* 建议回复（按主导维度给风格化回复） */
+function replies(a){
+  var d=a.dim;
+  var out=[];
+  if(d==='beize'){
+    out.push({t:'认账',c:'#e7dff0',x:'这件事是我没做好，我现在就去处理，X 点前给你结果。'});
+    out.push({t:'对账',c:'#e0eef2',x:'先确认一下事实：我们说的是同一件事吗？如果是，我按你说的来。'});
+    out.push({t:'缓兵',c:'#f2e8df',x:'我现在情绪不太对，怕说错话，晚点我认真回你。'});
+  }else if(d==='shitan'){
+    out.push({t:'开门',c:'#e0eef2',x:'在的，你说。我先认真听，不打断。'});
+    out.push({t:'点名',c:'#f2e8df',x:'你专门找我是想问某件事吧？直接问，我不猜。'});
+    out.push({t:'定锚',c:'#e0efe0',x:'在。要是想聊就得聊久一点——现在方便聊十分钟吗？'});
+  }else if(d==='huibi'){
+    out.push({t:'要承诺',c:'#f2e8df',x:'那我定时间了：这周三下午可以吗？不合适你现在说。'});
+    out.push({t:'给台阶',c:'#e0efe0',x:'好，那这事就先放一放，等你想聊了我随时在。'});
+    out.push({t:'退回',c:'#f2e8df',x:'明白，这件事我不催了，有进展你喊我。'});
+  }else if(d==='shengwen'){
+    out.push({t:'接住',c:'#f6e4ea',x:'我也想你了。今晚有空的话我去找你，别让我等太久。'});
+    out.push({t:'加码',c:'#e0efe0',x:'突然这么说，我这边心跳有点快。'});
+    out.push({t:'落地',c:'#e0efe0',x:'那别打字了，电话打过来。'});
+  }else if(d==='fuyan'){
+    out.push({t:'拆责',c:'#f2e8df',x:'我给两个方案和各自风险，你来定，我来兜执行。'});
+    out.push({t:'试探',c:'#e0eef2',x:'你更想要哪一个？别再说随便了。'});
+    out.push({t:'收权',c:'#f6e4ea',x:'那我按我的判断走，如果不行你随时叫停。'});
+  }else if(d==='lengdan'){
+    out.push({t:'降速',c:'#e0eef2',x:'先不聊这个了。等你哪天想聊，我在。'});
+    out.push({t:'点破',c:'#f2e8df',x:'你这一句听着不太对，是哪件事卡住了？'});
+    out.push({t:'退出',c:'#f2e8df',x:'好，我去忙别的了。'});
+  }else{
+    out.push({t:'顺毛',c:'#e0efe0',x:'行，那就这么定。我来推进，有进展同步你。'});
+    out.push({t:'确认',c:'#e0eef2',x:'我理解一下：你要的是 X，重点是 Y，对吗？'});
+    out.push({t:'推进',c:'#e0efe0',x:'那下一步我来安排，今晚给你结果。'});
+  }
+  return out;
+}
+
+/* ============================================================
+   三、渲染
+   ============================================================ */
+var $=function(id){return document.getElementById(id);};
+var ta=$('ta'), cnt=$('cnt'), chips=$('chips');
+var scanSec=$('screenScan'), inputSec=$('screenInput'), reportSec=$('report');
+var instr=$('instr'), instrT=$('instrT'), instrId=$('instrId');
+
+var store = { n:0 };
+try{ store.n = parseInt(localStorage.getItem('subscan_n')||'0',10)||0; }catch(e){ store.n=0; }
+$('scanN').textContent = store.n;
+
+function setInstr(txt,id,on){ instrT.textContent=txt; if(id) instrId.textContent=id; instr.classList.toggle('on',!!on); }
+
+/* 生成报告编号 */
+function makeId(){
+  var d=new Date();
+  var p=function(n){return n<10?'0'+n:''+n;};
+  var s='SC-'+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-';
+  var h='0123456789ABCDEF',r='';
+  for(var i=0;i<4;i++) r+=h[Math.floor(Math.random()*16)];
+  return s+r;
+}
+
+function buildChips(){
+  var frag='';
+  for(var i=0;i<SAMPLES.length;i++){
+    frag+='<button class="chip" type="button" data-s="'+SAMPLES[i].replace(/"/g,'&quot;')+'">'+SAMPLES[i]+'</button>';
+  }
+  chips.innerHTML=frag;
+}
+buildChips();
+chips.addEventListener('click',function(e){
+  var b=e.target.closest?e.target.closest('.chip'):null;
+  if(!b) return;
+  ta.value=b.getAttribute('data-s');
+  upd();
+  ta.focus();
+});
+
+function upd(){ cnt.textContent = ta.value.replace(/\s/g,'').length + ' / 120 字 · 支持整句、整段，或只有两个字的回话'; }
+ta.addEventListener('input',upd);
+
+/* ---- 报告渲染 ---- */
+var current = null;
+var curTab = 'work';
+
+function render(a){
+  var id = makeId();
+  var dec = {};
+  for(var i=0;i<SCENES.length;i++) dec[SCENES[i].id] = decode(a, SCENES[i].id);
+  current = {a:a, dec:dec, id:id};
+
+  var rl = riskLevel(a.risk);
+  var hl = '';
+
+  /* 结论 */
+  hl += '<div class="verdict fadein">'
+     +   '<div class="k">扫描报告 · '+id+'</div>'
+     +   '<div class="big">这句话的<b>表层</b>是「'+esc(a.raw)+'」<br>它的<b>底层</b>是：'+esc(dec.work.implicit)+'</div>'
+     + '</div>';
+  hl += '<div class="src">原句样本：'+esc(a.raw)+'<br>客观描述：'+esc(surfaceText(a))+'</div>';
+
+  /* 指标 */
+  hl += '<div class="metrics">'
+     + met('敷衍指数',a.cold,'对方不想接话的程度。')
+     + met('情绪浓度',a.heat,'这句话带了多少情绪能量。')
+     + met('试探浓度',a.probe,'对方在等你给反应的期待值。')
+     + '<div class="met"><div class="nm">危险信号<b class="rk '+rl.t+'">'+rl.t+'</b></div>'
+     +   '<div class="tr"><i class="'+rl.c+'" data-w="'+a.risk+'"></i></div>'
+     +   '<div class="cm">归因、催促、承诺压得越紧，信号越强。</div></div>'
+     + '</div>';
+
+  function met(n,v,c){
+    var col = lvlColor(v);
+    return '<div class="met"><div class="nm">'+n+'<b>'+v+'</b></div>'
+         + '<div class="tr"><i class="'+col+'" data-w="'+v+'"></i></div>'
+         + '<div class="cm">'+lvName(v)+' · '+c+'</div></div>';
+  }
+
+  /* 场景切换 */
+  hl += '<div class="tabs" id="tabs">';
+  for(var j=0;j<SCENES.length;j++){
+    hl += '<button class="tab'+(SCENES[j].id==='work'?' on':'')+'" type="button" data-sc="'+SCENES[j].id+'">'+SCENES[j].name+'</button>';
+  }
+  hl += '</div><div id="tpBox"></div>';
+
+  /* 建议回复 */
+  var rp = replies(a);
+  hl += '<div class="card"><div class="sec-t">建议回话 · 点一下可复制</div><div class="reps">';
+  for(var k=0;k<rp.length;k++){
+    hl += '<button class="rep" type="button" data-t="'+esc(rp[k].x)+'">'
+        +  '<span class="tg" style="background:'+rp[k].c+'">'+rp[k].t+'</span>'
+        +  '<span class="tx">'+esc(rp[k].x)+'</span></button>';
+  }
+  hl += '</div><button class="btn ghost" id="zhitang" style="width:100%;margin-top:12px">⚡ 强制翻译成直球（隐藏模式）</button></div>';
+
+  /* 彩蛋 */
+  if(a.easter){
+    hl += '<div class="easter" id="easter"><div class="h">✦ 异常批注 · 本仪器额外检测到</div><div class="b">'+esc(a.easter.t)+'</div></div>';
+  }else if(a.burst>=3){
+    hl += '<div class="easter" id="easter"><div class="h">✦ 异常批注 · 本仪器额外检测到</div>'
+        +  '<div class="b">检测到重复字符爆发。中文社交里，一串「哈」和「啊」不是开心，是尴尬缓冲垫——它在替说话的人争取两秒钟，好把真正想说的话咽回去。笑得越长，场面越僵。</div></div>';
+  }
+
+  hl += '<div class="acts">'
+     + '<button class="btn mini" id="copyAll">复制整份报告</button>'
+     + '<button class="btn mini ghost" id="again">再扫一句</button>'
+     + '</div>';
+  hl += '<div class="stats">扫描次数 '+store.n+' · 本报告由本地词库推断，不是读心术</div>';
+
+  reportSec.innerHTML = hl;
+  reportSec.className='fadein';
+
+  /* 动画填充进度条 */
+  var bars = reportSec.querySelectorAll('.met .tr>i');
+  for(var b=0;b<bars.length;b++){ (function(el){ setTimeout(function(){ el.style.width = el.getAttribute('data-w')+'%'; }, 90); })(bars[b]); }
+
+  paintTab('work');
+
+  reportSec.querySelector('#tabs').addEventListener('click',function(e){
+    var t=e.target.closest?e.target.closest('.tab'):null; if(!t) return;
+    var tabs=this.querySelectorAll('.tab');
+    for(var q=0;q<tabs.length;q++) tabs[q].classList.remove('on');
+    t.classList.add('on');
+    paintTab(t.getAttribute('data-sc'));
+  });
+
+  reportSec.querySelectorAll('.rep').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      copy(btn.getAttribute('data-t'));
+      btn.classList.add('done');
+      setTimeout(function(){ btn.classList.remove('done'); }, 1100);
+    });
+  });
+
+  $('zhitang').addEventListener('click',function(){
+    var box=$('tpBox');
+    var d=dec[curTab];
+    box.innerHTML = '<div class="tp" style="border-color:var(--amber)"><div class="row"><div class="lb">直球版 · '+scName(curTab)+'</div>'
+      + '<div class="tx big" style="color:#8a3b3b">'+esc(d.direct)+'</div></div>'
+      + '<div class="row"><div class="lb">直球成本</div><div class="tx act">'+esc(costLine(a))+'</div></div></div>';
+    toast('已解除委婉层');
+  });
+
+  $('copyAll').addEventListener('click',function(){ copy(reportText(a,dec)); });
+  $('again').addEventListener('click',function(){
+    ta.value=''; upd(); showScreen('input');
+    setTimeout(function(){ ta.focus(); }, 60);
+  });
+}
+
+function scName(id){ for(var i=0;i<SCENES.length;i++) if(SCENES[i].id===id) return SCENES[i].name; return id; }
+
+function paintTab(id){
+  curTab = id;
+  var d = current.dec[id];
+  var extra = id==='work' ? '' :
+    '<div class="row"><div class="lb">在这个世界里说这句话的人</div><div class="tx act">'+esc(worldNote(id))+'</div></div>';
+  $('tpBox').innerHTML =
+      '<div class="tp">'
+    +   '<div class="row"><div class="lb">字面意思 · '+scName(id)+'</div><div class="tx">'+esc(d.raw)+'</div></div>'
+    +   '<div class="row"><div class="lb">潜台词 · '+scName(id)+'</div><div class="tx big" style="color:#8a3b3b">'+esc(d.implicit)+'</div></div>'
+    +   '<div class="row"><div class="lb">对方此刻的心理</div><div class="tx emo">'+esc(d.mind)+'</div></div>'
+    +   '<div class="row"><div class="lb">你现在该做的</div><div class="tx act">'+esc(d.action)+'</div></div>'
+    +   extra
+    + '</div>';
+}
+
+function worldNote(id){
+  if(id==='love') return '关系越近，含蓄度越高，攻击性越低，试探越多。同一句「都行」，在职场是甩锅，在恋爱里是等你自己猜。';
+  return '朋友之间省略量最大——三个字就能完成一次完整的情绪交换，因为默认对方会补全。';
+}
+
+function costLine(a){
+  var m={fuyan:'直球会显得强势，但你至少得到了一个明确答复。',lengdan:'直球会关闭话题，但至少留了个真实记录。',huibi:'直球会得罪人，但能立刻分辨这段关系值不值得继续投入。'};
+  var d=a.dim;
+  return m[d] || '直球的代价是对方需要当场回应，缓兵空间会消失。';
+}
+
+function reportText(a,dec){
+  var L=[];
+  L.push('【潜台词扫描报告】'+current.id);
+  L.push('原句：'+a.raw);
+  L.push('客观描述：'+surfaceText(a));
+  L.push('指标：敷衍'+a.cold+' / 情绪'+a.heat+' / 试探'+a.probe+' / 危险'+a.risk+'（'+riskLevel(a.risk).t+'）');
+  for(var i=0;i<SCENES.length;i++){
+    var d=dec[SCENES[i].id];
+    L.push('');
+    L.push('【'+SCENES[i].name+'】');
+    L.push('潜台词：'+d.implicit);
+    L.push('心理：'+d.mind);
+    L.push('该做：'+d.action);
+  }
+  if(a.easter) L.push('\n✦ 异常批注：'+a.easter.t);
+  return L.join('\n');
+}
+
+/* ---- 扫描动画 ---- */
+var timers=[];
+function clearTimers(){ for(var i=0;i<timers.length;i++) clearTimeout(timers[i]); timers=[]; }
+function later(fn,ms){ timers.push(setTimeout(fn,ms)); }
+
+var STEPS = ['切分语义单元','匹配语气词库 v2','比对三个世界','生成潜台词报告'];
+
+function runScan(text){
+  clearTimers();
+  showScreen('scan');
+  setInstr('SCANNING…','BUSY',true);
+  var stepEls = $('steps').querySelectorAll('li');
+  var typeEl = $('type'), waveEl = $('wave');
+  var t = text;
+  typeEl.innerHTML='';
+
+  drawWave(waveEl, 1);
+
+  /* 打字机 */
+  var i=0;
+  (function type(){
+    if(i<t.length){
+      typeEl.innerHTML = esc(t.slice(0,i+1))+'<span class="cur"></span>';
+      i++;
+      var fast = (i%3===0) ? 34 : 58;
+      later(type, fast);
+    }
+  })();
+
+  /* 步骤推进 */
+  for(var s=0;s<STEPS.length;s++){
+    (function(k){
+      later(function(){
+        for(var q=0;q<stepEls.length;q++){
+          if(q<k) stepEls[q].className='fin';
+          else if(q===k) stepEls[q].className='act';
+        }
+        $('scanTtl').textContent = STEPS[k]+' …';
+        drawWave(waveEl, 1+k*0.24);
+      }, 620 + k*640);
+    })(s);
+  }
+
+  /* 进度条 */
+  var dur = 620 + 4*640 + 380;
+  var start = Date.now();
+  (function prog(){
+    var el=$('prog');
+    var p = Math.min(100, (Date.now()-start)/dur*100);
+    el.style.width = p+'%';
+    if(p<100) later(prog, 40);
+  })();
+
+  later(function(){
+    for(var q=0;q<stepEls.length;q++) stepEls[q].className='fin';
+    finish();
+  }, dur);
+}
+
+function skipAnim(){
+  clearTimers();
+  finish();
+}
+
+function finish(){
+  var text = ta.value.trim();
+  var a = analyze(text);
+  if(a.empty){
+    setInstr('SUBTEXT-SCAN X1 · 样本为空','ERR',false);
+    showScreen('input');
+    toast('先写点什么，空样本扫不出东西');
+    ta.focus();
+    return;
+  }
+  store.n++;
+  try{ localStorage.setItem('subscan_n', String(store.n)); }catch(e){}
+  $('scanN').textContent = store.n;
+  setInstr('ANALYZING… '+a.dim.toUpperCase(), current?current.id:'BUSY', true);
+  render(a);
+  showScreen('report');
+  setInstr('SUBTEXT-SCAN X1 · 就绪', current.id, true);
+}
+
+/* 波形：正弦 + 伪随机扰动，纯 SVG path */
+function drawWave(svg, amp){
+  if(!svg) return;
+  var W=300,H=52,mid=H/2,pts=[],seed=Math.floor(amp*1000)+1;
+  var i;
+  for(i=0;i<=60;i++){
+    var x = i*(W/60);
+    var seedN = Math.abs(Math.sin((i+seed)*12.9898)*43758.5453);
+    var r = (seedN-Math.floor(seedN));
+    var y = mid + Math.sin(i*0.55+seed)*9*amp + (r-0.5)*13*amp;
+    pts.push(x.toFixed(1)+','+y.toFixed(1));
+  }
+  svg.innerHTML = '<polyline points="'+pts.join(' ')+'" fill="none" stroke="#7dffb0" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".92"/>';
+}
+
+/* ---- 屏幕切换 ----
+   注意：必须显式给 display:block。用 '' 会清掉内联样式，
+   于是 CSS 里的 #screenScan/#report{display:none} 又生效（三屏全隐藏）。 */
+function showScreen(s){
+  inputSec.style.display   = (s==='input')   ? 'block' : 'none';
+  scanSec.style.display    = (s==='scan')    ? 'block' : 'none';
+  reportSec.style.display  = (s==='report')  ? 'block' : 'none';
+  if(s!=='report' && s!=='scan') reportSec.innerHTML='';
+  window.scrollTo(0,0);
+}
+
+/* ---- 复制 / toast ---- */
+function copy(text){
+  var ok=false;
+  try{
+    if(navigator.clipboard && window.isSecureContext){ navigator.clipboard.writeText(text); ok=true; }
+  }catch(e){ ok=false; }
+  if(!ok){
+    try{
+      var ta=document.createElement('textarea');
+      ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select();
+      ok=document.execCommand('copy');
+      document.body.removeChild(ta);
+    }catch(e){ ok=false; }
+  }
+  toast(ok?'已复制，去粘贴吧':'复制失败，请长按手动选中');
+}
+var toastT=null;
+function toast(msg){
+  var el=$('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(toastT);
+  toastT=setTimeout(function(){ el.classList.remove('show'); }, 1900);
+}
+
+function esc(s){
+  return String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ---- 事件绑定 ---- */
+$('go').addEventListener('click',function(){
+  var t=ta.value.trim();
+  if(!t){ toast('先写点什么'); ta.focus(); return; }
+  runScan(t);
+});
+ta.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey) && e.key==='Enter'){ $('go').click(); }
+});
+$('skip').addEventListener('click',skipAnim);
+$('back2').addEventListener('click',function(){
+  clearTimers(); setInstr('SUBTEXT-SCAN X1 · 就绪','READY',true); showScreen('input'); ta.focus();
+});
+
+/* 导出给测试/调试 */
+window.__scan = analyze;
+window.__decode = decode;
+window.__start = function(t){ ta.value=t; upd(); runScan(t); };
+
+showScreen('input');
+})();
+</script>
+</body>
+</html>
