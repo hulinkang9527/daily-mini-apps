@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>弹窗大作战 · POP-UP WARS</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23c0c0c0'/%3E%3Crect x='6' y='10' width='52' height='38' fill='%23fff' stroke='%23000' stroke-width='3'/%3E%3Crect x='6' y='10' width='52' height='10' fill='%23000080'/%3E%3Crect x='14' y='30' width='36' height='12' fill='%23c0c0c0' stroke='%23000' stroke-width='2'/%3E%3C/svg%3E" />
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    background:#008080;
+    font-family:"Microsoft YaHei","PingFang SC","Segoe UI",Tahoma,sans-serif;
+    color:#000;
+    overflow:hidden;
+    user-select:none;
+    -webkit-user-select:none;
+    touch-action:manipulation;
+  }
+  .screen{display:none}
+  .screen.on{display:block}
+
+  /* ============ Windows 95 基础元件 ============ */
+  .win{
+    background:#c0c0c0;
+    border:2px solid;
+    border-color:#ffffff #000000 #000000 #ffffff;
+    box-shadow:inset -1px -1px 0 #808080, inset 1px 1px 0 #dfdfdf;
+  }
+  .tbar{
+    background:linear-gradient(90deg,#000080 0%,#1084d0 100%);
+    color:#fff;font-weight:700;
+    padding:3px 4px 3px 5px;
+    display:flex;align-items:center;gap:6px;
+    font-size:13px;letter-spacing:.3px;
+    min-height:22px;
+  }
+  .tbar .tt{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tbtn{
+    width:18px;height:16px;background:#c0c0c0;
+    border:2px solid;border-color:#fff #000 #000 #fff;
+    box-shadow:inset -1px -1px 0 #808080,inset 1px 1px 0 #dfdfdf;
+    font-size:11px;line-height:12px;font-weight:700;text-align:center;
+    color:#000;cursor:pointer;flex:none;
+  }
+  .tbtn:active{border-color:#000 #fff #fff #000}
+  .btn{
+    background:#c0c0c0;color:#000;
+    border:2px solid;border-color:#ffffff #000000 #000000 #ffffff;
+    box-shadow:inset -1px -1px 0 #808080, inset 1px 1px 0 #dfdfdf;
+    font-family:inherit;font-size:14px;font-weight:700;
+    min-height:44px;min-width:76px;padding:6px 14px;
+    cursor:pointer;line-height:1.25;
+  }
+  .btn:active{border-color:#000000 #ffffff #ffffff #000000;padding:7px 13px 5px 15px}
+  .btn:focus-visible{outline:2px dotted #000;outline-offset:-6px}
+  .panel{padding:14px}
+
+  /* ============ 开始屏 ============ */
+  #screenStart{height:100%;display:none;place-items:center;overflow:auto}
+  #screenStart.on{display:grid}
+  .start-wrap{width:min(560px,94vw);margin:24px 0}
+  .hero{
+    text-align:center;padding:18px 16px 14px;
+    background:repeating-linear-gradient(45deg,#c0c0c0,#c0c0c0 6px,#b8b8b8 6px,#b8b8b8 12px);
+  }
+  .hero h1{
+    font-size:clamp(26px,7vw,44px);font-weight:900;letter-spacing:1px;
+    text-shadow:2px 2px 0 #fff,3px 3px 0 #000;
+    color:#000080;
+  }
+  .hero .sub{margin-top:6px;font-size:13px;font-weight:700;color:#000}
+  .hero .blink{margin-top:8px;font-size:12px;color:#c00;font-weight:700;animation:bl 1.1s steps(1,end) infinite}
+  @keyframes bl{0%,55%{opacity:1}56%,100%{opacity:.15}}
+  .rules{margin-top:12px;font-size:14px;line-height:1.85}
+  .rules li{list-style:none;padding-left:18px;position:relative;margin-bottom:2px}
+  .rules li:before{content:"■";position:absolute;left:2px;top:0;color:#000080;font-size:11px}
+  .rules b{color:#000080}
+  .legend{margin-top:12px;display:grid;gap:7px;font-size:13px}
+  .lg{display:flex;gap:9px;align-items:flex-start;line-height:1.5}
+  .tag{
+    flex:none;min-width:64px;text-align:center;font-size:11px;font-weight:700;
+    padding:3px 6px;background:#000080;color:#fff;border:1px solid #000;
+  }
+  .tag.g{background:#006000}.tag.r{background:#a00000}.tag.p{background:#700070}
+  .start-bar{margin-top:16px;text-align:center}
+  #btnStart{font-size:17px;min-height:52px;padding:8px 30px}
+  .foot{margin-top:10px;text-align:center;font-size:11px;color:#404040}
+
+  /* ============ 游戏屏 ============ */
+  #screenGame.on{display:flex;flex-direction:column;height:100%}
+  .statusbar{
+    flex:none;display:flex;align-items:center;gap:10px;
+    padding:4px 8px;font-size:12px;font-weight:700;
+    background:#c0c0c0;
+    border-bottom:2px solid;border-color:#ffffff #000000 #000000 #ffffff;
+    min-height:38px;
+  }
+  .stat{display:flex;align-items:center;gap:5px;flex:none}
+  .stat .k{color:#000080}
+  .stat .v{font-variant-numeric:tabular-nums;min-width:2.2em}
+  .memwrap{flex:1;display:flex;align-items:center;gap:6px;min-width:70px}
+  .membar{
+    flex:1;height:16px;background:#fff;
+    border:2px solid;border-color:#808080 #fff #fff #808080;
+    overflow:hidden;min-width:44px;
+  }
+  .memfill{height:100%;width:12%;background:repeating-linear-gradient(90deg,#006000 0 6px,#0a7a0a 6px 8px);transition:width .12s linear}
+  .memfill.warn{background:repeating-linear-gradient(90deg,#a07000 0 6px,#c08c00 6px 8px)}
+  .memfill.crit{background:repeating-linear-gradient(90deg,#a00000 0 6px,#d02020 6px 8px);animation:bl .5s steps(1,end) infinite}
+  .timebar{
+    position:relative;flex:none;height:14px;background:#fff;
+    border:2px solid;border-color:#808080 #fff #fff #808080;overflow:hidden;
+  }
+  .timefill{height:100%;width:100%;background:linear-gradient(90deg,#1084d0,#000080)}
+  #desktop{
+    flex:1;position:relative;overflow:hidden;
+    background:#008080;
+    background-image:radial-gradient(rgba(255,255,255,.10) 1px,transparent 1px);
+    background-size:22px 22px;
+  }
+  #taskbar{
+    flex:none;display:flex;align-items:center;gap:8px;padding:5px 6px;
+    background:#c0c0c0;
+    border-top:2px solid;border-color:#ffffff #000000 #000000 #ffffff;
+    min-height:50px;
+  }
+  #btnStartMenu{flex:none;min-width:96px;font-size:13px}
+  .clock{
+    margin-left:auto;flex:none;background:#c0c0c0;
+    border:2px solid;border-color:#808080 #fff #fff #808080;
+    padding:4px 10px;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;
+  }
+
+  /* ============ 弹窗 ============ */
+  .popup{
+    position:absolute;z-index:5;
+    width:min(var(--pw,300px),calc(100vw - 20px));
+    animation:pop .18s cubic-bezier(.2,1.5,.4,1);
+  }
+  @keyframes pop{from{transform:scale(.72) translateY(-14px);opacity:0}to{transform:none;opacity:1}}
+  .popup.dying{animation:bye .16s forwards}
+  @keyframes bye{to{transform:scale(.8);opacity:0;filter:grayscale(1)}}
+  .pbody{padding:11px 12px 12px;font-size:14px;line-height:1.6}
+  .ptitle{display:flex;gap:9px;align-items:flex-start}
+  .picon{
+    flex:none;width:30px;height:30px;display:grid;place-items:center;
+    font-size:19px;background:#fff;border:1px solid #808080;
+  }
+  .ptxt{flex:1;min-width:0;font-weight:700}
+  .pdesc{margin-top:7px;font-size:13px;font-weight:400;color:#202020;word-break:break-word}
+  .pacts{display:flex;gap:9px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+  .pacts .btn{min-width:88px;min-height:44px}
+  .pacts.danger .btn.prim{background:#a00000;color:#fff;border-color:#fff #000 #000 #fff}
+  .pacts.trap .btn.ok{background:#000080;color:#fff}
+  .popup.ad .tbar{background:linear-gradient(90deg,#a00000,#e04a4a)}
+  .popup.trap .tbar{background:linear-gradient(90deg,#8a4b00,#c08c00)}
+  .popup.gold .tbar{background:linear-gradient(90deg,#006000,#39a53a)}
+  .popup.moon .tbar{background:linear-gradient(90deg,#2b0a5e,#7a2ec0)}
+  .adbody{background:linear-gradient(160deg,#fff3a0,#ffd24a 55%,#ff9d3d);padding:10px 12px;border:1px solid #7a4a00}
+  .adtitle{font-size:16px;font-weight:900;color:#8a2b00;text-shadow:1px 1px 0 #fff}
+  .adfake{
+    margin-top:7px;height:56px;background:repeating-linear-gradient(135deg,#fff 0 8px,#ffe9a8 8px 16px);
+    border:2px dashed #b06a00;display:grid;place-items:center;font-size:22px;
+  }
+
+  /* 浮动分数 */
+  .float{
+    position:absolute;z-index:60;pointer-events:none;
+    font-weight:900;font-size:19px;color:#fff;
+    text-shadow:2px 2px 0 #000,-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000;
+    animation:fu .75s ease-out forwards;
+  }
+  @keyframes fu{0%{transform:translate(-50%,0) scale(.7)}25%{transform:translate(-50%,-14px) scale(1.12)}100%{transform:translate(-50%,-58px) scale(.95);opacity:0}}
+
+  /* 彩蛋：MOONWALK */
+  #moonwalk{
+    display:none;position:fixed;inset:0;z-index:9999;
+    background:radial-gradient(ellipse at 50% 120%,#5b2ea8 0%,#180636 55%,#06000f 100%);
+    overflow:hidden;
+  }
+  #moonwalk.on{display:block;animation:mw .25s}
+  @keyframes mw{from{opacity:0;transform:scale(1.06)}to{opacity:1;transform:none}}
+  .mw-floor{
+    position:absolute;left:0;right:0;bottom:0;height:34%;
+    background:repeating-linear-gradient(90deg,#1a0930 0 40px,#241046 40px 80px);
+    border-top:5px solid #ffe45e;
+    transform:perspective(300px) rotateX(52deg);
+  }
+  #mwMoon{
+    position:absolute;width:74px;height:74px;border-radius:50%;
+    background:radial-gradient(circle at 34% 30%,#fff8c8,#ffd83d 62%,#c99a12);
+    box-shadow:0 0 46px 12px rgba(255,220,90,.42);
+    animation:moonslide 6.2s linear;
+  }
+  @keyframes moonslide{from{left:88%}to{left:8%}}
+  .dancer{
+    position:absolute;bottom:26%;font-size:clamp(44px,15vw,86px);
+    animation:dance .42s ease-in-out infinite alternate;
+    filter:drop-shadow(0 8px 10px rgba(0,0,0,.6));
+  }
+  @keyframes dance{from{transform:translateY(0) rotate(-13deg) scaleY(1)}to{transform:translateY(-22px) rotate(13deg) scaleY(1.06)}}
+  .note{position:absolute;font-size:26px;animation:fall linear forwards}
+  @keyframes fall{from{transform:translateY(-40px) rotate(0);opacity:1}to{transform:translateY(105vh) rotate(420deg);opacity:.15}}
+  .mw-txt{
+    position:absolute;top:7%;left:0;right:0;text-align:center;color:#fff;
+    font-size:clamp(17px,4.6vw,27px);font-weight:900;letter-spacing:1px;
+    text-shadow:3px 3px 0 #7a2ec0,0 0 18px rgba(255,255,255,.6);
+  }
+  .mw-txt small{display:block;margin-top:8px;font-size:12px;font-weight:700;color:#ffd83d;letter-spacing:2px}
+  #mwClose{position:absolute;bottom:8%;left:50%;transform:translateX(-50%);min-height:48px;padding:8px 26px;font-size:15px}
+
+  /* 蓝屏 */
+  #bsod{display:none;position:fixed;inset:0;z-index:9998;background:#0000aa;color:#fff;padding:min(9vw,74px)}
+  #bsod.on{display:block}
+  #bsod .b-top{font-size:clamp(16px,3.6vw,30px);line-height:1.5}
+  #bsod .b-mid{margin-top:clamp(20px,5vh,52px);font-size:clamp(10px,2.1vw,15px);line-height:1.75;white-space:pre-wrap;max-width:640px}
+  #bsod .b-bot{margin-top:clamp(18px,4vh,44px);font-size:clamp(10px,2.1vw,14px)}
+
+  /* 结算屏 */
+  #screenOver.on{display:block;height:100%;overflow:auto;padding:20px 12px 34px}
+  .over-wrap{width:min(560px,96vw);margin:0 auto}
+  .ov-head{
+    text-align:center;background:#a00000;color:#fff;
+    padding:9px;font-weight:900;font-size:15px;letter-spacing:2px;
+  }
+  .ov-head.ok{background:#006000}
+  .grade{
+    text-align:center;padding:16px 10px 6px;
+    background:repeating-linear-gradient(45deg,#c0c0c0,#c0c0c0 6px,#b8b8b8 6px,#b8b8b8 12px);
+  }
+  .grade .g{
+    font-size:clamp(50px,14vw,86px);font-weight:900;line-height:1;
+    text-shadow:3px 3px 0 #fff,5px 5px 0 #000080;
+  }
+  .grade .t{font-size:14px;font-weight:700;margin-top:6px}
+  .grade .e{margin-top:8px;font-size:12px;color:#404040;font-weight:700}
+  .rows{padding:12px 14px}
+  .rw{display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:14px;border-bottom:1px dotted #808080}
+  .rw:last-child{border-bottom:none}
+  .rw .k{font-weight:700;color:#202020}
+  .rw .v{font-weight:900;font-variant-numeric:tabular-nums;text-align:right}
+  .rw.hi .v{color:#006000}
+  .note-line{margin:10px 14px 0;padding:8px 10px;background:#fff8c8;border:1px dashed #a07000;font-size:13px;line-height:1.6}
+  .over-acts{display:flex;gap:10px;padding:14px 14px 16px;flex-wrap:wrap}
+  .over-acts .btn{flex:1;min-width:130px}
+  .best{margin:0 14px 12px;font-size:12px;color:#404040;text-align:right;font-weight:700}
+</style>
+</head>
+<body>
+
+<!-- ===================== 开始屏 ===================== -->
+<section id="screenStart" class="screen on">
+  <div class="start-wrap win">
+    <div class="hero">
+      <h1>弹窗大作战</h1>
+      <div class="sub">POP-UP WARS · 60 秒生存挑战</div>
+      <div class="blink">SYSTEM WARNING：检测到 47 个待处理弹窗</div>
+    </div>
+    <div class="panel">
+      <ul class="rules">
+        <li>你是一台<b>快被弹窗逼疯的老电脑</b>，要在 <b>60 秒</b>内活下来。</li>
+        <li>弹窗会不断从屏幕各处冒出来，<b>点得越快、连得越顺，分数越高</b>。</li>
+        <li><b>内存条会随着弹窗数量上涨</b>，一旦爆表 → 蓝屏，今天就算加班了。</li>
+        <li>电脑只有两个键：<b>处理</b> 和 <b>思考</b>。</li>
+      </ul>
+      <div class="legend">
+        <div class="lg"><span class="tag">普通</span><span>日常通知，点「我知道了」关掉，得 1 分，安全。</span></div>
+        <div class="lg"><span class="tag g">回收</span><span>更新/草稿类，关掉得 <b>5 分</b>，但只会一闪而过。</span></div>
+        <div class="lg"><span class="tag r">广告</span><span>点一下弹一层，<b>贪一层得 2 分</b>，但内存涨得飞快。不点它 2.6 秒后自己消失，一分没有。</span></div>
+        <div class="lg"><span class="tag p">陷阱</span><span>「是否立即升级？」——点<b>「确定」</b>会分裂出 2 个新弹窗（+1），点<b>「取消」</b>干净收场（+3）。</span></div>
+      </div>
+      <div class="start-bar">
+        <button id="btnStart" class="btn">▶ 启动系统</button>
+      </div>
+      <div class="foot">手机 / 电脑都能玩 · 键盘也可以：Esc 关掉最上面那个窗口</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 游戏屏 ===================== -->
+<section id="screenGame" class="screen">
+  <div class="statusbar">
+    <div class="stat"><span class="k">时间</span><span class="v" id="hudTime">60</span></div>
+    <div class="stat"><span class="k">得分</span><span class="v" id="hudScore">0</span></div>
+    <div class="stat"><span class="k">连击</span><span class="v" id="hudCombo">x1</span></div>
+    <div class="memwrap"><span class="k" style="font-size:11px">内存</span><div class="membar"><div class="memfill" id="hudMem"></div></div><span class="v" id="hudMemN" style="font-size:11px;min-width:2.4em">12%</span></div>
+    <div class="timebar" style="width:74px"><div class="timefill" id="hudTimeFill"></div></div>
+  </div>
+
+  <div id="desktop"></div>
+
+  <div id="taskbar">
+    <button id="btnStartMenu" class="btn">▣ 任务管理器</button>
+    <span style="font-size:12px;font-weight:700;color:#303030" id="taskHint">💡 连续快速关闭可叠加连击倍率</span>
+    <span class="clock" id="hudClock">00:60</span>
+  </div>
+</section>
+
+<!-- ===================== 结算屏 ===================== -->
+<section id="screenOver" class="screen">
+  <div class="over-wrap win">
+    <div class="ov-head" id="ovHead">SYSTEM REPORT · 系统评估报告</div>
+    <div class="grade">
+      <div class="g" id="ovGrade">A</div>
+      <div class="t" id="ovTitle">优秀员工</div>
+      <div class="e" id="ovSub">—</div>
+    </div>
+    <div class="rows">
+      <div class="rw hi"><span class="k">最终得分</span><span class="v" id="ovScore">0</span></div>
+      <div class="rw"><span class="k">处理弹窗总数</span><span class="v" id="ovHandled">0</span></div>
+      <div class="rw"><span class="k">最高连击</span><span class="v" id="ovCombo">0</span></div>
+      <div class="rw"><span class="k">最高单次倍率</span><span class="v" id="ovMult">x1</span></div>
+      <div class="rw"><span class="k">广告层数</span><span class="v" id="ovAd">0</span></div>
+      <div class="rw"><span class="k">存活时长</span><span class="v" id="ovTime">60 秒</span></div>
+    </div>
+    <div class="note-line" id="ovNote">—</div>
+    <div class="best" id="ovBest">历史最高：0 分</div>
+    <div class="over-acts">
+      <button id="btnCopy" class="btn">📋 复制战绩</button>
+      <button id="btnAgain" class="btn">↻ 再来一局</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 蓝屏 ===================== -->
+<div id="bsod">
+  <div class="b-top">你的电脑遇到一个严重问题，正在努力补救……<br/>Your PC ran into a problem and needs to restart.</div>
+  <div class="b-mid">POPUP_OVERFLOW_BUG
+弹窗溢出（缓冲区溢出）
+如果你正在看这条消息，你的电脑刚刚因为<b>弹窗太多</b>蓝屏了。</div>
+  <div class="b-bot">* 按任意键继续_<br/><br/>蓝屏时长 3 秒 · 建议：少点几个「立即下载」<br/>POP-UP WARS © 每日有趣小应用</div>
+</div>
+
+<!-- ===================== 彩蛋 MOONWALK ===================== -->
+<div id="moonwalk">
+  <div id="mwMoon"></div>
+  <div class="mw-floor"></div>
+  <div class="mw-txt">MOONWALK MODE<small>DO NOT STOP 'TIL YOU GET ENOUGH</small></div>
+  <button id="mwClose" class="btn">✕ 关闭这个窗口</button>
+</div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   数据与文案
+   ========================================================= */
+var DUR = 60;          // 一局秒数
+var MEM_LIMIT = 124;   // 内存上限，超过即蓝屏（实测：峰值常在 70-96，124 让人有喘息但仍需认真处理）
+var MAX_POP = 13;      // 同屏弹窗上限，防止手滑刷爆
+
+var T = {
+  notify: { w:300, mem:8,  ttl:null, title:'新消息', icon:'💬', score:1 },
+  gold:   { w:300, mem:6,  ttl:5200, title:'系统建议', icon:'🔔', score:5 },
+  ad:     { w:320, mem:14, ttl:2600, title:'网页内容', icon:'⚡', score:2 },
+  trap:   { w:322, mem:10, ttl:null, title:'系统提示', icon:'❓', score:3 },
+  moon:   { w:300, mem:4,  ttl:9000, title:'C:\\程序\\老古董.exe', icon:'🌙', score:1 }
+};
+
+var NOTIFY = [
+  ['💬 微信','你妈：周末回来吃饭吗','顺便带两斤腊肉。'],
+  ['💬 微信','李工：文档我改好了','你看一下还有没有别的问题。'],
+  ['💬 微信','前任：在吗','（对方正在输入……）'],
+  ['📅 日历','提醒：明天 9:00 牙科','记得带医保卡。'],
+  ['📩 短信','您的验证码是 8 3 5 2','5 分钟内有效，别问为什么是它。'],
+  ['📮 邮箱','老板：关于那件事','我们需要再谈谈。方便的话今天。'],
+  ['🖥 系统','您已连续使用电脑 2 小时 47 分','建议您站起来走一走。'],
+  ['💬 工作群','@全体成员请注意查收','附件见群文件，今天下班前要。'],
+  ['📱 推送','你关注的up主更新了','标题：《我把这台旧电脑修好了》第 12 期。'],
+  ['💬 微信','邻居张阿姨','你家的快递放在楼道了，顺便帮我收一下。']
+];
+var GOLD = [
+  ['🔔 系统建议','检测到 1 个可用更新','更新内容：把「更新」两个字也更新了。'],
+  ['💾 草稿箱','检测到未保存内容','上次编辑于 3 天前，内容是「算了」。'],
+  ['🗂 回收站','有 12 个文件可恢复','其中 9 个叫「新建文件夹 (3)」。'],
+  ['🎁 神秘礼包','服务器送你 1 次加速','来源不明，用了大概会开心。']
+];
+var ADS = [
+  ['⚡ 极速清理大师！','一键释放 3.7GB 空间','🧹 已有 999 万人领取'],
+  ['🍑 你是谁的小可爱？','点这里马上就知道','💖 已有 8888 万人测过'],
+  ['💰 走路也能赚钱！','今天已有人赚到 328 元','👟 只需 0.01 元即可提现'],
+  ['🎰 你被选中了！','参与内测，送 7 天 VIP','🎁 仅有最后 3 个名额'],
+  ['🍗 深夜鸡翅限定！','下单立减 50 元','⏰ 剩余 00:47 秒'],
+  ['🐟 咸鱼翻身指南','月入十万不是梦','📈 已有 3 人升职加薪']
+];
+var TRAPS = [
+  ['❓ 发现新版本 v2.0.3','是否立即升级到最新版？','升级过程中请勿关闭电脑。'],
+  ['❓ 该操作需要管理员权限','是否继续执行？','继续即表示你同意承担一切后果。'],
+  ['❓ 是否将 42 条未读消息','全部标记为已读？','标记后对方会看到「已读」。'],
+  ['❓ 需要重启才能生效','现在重启电脑吗？','此时文档尚未保存。']
+];
+var MOON = [
+  ['🌙 MOONWALK.exe','你想看一段舞吗？','这台 1998 年的电脑里，藏着一个不得了的程序。'],
+  ['🌙 神秘的老程序','是否启动？','启动后可能会有人在你桌面跳舞。']
+];
+
+var GRADES = [
+  { min:1250, g:'SSS', t:'弹窗终结者', e:'微软给你发了面试邀请' },
+  { min:900,  g:'S',   t:'资深关窗手', e:'你的手速已经超过 87% 的同事' },
+  { min:620,  g:'A',   t:'优秀员工',   e:'基本没人能在你电脑上找到弹窗' },
+  { min:350,  g:'B',   t:'合格打工人', e:'弹窗是被你关掉的，不是自己消失的' },
+  { min:0,    g:'C',   t:'差点蓝屏',   e:'……你确定你刚才有在操作吗？' }
+];
+
+/* =========================================================
+   音效（WebAudio 合成，无外部文件）
+   ========================================================= */
+var AC = null;
+function ac(){
+  if(AC === null){ try{ AC = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ AC = false; } }
+  if(AC && AC.state === 'suspended'){ try{ AC.resume(); }catch(e){} }
+  return AC || null;
+}
+function beep(type){
+  var c = ac(); if(!c) return;
+  var now = c.currentTime, o = c.createOscillator(), g = c.createGain();
+  var cfg = { click:[880,0.045,'square',0.07], coin:[1320,0.10,'triangle',0.09],
+              trap:[220,0.16,'sawtooth',0.07], ad:[520,0.09,'square',0.06],
+              boom:[120,0.5,'sawtooth',0.11], win:[1046,0.30,'triangle',0.11] }[type] || [660,0.06,'square',0.06];
+  o.type = cfg[2]; o.frequency.setValueAtTime(cfg[0], now);
+  if(type==='trap'){ o.frequency.exponentialRampToValueAtTime(90, now+cfg[1]); }
+  if(type==='boom'){ o.frequency.exponentialRampToValueAtTime(40, now+cfg[1]); }
+  if(type==='win'){ o.frequency.setValueAtTime(cfg[0],now); o.frequency.setValueAtTime(cfg[0]*1.5, now+0.09); o.frequency.setValueAtTime(cfg[0]*2, now+0.18); }
+  g.gain.setValueAtTime(0.0001, now);
+  g.gain.exponentialRampToValueAtTime(cfg[3], now+0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001, now+cfg[1]);
+  o.connect(g); g.connect(c.destination);
+  o.start(now); o.stop(now+cfg[1]+0.03);
+}
+
+/* =========================================================
+   全局状态
+   ========================================================= */
+var S = null;
+var $ = function(id){ return document.getElementById(id); };
+var desktop, timer = null, zTop = 10;
+
+function newState(){
+  return { t:DUR, score:0, combo:0, comboT:0, best:0, bestMult:1,
+           handled:0, ad:0, moon:0, pops:[], spawnT:700, over:false, moonOn:false };
+}
+
+function show(id){
+  ['screenStart','screenGame','screenOver'].forEach(function(k){
+    var el = $(k);
+    if(!el) return;
+    if(k === id){ el.classList.add('on'); el.style.display = ''; }
+    else{ el.classList.remove('on'); el.style.display = 'none'; }
+  });
+}
+
+/* =========================================================
+   计分
+   ========================================================= */
+function mult(){ return Math.min(1 + Math.floor(Math.max(S.combo-1,0)/5), 5); }
+function addScore(base, x, y, label){
+  S.combo++; if(S.comboT <= 0) S.combo = 1;
+  S.comboT = 1.7;
+  if(S.combo > S.best) S.best = S.combo;
+  var m = mult(); if(m > S.bestMult) S.bestMult = m;
+  var gain = base * m;
+  S.score += gain; S.handled++;
+  if(x !== undefined) floatText('+' + gain + (m>1 ? '  x'+m : ''), x, y, label);
+  paint();
+}
+
+/* =========================================================
+   弹窗生成
+   ========================================================= */
+function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+
+function buildPopup(type, tier){
+  var spec = T[type];
+  var el = document.createElement('div');
+  el.className = 'popup ' + type;
+  el.style.setProperty('--pw', (type==='ad' && tier>1 ? 252 : spec.w) + 'px');
+  el.style.zIndex = ++zTop;
+  el.dataset.type = type;
+
+  var title = spec.title, icon = spec.icon, txt='', desc='', bodyCls='', body='';
+
+  if(type === 'notify'){
+    var d = pick(NOTIFY);
+    title = d[0]; icon = d[0].split(' ')[0]; txt = d[1]; desc = d[2];
+    body = '<div class="pbody"><div class="ptitle"><span class="picon">'+icon+'</span><span class="ptxt">'+txt+'</span></div>'+
+           '<div class="pdesc">'+desc+'</div>'+
+           '<div class="pacts"><button class="btn" data-a="ok">我知道了</button></div></div>';
+  } else if(type === 'gold'){
+    var g = pick(GOLD);
+    title = g[0]; icon = g[0].split(' ')[0]; txt = g[1]; desc = g[2];
+    body = '<div class="pbody"><div class="ptitle"><span class="picon">'+icon+'</span><span class="ptxt">'+txt+'</span></div>'+
+           '<div class="pdesc">'+desc+'</div>'+
+           '<div class="pacts"><button class="btn" data-a="gold">稍后再说</button><button class="btn" data-a="ok">立即查看</button></div></div>';
+  } else if(type === 'ad'){
+    var a = pick(ADS);
+    title = a[0]; icon = '⚡'; txt = a[0]; desc = a[1]; bodyCls = 'adbody';
+    body = '<div class="adbody"><div class="adtitle">'+a[0]+'</div>'+
+           '<div class="adfake">'+a[2]+'</div>'+
+           '<div class="pdesc" style="margin-top:6px">'+a[1]+'</div>'+
+           '<div class="pacts"><button class="btn" data-a="ad">关闭广告</button></div></div>';
+    if(tier > 1){ title = '网页内容（'+tier+'）'; }
+  } else if(type === 'trap'){
+    var tr = pick(TRAPS);
+    title = tr[0]; icon = '❓'; txt = tr[1]; desc = tr[2];
+    body = '<div class="pbody"><div class="ptitle"><span class="picon">❓</span><span class="ptxt">'+txt+'</span></div>'+
+           '<div class="pdesc">'+desc+'</div>'+
+           '<div class="pacts trap"><button class="btn ok" data-a="ok">确定</button><button class="btn" data-a="cancel">取消</button></div></div>';
+  } else {
+    var m = pick(MOON);
+    title = m[0]; icon = '🌙'; txt = m[1]; desc = m[2];
+    body = '<div class="pbody"><div class="ptitle"><span class="picon">🌙</span><span class="ptxt">'+txt+'</span></div>'+
+           '<div class="pdesc">'+desc+'</div>'+
+           '<div class="pacts"><button class="btn ok" data-a="moon">启动它</button><button class="btn" data-a="ok">删除</button></div></div>';
+  }
+
+  el.innerHTML = '<div class="win"><div class="tbar"><span class="tt">'+title+'</span>'+
+    (type==='ad' || type==='trap' || type==='moon' ? '' : '<span class="tbtn" data-a="ok">×</span>')+
+    '</div>'+body+'</div>';
+  return { el:el, type:type, tier:tier, born:Date.now(), dead:false, spec:spec };
+}
+
+function memUsed(){
+  var m = 12;
+  for(var i=0;i<S.pops.length;i++){ m += S.pops[i].spec.mem; }
+  return m;
+}
+
+function place(p){
+  var d = desktop;
+  var w = p.el.offsetWidth, h = p.el.offsetHeight;
+  var dw = d.clientWidth, dh = d.clientHeight;
+  var x = 6 + Math.random() * Math.max(1, dw - w - 12);
+  var y = 4 + Math.random() * Math.max(1, dh - h - 8);
+  p.el.style.left = Math.max(4, Math.min(x, Math.max(4, dw - w - 4))) + 'px';
+  p.el.style.top  = Math.max(2, Math.min(y, Math.max(2, dh - h - 2))) + 'px';
+}
+
+function spawn(type, tier){
+  if(S.over) return null;
+  var t = type;
+  if(!t){
+    var r = Math.random();
+    if(r < 0.055) t = 'moon';
+    else if(r < 0.185) t = 'ad';
+    else if(r < 0.33) t = 'trap';
+    else if(r < 0.43) t = 'gold';
+    else t = 'notify';
+  }
+  if(S.pops.length >= MAX_POP) return null;
+  var p = buildPopup(t, tier || 1);
+  desktop.appendChild(p.el);
+  place(p);
+  S.pops.push(p);
+  if(t === 'ad') beep('ad');
+  paint();
+  return p;
+}
+
+function kill(p, animated){
+  if(p.dead) return;
+  p.dead = true;
+  var i = S.pops.indexOf(p);
+  if(i >= 0) S.pops.splice(i,1);
+  if(animated){
+    p.el.classList.add('dying');
+    setTimeout(function(){ if(p.el.parentNode) p.el.parentNode.removeChild(p.el); }, 170);
+  } else if(p.el.parentNode){
+    p.el.parentNode.removeChild(p.el);
+  }
+}
+
+function floatText(txt, x, y, color){
+  var f = document.createElement('div');
+  f.className = 'float';
+  f.textContent = txt;
+  f.style.left = x + 'px'; f.style.top = (y-8) + 'px';
+  if(color) f.style.color = color;
+  desktop.appendChild(f);
+  setTimeout(function(){ if(f.parentNode) f.parentNode.removeChild(f); }, 780);
+}
+
+/* =========================================================
+   交互
+   ========================================================= */
+function respond(p, a){
+  if(p.dead || S.over) return;
+  var r = p.el.getBoundingClientRect(), d = desktop.getBoundingClientRect();
+  var x = r.left - d.left + r.width/2, y = r.top - d.top;
+
+  if(a === 'ok'){
+    if(p.type === 'moon'){ addScore(1, x, y, '#fff'); kill(p,true); beep('click'); return; }
+    if(p.type === 'gold'){ addScore(5, x, y); kill(p,true); beep('coin'); return; }
+    if(p.type === 'trap'){
+      addScore(1, x, y);
+      kill(p,true); beep('trap');
+      spawn('notify'); setTimeout(function(){ spawn('notify'); }, 300);
+      return;
+    }
+    if(p.type === 'ad'){ adClick(p,x,y); return; }
+    addScore(p.spec.score, x, y); kill(p,true); beep('click'); return;
+  }
+  if(a === 'gold'){ addScore(5, x, y); kill(p,true); beep('coin'); return; }
+  if(a === 'cancel'){ addScore(3, x, y); kill(p,true); beep('click'); return; }
+  if(a === 'ad'){ adClick(p,x,y); return; }
+  if(a === 'moon'){ kill(p,true); launchMoonwalk(); return; }
+}
+
+function adClick(p, x, y){
+  S.ad++;
+  addScore(2, x, y, '#ffd24a');
+  kill(p, true); beep('coin');
+  if(p.tier < 3 && Math.random() < 0.82){
+    var n = spawn('ad', p.tier + 1);
+    if(n) n.el.style.animationDelay = '0.06s';
+  }
+}
+
+document.addEventListener('click', function(e){
+  if(S && !S.over){
+    var b = e.target.closest ? e.target.closest('[data-a]') : null;
+    if(b){
+      var host = b.closest('.popup');
+      if(host){
+        var p = null;
+        for(var i=0;i<S.pops.length;i++){ if(S.pops[i].el === host){ p = S.pops[i]; break; } }
+        if(p) respond(p, b.getAttribute('data-a'));
+        return;
+      }
+      if(b.id === 'btnStartMenu'){
+        var hidden = 0;
+        for(var j=S.pops.length-1;j>=0;j--){ if(S.pops[j].type !== 'trap'){ hidden++; kill(S.pops[j], true); } }
+        if(hidden){
+          addScore(1, desktop.clientWidth/2, 40, '#fff');
+          beep('boom');
+        }
+        return;
+      }
+    }
+  }
+});
+
+document.addEventListener('keydown', function(e){
+  if(!S || S.over) return;
+  if(e.key === 'Escape' || e.key === ' '){
+    var top = null;
+    for(var i=0;i<S.pops.length;i++){
+      if(!top || S.pops[i].el.style.zIndex > top.el.style.zIndex) top = S.pops[i];
+    }
+    if(top){
+      e.preventDefault();
+      if(top.type === 'trap') respond(top, 'cancel');
+      else if(top.type === 'ad') respond(top, 'ad');
+      else if(top.type === 'moon') respond(top, 'ok');
+      else respond(top, 'ok');
+    }
+  }
+});
+
+/* =========================================================
+   彩蛋：MOONWALK
+   ========================================================= */
+function launchMoonwalk(){
+  S.moon++; S.score += 50; S.handled++;
+  beep('win');
+  var mw = $('moonwalk');
+  mw.innerHTML = '<div id="mwMoon"></div><div class="mw-floor"></div>'+
+    '<div class="mw-txt">MOONWALK MODE<small>DO NOT STOP \'TIL YOU GET ENOUGH</small></div>'+
+    '<button id="mwClose" class="btn">✕ 关闭这个窗口</button>';
+  var chars = ['🕺','💃','🕺','💃','🕺'];
+  for(var i=0;i<5;i++){
+    var d = document.createElement('div');
+    d.className = 'dancer';
+    d.textContent = chars[i];
+    d.style.left = (4 + i*20 + (Math.random()*5-2.5)) + '%';
+    d.style.animationDelay = (i*0.08).toFixed(2) + 's';
+    mw.appendChild(d);
+  }
+  var notes = ['🎵','🎶','♪','♫','🎵','🎶'];
+  for(var j=0;j<16;j++){
+    (function(j){
+      setTimeout(function(){
+        if(!mw.classList.contains('on')) return;
+        var n = document.createElement('div');
+        n.className = 'note';
+        n.textContent = notes[j % notes.length];
+        n.style.left = (Math.random()*96) + '%';
+        n.style.fontSize = (18 + Math.random()*20) + 'px';
+        n.style.animationDuration = (2.6 + Math.random()*2.2) + 's';
+        n.style.animationDelay = (Math.random()*1.4) + 's';
+        mw.appendChild(n);
+        setTimeout(function(){ if(n.parentNode) n.parentNode.removeChild(n); }, 6800);
+      }, j*380);
+    })(j);
+  }
+  mw.classList.add('on');
+  S.moonOn = true;
+  $('mwClose').addEventListener('click', function(){
+    mw.classList.remove('on'); S.moonOn = false; beep('click'); paint();
+  });
+}
+
+/* =========================================================
+   HUD
+   ========================================================= */
+function paint(){
+  $('hudTime').textContent = Math.max(0, Math.ceil(S.t));
+  $('hudScore').textContent = S.score;
+  $('hudCombo').textContent = 'x' + mult();
+  var m = memUsed();
+  $('hudMem').style.width = Math.min(100, m) + '%';
+  $('hudMemN').textContent = m + '%';
+  $('hudMem').className = 'memfill' + (m >= 88 ? ' crit' : m >= 65 ? ' warn' : '');
+  var pct = Math.max(0, Math.min(100, S.t / DUR * 100));
+  $('hudTimeFill').style.width = pct + '%';
+  var left = Math.max(0, Math.ceil(S.t));
+  $('hudClock').textContent = '00:' + (left < 10 ? '0'+left : left);
+  $('taskHint').textContent = S.comboT > 0
+    ? '🔥 连击 ' + S.combo + ' · 倍率 x' + mult()
+    : '💡 连续快速关闭可叠加连击倍率';
+}
+
+/* =========================================================
+   主循环
+   ========================================================= */
+function tick(){
+  if(S.over) return;
+  S.t -= 0.05;
+  if(S.comboT > 0){ S.comboT -= 0.05; if(S.comboT <= 0) S.combo = 0; }
+
+  S.spawnT -= 50;
+  if(S.spawnT <= 0){
+    var prog = 1 - S.t / DUR;
+    // 压力曲线：前 15 秒慢（热身），中段最密（考验），末段略缓（收尾别太绝望）
+    var rate = 1000 - 420 * prog + 120 * Math.max(0, prog - 0.75);
+    S.spawnT = Math.round(Math.max(330, rate));
+    var roll = Math.random();
+    var live = S.pops.length;
+    if(live < 4 || roll < 0.72) spawn();
+  }
+
+  var now = Date.now();
+  for(var i=S.pops.length-1;i>=0;i--){
+    var p = S.pops[i];
+    if(p.spec.ttl && now - p.born > p.spec.ttl){ kill(p, true); continue; }
+  }
+
+  paint();
+  if(memUsed() >= MEM_LIMIT){ finish(true); return; }
+  if(S.t <= 0){ S.t = 0; paint(); finish(false); }
+}
+
+/* =========================================================
+   结算
+   ========================================================= */
+function finish(bsod){
+  if(S.over) return;
+  S.over = true;
+  if(timer){ clearInterval(timer); timer = null; }
+  S.pops.slice().forEach(function(p){ kill(p, false); });
+
+  var seconds = bsod ? Math.max(0, Math.round(DUR - S.t)) : DUR;
+  var gr = GRADES.find(function(g){ return S.score >= g.min; }) || GRADES[GRADES.length-1];
+
+  $('ovHead').textContent = bsod ? 'SYSTEM REPORT · 蓝屏现场报告' : 'SYSTEM REPORT · 系统评估报告';
+  $('ovHead').className = 'ov-head' + (bsod ? '' : ' ok');
+  $('ovGrade').textContent = gr.g;
+  $('ovTitle').textContent = gr.t;
+  $('ovSub').textContent = gr.e;
+  $('ovScore').textContent = S.score;
+  $('ovHandled').textContent = S.handled;
+  $('ovCombo').textContent = S.best;
+  $('ovMult').textContent = 'x' + S.bestMult;
+  $('ovAd').textContent = S.ad;
+  $('ovTime').textContent = seconds + ' 秒' + (bsod ? '（提前蓝屏）' : '（满血通关）');
+
+  var notes = [];
+  if(bsod) notes.push('💀 你的电脑是被自己堆的弹窗撑爆的，不是被手速害的。');
+  if(S.moon > 0) notes.push('🌙 你启动了 ' + S.moon + ' 次那个老程序，桌面跳了 ' + S.moon + ' 段舞。');
+  if(S.ad === 0 && S.handled > 6) notes.push('🧘 全场一个广告都没点：意志力型选手。');
+  if(S.ad >= 6) notes.push('🤑 贪心王者：你今天一共点了 ' + S.ad + ' 层广告。');
+  if(S.best >= 15) notes.push('⚡ 最高 ' + S.best + ' 连击，手速已经不属于人类范畴。');
+  if(S.score < 100 && !bsod) notes.push('🕐 活下来了，但基本在发呆——下一局记得真的动手。');
+  if(!notes.length) notes.push('📎 把这份成绩单发到群里，让同事也体验一下被弹窗支配的恐惧。');
+  $('ovNote').textContent = notes.join(' ');
+
+  var best = 0;
+  try{ best = parseInt(localStorage.getItem('pw_best') || '0', 10) || 0; }catch(e){}
+  if(S.score > best){
+    best = S.score;
+    try{ localStorage.setItem('pw_best', String(best)); }catch(e){}
+    notes.push('🏆 新纪录！历史最高刷新为 ' + best + ' 分。');
+    $('ovNote').textContent = notes.join(' ');
+  }
+  $('ovBest').textContent = '历史最高：' + best + ' 分';
+
+  show('screenOver');
+  if(bsod){
+    beep('boom');
+    $('bsod').classList.add('on');
+    var wait = 2600;
+    var clearBsod = function(){
+      $('bsod').classList.remove('on');
+      document.removeEventListener('keydown', clearBsod);
+    };
+    document.addEventListener('keydown', clearBsod);
+    setTimeout(clearBsod, wait);
+  } else {
+    beep('win');
+  }
+}
+
+/* =========================================================
+   启动 / 重开
+   ========================================================= */
+function start(){
+  ac();
+  desktop = $('desktop');
+  desktop.innerHTML = '';
+  S = newState();
+  show('screenGame');
+  paint();
+  spawn('notify');
+  spawn('ad');
+  setTimeout(function(){ if(S && !S.over) spawn('gold'); }, 900);
+  setTimeout(function(){ if(S && !S.over) spawn('trap'); }, 1700);
+  if(timer) clearInterval(timer);
+  timer = setInterval(tick, 50);
+}
+
+$('btnStart').addEventListener('click', start);
+$('btnAgain').addEventListener('click', start);
+$('btnCopy').addEventListener('click', function(){
+  var txt = '【弹窗大作战】我拿到 ' + $('ovScore').textContent + ' 分，评级 ' + $('ovGrade').textContent +
+    '（' + $('ovTitle').textContent + '），共处理 ' + $('ovHandled').textContent + ' 个弹窗，最高 ' +
+    $('ovCombo').textContent + ' 连击。' + (S && S.moon ? '我还跳了一段舞 🕺' : '') +
+    '👉 https://hulinkang9527.github.io/daily-mini-apps/2026-10-17.html';
+  var b = this;
+  var ok = function(){
+    b.textContent = '✓ 已复制，去群里炫吧';
+    setTimeout(function(){ b.textContent = '📋 复制战绩'; }, 2200);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(ok, function(){ fallback(); });
+  } else fallback();
+  function fallback(){
+    var ta = document.createElement('textarea');
+    ta.value = txt; ta.setAttribute('readonly','');
+    ta.style.cssText = 'position:fixed;left:-9999px;top:0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); ok(); }
+    catch(e){ b.textContent = '复制失败，长按选中吧'; }
+    document.body.removeChild(ta);
+  }
+});
+
+window.addEventListener('resize', function(){
+  if(!S || S.over || !desktop) return;
+  S.pops.forEach(function(p){ if(p.el.parentNode) place(p); });
+});
+
+/* 供自动化测试探针调用 */
+window.__pw = {
+  state: function(){ return S; },
+  mem: memUsed,
+  mult: mult,
+  spawn: spawn,
+  forceMoon: function(){ spawn('moon'); },
+  forceTrap: function(){ spawn('trap'); },
+  forceAd: function(){ return spawn('ad', 1); },
+  clickTop: function(){
+    var top = null;
+    for(var i=0;i<S.pops.length;i++){ if(!top || S.pops[i].el.style.zIndex > top.el.style.zIndex) top = S.pops[i]; }
+    if(!top) return false;
+    var btn = top.el.querySelector('[data-a]');
+    if(btn) btn.click();
+    return true;
+  },
+  popCount: function(){ return S ? S.pops.length : 0; },
+  start: start
+};
+show('screenStart');
+</script>
+</body>
+</html>
