@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>纸飞机邮筒 · 写给某个人</title>
+<meta name="description" content="把一句想说的话折成纸飞机扔出窗外，等 TA 的回信。" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%232b1b4d'/%3E%3Ccircle cx='46' cy='16' r='7' fill='%23ffcf8a'/%3E%3Cpath d='M6 40l30-14 18 22-22-6z' fill='%23fdf6e3'/%3E%3Cpath d='M36 26l-4 16 22 6z' fill='%23e8dcc0'/%3E%3C/svg%3E" />
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    background:#221542;
+    font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
+    color:#f6efe2;
+    min-height:100dvh;
+    overflow-x:hidden;
+    position:relative;
+    -webkit-font-smoothing:antialiased;
+  }
+  .screen{display:none}
+  .screen.on{display:block}
+  /* ID 选择器特异性高于 .screen.on，隐藏屏必须显式声明 */
+  #screenFly{position:fixed;inset:0;z-index:6;display:none}
+  #screenFly.on{display:block}
+  #screenFold{position:relative;z-index:4;min-height:100dvh;display:none;overflow:hidden}
+  #screenFold.on{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+
+  /* ---------- 通用 ---------- */
+  .wrap{max-width:560px;margin:0 auto;padding:0 18px}
+  .kaiti{font-family:"Kaiti SC","STKaiti",KaiTi,"楷体",serif}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  .btn{
+    display:block;width:100%;min-height:52px;border-radius:14px;
+    font-size:1.06rem;font-weight:700;letter-spacing:.04em;
+    background:linear-gradient(160deg,#ffd89b,#f0a35e);
+    color:#3d2410;box-shadow:0 8px 22px rgba(240,163,94,.28);
+    transition:transform .12s ease,box-shadow .12s ease,filter .12s;
+  }
+  .btn:active{transform:translateY(2px) scale(.99);box-shadow:0 3px 10px rgba(240,163,94,.24)}
+  .btn[disabled]{filter:grayscale(.55) brightness(.85);cursor:not-allowed;box-shadow:none}
+  .btn.ghost{
+    background:transparent;color:#f0e2cd;box-shadow:inset 0 0 0 1.5px rgba(246,239,226,.34);
+  }
+  .btn.mini{min-height:46px;font-size:.94rem;font-weight:600;padding:0 14px;width:auto}
+
+  /* ---------- 天空 ---------- */
+  .sky{
+    position:fixed;inset:0;z-index:0;
+    background:linear-gradient(178deg,
+      #1d1236 0%, #35205a 16%, #6b2f5e 34%, #a83f56 50%,
+      #d9663f 66%, #f2994a 78%, #ffc978 88%, #ffe3ad 100%);
+  }
+  .sky.night{
+    background:linear-gradient(178deg,
+      #0d0a1f 0%, #171338 22%, #26205a 44%, #3a2a63 62%,
+      #55355f 78%, #7a4553 90%, #a8645a 100%);
+    transition:background 1.6s ease;
+  }
+  .stars{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0;transition:opacity 1.8s ease}
+  .stars.on{opacity:1}
+  .star-dot{
+    position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;
+    box-shadow:0 0 4px 1px rgba(255,255,255,.55);
+    animation:tw 3.4s ease-in-out infinite;
+  }
+  @keyframes tw{0%,100%{opacity:.25}50%{opacity:.95}}
+  .cloud{position:fixed;z-index:1;pointer-events:none;opacity:.42;filter:blur(.4px);overflow:hidden}
+  .cloud i{position:absolute;background:rgba(255,241,222,.9);border-radius:50%;display:block}
+  .cloud.c1{width:190px;height:60px;top:20%;left:-200px;animation:drift 64s linear infinite}
+  .cloud.c2{width:130px;height:44px;top:47%;left:-160px;animation:drift 92s linear infinite;opacity:.28}
+  .cloud.c3{width:230px;height:70px;top:72%;left:-240px;animation:drift 118s linear infinite;opacity:.2}
+  @keyframes drift{from{transform:translateX(0)}to{transform:translateX(150vw)}}
+  .hills{position:fixed;left:0;right:0;bottom:0;height:20vh;z-index:2;pointer-events:none;
+    -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 8%);
+    mask-image:linear-gradient(180deg,transparent 0,#000 8%)}
+  .hills i{position:absolute;bottom:0;display:block}
+  .hills i:nth-child(1){left:-14%;width:70%;height:58%;border-radius:0 100% 0 0;background:#2f1c4a}
+  .hills i:nth-child(2){right:-16%;width:78%;height:76%;border-radius:100% 0 0 0;background:#241339}
+  .hills i:nth-child(3){left:26%;width:52%;height:40%;border-radius:100% 0 0 0;background:#1b0e2e}
+
+  /* ---------- 写信屏 ---------- */
+  #screenWrite{position:relative;z-index:3;padding:calc(28px + env(safe-area-inset-top)) 0 56px;min-height:100dvh}
+  .brand{text-align:center;margin-bottom:20px}
+  .brand h1{font-size:1.72rem;letter-spacing:.06em;text-shadow:0 3px 18px rgba(0,0,0,.4)}
+  .brand p{font-size:.84rem;color:#e7d3bb;margin-top:6px;letter-spacing:.1em}
+  .brand .lamp{
+    display:inline-block;font-size:1.5rem;animation:sway 3.6s ease-in-out infinite;
+  }
+  @keyframes sway{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(8deg)}}
+
+  .paper{
+    position:relative;background:linear-gradient(172deg,#fdf6e4,#f6e9cd);
+    border-radius:4px;color:#3c2f26;
+    box-shadow:0 14px 34px rgba(0,0,0,.42),0 1px 0 rgba(255,255,255,.7) inset;
+    padding:24px 20px 20px;
+    overflow:hidden;
+  }
+  .paper::before{
+    content:'';position:absolute;left:26px;top:0;bottom:0;width:1.5px;pointer-events:none;
+    background:rgba(196,70,60,.26);
+  }
+  .paper .inner{position:relative;z-index:2;padding-left:16px;padding-right:4px}
+  .paper .frow:first-of-type{padding-right:56px}
+  .paper::after{
+    content:'';position:absolute;inset:0;pointer-events:none;border-radius:4px;opacity:.4;
+    background-image:radial-gradient(rgba(140,110,70,.14) 1px,transparent 1px);
+    background-size:5px 5px;
+  }
+  .flabel{font-size:.76rem;letter-spacing:.22em;color:#a08b6c;margin-bottom:7px}
+  .frow{margin-bottom:16px}
+  .finput{
+    width:100%;background:transparent;border:none;outline:none;
+    font-size:1.05rem;color:#3c2f26;line-height:34px;height:46px;
+    border-bottom:1.5px dashed rgba(124,104,76,.5);padding:0;
+    font-family:"Kaiti SC","STKaiti",KaiTi,"楷体",serif;
+  }
+  .finput::placeholder{color:#b8a68c}
+  .fbox{
+    width:100%;background:transparent;border:none;outline:none;resize:none;
+    font-size:1.12rem;line-height:34px;color:#3c2f26;height:136px;padding:0;
+    font-family:"Kaiti SC","STKaiti",KaiTi,"楷体",serif;
+  }
+  .fbox::placeholder{color:#b8a68c}
+  .counter{text-align:right;font-size:.76rem;color:#a08b6c;margin-top:2px;letter-spacing:.06em}
+  .postcard{
+    position:absolute;top:14px;right:14px;width:48px;height:58px;
+    background:repeating-linear-gradient(45deg,#7fa6c9 0 5px,#7fa6c9 5px 10px);
+    border:2px solid rgba(255,255,255,.5);border-radius:2px;
+    box-shadow:0 2px 6px rgba(0,0,0,.2);z-index:3;opacity:.9;
+  }
+  .postcard::after{
+    content:'2026';position:absolute;bottom:-15px;right:-2px;font-size:.6rem;
+    color:#9c8663;letter-spacing:.06em;background:#fdf6e4;padding:0 2px;border-radius:1px;
+  }
+  .tips{margin-top:14px;font-size:.82rem;color:#e3cfb6;line-height:1.75;text-align:center}
+  .tips b{color:#ffd89b}
+
+  /* ---------- 折纸屏 ---------- */
+  .foldstage{position:relative;width:230px;height:280px;perspective:1100px;margin-bottom:30px}
+  .sheet{
+    position:absolute;inset:0;transform-style:preserve-3d;
+    transition:transform .55s cubic-bezier(.4,.05,.3,1);
+  }
+  .flap{
+    position:absolute;left:0;width:100%;height:50%;overflow:hidden;
+    background:linear-gradient(180deg,#fdf6e4,#f4e7cb);transform-origin:top center;
+    box-shadow:0 10px 30px rgba(0,0,0,.3);
+  }
+  .flap.t{top:0;border-radius:8px 8px 0 0}
+  .flap.b{bottom:0;border-radius:0 0 8px 8px;background:linear-gradient(0deg,#f4e7cb,#fdf6e4)}
+  .flap.t .half{position:absolute;top:0;left:0;width:100%;height:200%}
+  .flap.b .half{position:absolute;bottom:0;left:0;width:100%;height:200%}
+  .flap::after{
+    content:'';position:absolute;left:0;width:100%;height:50%;
+    background:linear-gradient(180deg,rgba(120,100,70,.2),transparent);
+  }
+  .flap.t::after{bottom:0}
+  .flap.b::after{top:0;transform:scaleY(-1)}
+  /* 信纸横线，随折叠一起压下去 */
+  .ruled{
+    position:absolute;inset:0;pointer-events:none;z-index:4;
+    background:repeating-linear-gradient(180deg,transparent 0 27px,rgba(120,146,180,.18) 27px 28px);
+  }
+  .crease{position:absolute;left:0;right:0;top:50%;height:2px;background:rgba(120,100,70,.35);z-index:5;opacity:.6}
+  .plane{
+    position:absolute;left:50%;top:50%;width:96px;height:66px;margin:-33px 0 0 -48px;
+    opacity:0;transition:opacity .3s;
+  }
+  .foldtip{font-size:1rem;color:#ffe0b8;letter-spacing:.14em;min-height:1.4em;text-shadow:0 2px 10px rgba(0,0,0,.45)}
+  .sub{font-size:.8rem;color:#e7d3bb;margin-top:10px;text-align:center;line-height:1.7}
+
+  /* ---------- 飞行屏 ---------- */
+  #flyCv{position:absolute;inset:0;width:100%;height:100%;z-index:2}
+  /* 飞行时隐藏折纸屏文字，避免与飞行画面叠字 */
+  body.flying .foldtip,body.flying .sub{opacity:0;transition:opacity .3s}
+
+  /* ---------- 回信屏 ---------- */
+  #screenReply{position:relative;z-index:3;padding:calc(26px + env(safe-area-inset-top)) 0 76px;min-height:100dvh}
+  .rhead{text-align:center;margin-bottom:16px}
+  .rhead .who{font-size:.86rem;color:#f0dcbe;letter-spacing:.14em}
+  .rhead .when{font-size:.76rem;color:#d9c1a2;margin-top:5px}
+  .letter{
+    position:relative;background:linear-gradient(174deg,#fffdf5,#f7f0dd);
+    border-radius:3px;color:#38302a;padding:44px 22px 26px;
+    box-shadow:0 16px 40px rgba(0,0,0,.45);
+    -webkit-touch-callout:default;
+  }
+  .letter::after{
+    content:'';position:absolute;inset:0;pointer-events:none;border-radius:3px;opacity:.35;
+    background-image:radial-gradient(rgba(140,110,70,.12) 1px,transparent 1px);background-size:5px 5px;
+  }
+  .letter .inner{position:relative;z-index:2}
+  .stamp{
+    position:absolute;top:6px;right:14px;width:74px;height:74px;z-index:6;
+    transform:rotate(-13deg);opacity:.9;
+  }
+  .lbody{font-size:1.16rem;line-height:2.05;white-space:pre-wrap;word-break:break-word}
+  .lbody .sig{display:block;margin-top:18px;text-align:right;font-size:1rem;color:#6b5a47}
+  .typing{min-height:2.4em;display:flex;align-items:center;gap:5px;justify-content:center}
+  .typing i{width:7px;height:7px;border-radius:50%;background:#c9a06a;animation:tp 1.1s infinite}
+  .typing i:nth-child(2){animation-delay:.16s}
+  .typing i:nth-child(3){animation-delay:.32s}
+  @keyframes tp{0%,60%,100%{opacity:.28;transform:translateY(0)}30%{opacity:1;transform:translateY(-5px)}}
+  .rmeta{
+    display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:16px 0 20px;
+  }
+  .tag{
+    font-size:.76rem;padding:6px 12px;border-radius:20px;letter-spacing:.06em;
+    font-weight:600;border:1px solid transparent;
+  }
+  .tag.t-love{background:rgba(194,65,122,.16);color:#f4a8c8;border-color:rgba(244,168,200,.5)}
+  .tag.t-miss{background:rgba(184,83,107,.16);color:#f0a3b4;border-color:rgba(240,163,180,.5)}
+  .tag.t-sorry{background:rgba(63,111,168,.2);color:#9dc2ec;border-color:rgba(157,194,236,.5)}
+  .tag.t-thanks{background:rgba(184,121,42,.2);color:#f0c384;border-color:rgba(240,195,132,.5)}
+  .tag.t-bye{background:rgba(123,82,168,.2);color:#c4a5e4;border-color:rgba(196,165,228,.5)}
+  .tag.t-cheer{background:rgba(200,160,42,.2);color:#f2d68a;border-color:rgba(242,214,138,.5)}
+  .tag.t-vent{background:rgba(47,129,119,.22);color:#8fdccf;border-color:rgba(143,220,207,.5)}
+  .tag.t-daily{background:rgba(79,125,62,.22);color:#b3dd9a;border-color:rgba(179,221,154,.5)}
+  .tag.t-roast{background:rgba(93,100,114,.24);color:#c0c8d6;border-color:rgba(192,200,214,.45)}
+  .tag.t-hi{background:rgba(74,90,168,.22);color:#aab8f0;border-color:rgba(170,184,240,.5)}
+  .tag.t-general{background:rgba(255,232,196,.16);color:#f4dcb4;border-color:rgba(244,220,180,.42)}
+  /* 浅色纸面上的小标签（信箱列表内） */
+  .imeta .tag{padding:3px 9px;font-size:.68rem;font-weight:600}
+  .imeta .tag.t-love{background:rgba(194,65,122,.12);color:#a82e63}
+  .imeta .tag.t-miss{background:rgba(184,83,107,.12);color:#a63a52}
+  .imeta .tag.t-sorry{background:rgba(63,111,168,.12);color:#2f5a90}
+  .imeta .tag.t-thanks{background:rgba(184,121,42,.14);color:#96601a}
+  .imeta .tag.t-bye{background:rgba(123,82,168,.12);color:#6b3f96}
+  .imeta .tag.t-cheer{background:rgba(168,134,42,.14);color:#8a6c1e}
+  .imeta .tag.t-vent{background:rgba(47,129,119,.13);color:#226b61}
+  .imeta .tag.t-daily{background:rgba(79,125,62,.13);color:#3f6a2f}
+  .imeta .tag.t-roast{background:rgba(93,100,114,.13);color:#4a5160}
+  .imeta .tag.t-hi{background:rgba(74,90,168,.12);color:#3c4a92}
+  .imeta .tag.t-general{background:rgba(138,116,87,.12);color:#6d5a41}
+  .ractions{display:flex;flex-direction:column;gap:10px}
+  .easter{
+    margin-top:16px;background:rgba(46,26,66,.92);border-left:3px solid #ffd89b;
+    border-radius:0 10px 10px 0;padding:12px 14px;font-size:.86rem;color:#ffe6c2;line-height:1.8;
+    box-shadow:0 6px 18px rgba(0,0,0,.35);
+  }
+  .mailwarn{margin-top:14px;font-size:.84rem;color:#ffd0c2;text-align:center;line-height:1.7}
+  .sharehint{margin-top:12px;font-size:.76rem;color:#d9c1a2;text-align:center;line-height:1.7}
+
+  /* ---------- 信箱屏 ---------- */
+  #screenBox{position:relative;z-index:3;padding:calc(26px + env(safe-area-inset-top)) 0 76px;min-height:100dvh}
+  .bhead{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+  .backbtn{
+    min-width:46px;min-height:46px;border-radius:12px;background:rgba(255,255,255,.12);
+    display:flex;align-items:center;justify-content:center;font-size:1.2rem;
+  }
+  .backbtn:active{background:rgba(255,255,255,.22)}
+  .bhead h2{flex:1;font-size:1.2rem;letter-spacing:.08em}
+  .bhead .cnt{font-size:.78rem;color:#e0c8a9}
+  .item{
+    background:rgba(253,246,228,.94);border-radius:5px;color:#3c2f26;
+    padding:15px 16px;margin-bottom:12px;box-shadow:0 6px 18px rgba(0,0,0,.28);
+    -webkit-touch-callout:default;
+  }
+  .item .imeta{display:flex;justify-content:space-between;align-items:center;font-size:.72rem;color:#a08b6c;margin-bottom:6px;letter-spacing:.06em}
+  .item .itext{font-size:.96rem;line-height:1.6;font-family:"Kaiti SC","STKaiti",KaiTi,"楷体",serif;word-break:break-word}
+  .item .ireply{
+    margin-top:11px;padding-top:11px;border-top:1px dashed rgba(124,104,76,.42);
+    font-size:.86rem;line-height:1.8;color:#5a4c3e;white-space:pre-wrap;word-break:break-word;
+  }
+  .item .iact{display:flex;gap:8px;margin-top:11px}
+  .emptybox{text-align:center;padding:56px 20px;color:#e3cfb6;line-height:2}
+  .emptybox .ic{font-size:2.6rem;display:block;margin-bottom:10px;opacity:.75}
+
+  /* ---------- toast ---------- */
+  #toast{
+    position:fixed;left:50%;bottom:38px;transform:translateX(-50%) translateY(20px);
+    background:rgba(24,15,42,.94);color:#ffe6c2;padding:12px 20px;border-radius:24px;
+    font-size:.88rem;z-index:99;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;
+    max-width:86vw;text-align:center;line-height:1.5;
+  }
+  #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+  .sfx{
+    position:fixed;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));
+    width:46px;height:46px;border-radius:50%;z-index:60;
+    background:rgba(20,12,36,.62);backdrop-filter:blur(6px);
+    border:1px solid rgba(255,232,196,.24);
+    display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+  }
+  .sfx.off{opacity:.5}
+</style>
+</head>
+<body>
+
+<div class="sky" id="sky"></div>
+<div class="stars" id="stars"></div>
+<div class="cloud c1" id="cl1"><i style="left:0;top:16px;width:64px;height:40px"></i><i style="left:40px;top:0;width:82px;height:56px"></i><i style="left:104px;top:18px;width:58px;height:36px"></i><i style="left:20px;bottom:0;width:100px;height:22px"></i></div>
+<div class="cloud c2" id="cl2"><i style="left:0;top:10px;width:48px;height:30px"></i><i style="left:30px;top:0;width:62px;height:42px"></i><i style="left:72px;top:12px;width:40px;height:26px"></i></div>
+<div class="cloud c3" id="cl3"><i style="left:0;top:20px;width:76px;height:46px"></i><i style="left:48px;top:0;width:96px;height:62px"></i><i style="left:122px;top:22px;width:70px;height:44px"></i><i style="left:30px;bottom:0;width:120px;height:24px"></i></div>
+<div class="hills"><i></i><i></i><i></i></div>
+
+<!-- ========== 写信 ========== -->
+<section id="screenWrite" class="screen on">
+  <div class="wrap">
+    <div class="brand">
+      <span class="lamp">🪔</span>
+      <h1 class="kaiti">纸飞机邮筒</h1>
+      <p>写给某个人 · 折起来 · 扔出窗外</p>
+    </div>
+
+    <div class="paper">
+      <div class="postcard"></div>
+      <div class="inner">
+        <div class="frow">
+          <div class="flabel">TO</div>
+          <input class="finput" id="fTo" maxlength="12" placeholder="TA 的名字" autocomplete="off" />
+        </div>
+        <div class="frow">
+          <div class="flabel">MESSAGE</div>
+          <textarea class="fbox" id="fText" maxlength="60" placeholder="只写一句你想了很久、却一直没发出去的话。"></textarea>
+        </div>
+        <div class="counter" id="counter">0 / 60</div>
+        <div class="frow" style="margin:14px 0 0">
+          <div class="flabel">FROM</div>
+          <input class="finput" id="fFrom" maxlength="10" placeholder="你的落款（可不填）" autocomplete="off" />
+        </div>
+      </div>
+    </div>
+
+    <div class="tips">
+      每天 <b>5</b> 张纸飞机在途 · 写得越短，风越大<br/>TA 可能回，也可能不回。纸飞机不会丢。
+    </div>
+
+    <div style="margin-top:18px;display:flex;flex-direction:column;gap:10px">
+      <button class="btn" id="btnSend">折好，扔出去</button>
+      <button class="btn ghost mini" id="btnBox" style="align-self:center">我的信箱（0）</button>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 折纸 ========== -->
+<section id="screenFold" class="screen">
+  <div class="foldstage">
+    <div class="sheet" id="sheet">
+      <div class="flap t"><div class="half"></div></div>
+      <div class="flap b"><div class="half"></div></div>
+      <div class="crease"></div>
+      <div class="ruled"></div>
+    </div>
+    <div class="plane" id="planeMini">
+      <svg viewBox="0 0 96 66" width="96" height="66">
+        <path d="M92 6 4 40l34 8z" fill="#fdf6e4"/>
+        <path d="M92 6 38 48 4 40z" fill="#e6d6b2"/>
+        <path d="M92 6 38 48l8-22z" fill="#cfc09c"/>
+      </svg>
+    </div>
+  </div>
+  <div class="foldtip" id="foldTip">正在折…</div>
+  <div class="sub" id="foldSub">把说不出口的，压进一道折痕里</div>
+</section>
+
+<!-- ========== 飞行 ========== -->
+<section id="screenFly" class="screen"><canvas id="flyCv"></canvas></section>
+
+<!-- ========== 回信 ========== -->
+<section id="screenReply" class="screen">
+  <div class="wrap">
+    <div class="rhead">
+      <div class="who" id="rWho">TA 的回信</div>
+      <div class="when" id="rWhen">—</div>
+    </div>
+
+    <div class="letter">
+      <svg class="stamp" viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="50" cy="50" r="46" fill="none" stroke="#c4463c" stroke-width="3.5" stroke-dasharray="5 4"/>
+        <circle cx="50" cy="50" r="36" fill="none" stroke="#c4463c" stroke-width="1.4"/>
+        <path d="M32 52l12 12 24-26" fill="none" stroke="#c4463c" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="inner">
+        <div class="typing" id="typing"><i></i><i></i><i></i></div>
+        <div class="lbody kaiti" id="lBody" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="rmeta" id="rMeta"></div>
+    <div id="easterBox"></div>
+    <div class="mailwarn" id="mailWarn" style="display:none"></div>
+
+    <div style="margin-top:18px;display:flex;flex-direction:column;gap:10px">
+      <button class="btn" id="btnCopy">复制这封回信，发给 TA</button>
+      <div style="display:flex;gap:10px">
+        <button class="btn ghost" id="btnAgain" style="flex:1">再写一张</button>
+        <button class="btn ghost" id="btnBox2" style="flex:1">去信箱</button>
+      </div>
+    </div>
+    <div class="sharehint">信纸可长按复制 · 纸飞机编号可以和 TA 对暗号</div>
+  </div>
+</section>
+
+<!-- ========== 信箱 ========== -->
+<section id="screenBox" class="screen">
+  <div class="wrap">
+    <div class="bhead">
+      <button class="backbtn" id="btnBack" aria-label="返回">←</button>
+      <h2>我的信箱</h2>
+      <div class="cnt" id="boxCnt">0 张</div>
+    </div>
+    <div id="boxList"></div>
+  </div>
+</section>
+
+<button class="sfx" id="btnSfx" aria-label="音效开关">🔊</button>
+<div id="toast"></div>
+
+<script>
+/* =========================================================================
+   纸飞机邮筒 · 逻辑
+   ========================================================================= */
+var KEY = 'pp_mailbox_v1';
+var $ = function(id){ return document.getElementById(id); };
+
+/* ---------- 音效（WebAudio 合成，无外部资源） ---------- */
+var AudioC = (function(){
+  var ctx = null, on = true;
+  function ac(){
+    if(!ctx){ try{ ctx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ ctx=false; } }
+    if(ctx && ctx.state==='suspended'){ ctx.resume(); }
+    return ctx || null;
+  }
+  function noise(dur, gain, f0, f1){
+    var c = ac(); if(!c || !on) return;
+    var n = Math.floor(c.sampleRate*dur);
+    var buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0);
+    for(var i=0;i<n;i++){ d[i] = (Math.random()*2-1) * (1 - i/n); }
+    var src = c.createBufferSource(); src.buffer = buf;
+    var flt = c.createBiquadFilter(); flt.type='bandpass';
+    flt.frequency.setValueAtTime(f0,c.currentTime);
+    flt.frequency.exponentialRampToValueAtTime(Math.max(80,f1),c.currentTime+dur);
+    var g = c.createGain(); g.gain.value = gain;
+    src.connect(flt); flt.connect(g); g.connect(c.destination); src.start();
+  }
+  function tone(freq, dur, gain, type){
+    var c = ac(); if(!c || !on) return;
+    var o = c.createOscillator(), g = c.createGain();
+    o.type = type||'sine'; o.frequency.setValueAtTime(freq, c.currentTime);
+    g.gain.setValueAtTime(gain, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(.0001, c.currentTime+dur);
+    o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+dur+.02);
+  }
+  return {
+    fold:function(){ noise(.22,.22,2600,700); },
+    tick:function(){ noise(.05,.1,3800,1800); },
+    throw:function(){ noise(.75,.16,1500,240); tone(320,.5,.05,'triangle'); },
+    stamp:function(){ tone(160,.16,.22,'square'); noise(.1,.14,900,200); },
+    done:function(){ tone(660,.22,.1); setTimeout(function(){ tone(880,.3,.09); },120); },
+    toggle:function(){ on=!on; return on; },
+    isOn:function(){ return on; }
+  };
+})();
+
+/* ---------- 回信语料 ---------- */
+var CATS = {
+  love:    { name:'告白', color:'t-love',    keys:['喜欢你','爱你','我爱','心动','暗恋','交往','在一起','亲亲'] },
+  miss:    { name:'思念', color:'t-miss',    keys:['想你','好久不见','念你','见一面','回来','异地','分别','好想'] },
+  sorry:   { name:'道歉', color:'t-sorry',   keys:['对不起','抱歉','sorry','我错了','原谅','不该'] },
+  thanks:  { name:'感谢', color:'t-thanks',  keys:['谢谢','感谢','多谢','thanks','辛苦了','受恩'] },
+  bye:     { name:'告别', color:'t-bye',     keys:['再见','毕业','离开','最后','后会无期','退群','各奔'] },
+  cheer:   { name:'打气', color:'t-cheer',   keys:['加油','坚持','努力','别放弃','你可以','挺住','dawn','dawnup'] },
+  vent:    { name:'倾诉', color:'t-vent',    keys:['累','烦','难受','emo','压力','崩溃','撑不住','不开心','好难'] },
+  daily:   { name:'日常', color:'t-daily',   keys:['吃饭','早安','晚安','天气','上班','下班','奶茶','咖啡','电影','睡了'] },
+  roast:   { name:'吐槽', color:'t-roast',   keys:['无语','离谱','绝了','笑死','烦死','垃圾','破防','服了'] },
+  hi:      { name:'试探', color:'t-hi',      keys:['在吗','在么','忙吗','睡了吗','醒着'] }
+};
+
+var BANK = {
+  love: {
+    open:['我看到这行字的时候，正在喝水，呛了一下。','这封信我拆了三遍，第一遍没敢看。','我不知道该怎么回，所以先回一句：我在。','写这封信的人是不是鼓了很久的勇气，那我先把伞撑好。'],
+    body:[
+      '你大概是想说很久了吧。我也是，从第一次见你开始就没敢往前挪半步。\n现在我把话说清楚：不是朋友，不是暧昧，是那种你不在我会看手机的在意。',
+      '有些话当面说会卡住，写下来反而顺。\n所以今天我正式回你一次：你很好，好到我怕自己配不上。',
+      '我知道这样很突然。但如果再拖下去，我就真的只敢当那个「什么都懂」的朋友了。\n我不想那样。',
+      '我们认识的时间不算长，但你在的那些天我记得比谁都清楚。\n所以现在我也想成为你的那个「某个人」。'
+    ],
+    end:['我不催你回答。你慢慢想，我等。','你要是说「再等等」，我也等。但我不会装作没看见过这封信。','不用今天回复我。这封信我收好了。','不管你怎么答，这封信我不会给第二个人看。']
+  },
+  miss: {
+    open:['隔了挺久才回，不是因为不想回。','手机震动的时候我正在开会，散会第一件事就是看它。','我这边天已经黑了，你那边应该是早上。','刚看到信的时候手抖了一下，还以为是幻觉。'],
+    body:[
+      '上次你走的时候我没追出去，现在想想有点后悔。\n这阵子路过的店我都会想：你会喜欢这家吗。',
+      '说不上哪里变了，就是以前随手拍的东西，现在都会先想一下能不能发给你。\n然后又没发。',
+      '距离这东西很奇怪，它没让你想我少一点，反而让你想得特别具体。\n具体到记得你那天穿的是哪件外套。',
+      '我这边一切都好，就是房间空了一块。\n那个位置以前是你的，现在放了个箱子。'
+    ],
+    end:['什么时候回来？我去接你。','不用回我长消息，回一个字也行。','我把你的位置记着呢。','想见你，没有别的事，就是想见。']
+  },
+  sorry: {
+    open:['这封信我拖了很久才敢拆开看。','我先说最难听的：对不起。','我打了三遍草稿，还是直接从第一句开始吧。','这条消息我改了三次名字才发出去。'],
+    body:[
+      '那件事上，我选择了沉默，事后又用「讲不清楚」当借口。\n这不是理由，是我在躲。\n你被我晾着的那几天，其实比我自己难受的多。',
+      '我总以为解释就够了，但那天你需要的从来不是解释，是我站到你那边。\n我站晚了。',
+      '我不求你马上原谅我。你要是生气，就生气久一点，我受得住。\n我只是不想你一个人消化这件事。',
+      '我知道一句对不起换不回什么。\n所以我不打算用话解决，我打算用以后的时间慢慢还。'
+    ],
+    end:['我不催回复。你准备好了再回我。','真的对不起。这句我想说很久了。','以后有事我第一个告诉你。','你要是不原谅，我也在旁边。']
+  },
+  thanks: {
+    open:['这封信来得比我预想的晚。','本来想当面说的，但又觉得写下来更正式一点。','刚看完你发的消息，想了想，还是回一封信。','翻手机翻到那张照片了，就当是开场。'],
+    body:[
+      '那天我状态很差，是你在旁边把话头一直接住，我才知道自己没讲不下去。\n这件事我一直记得，只是没说。',
+      '很多人帮完就忘了，我不太行。\n你给我的那点支持，撑过了我一整个很糟的阶段。',
+      '谢谢你当时没有问我「你怎么了」，只是把饭推过来。\n那比任何安慰都管用。',
+      '有些恩情是不能量化衡量的，硬要说的话，就是我现在还常提起你。'
+    ],
+    end:['以后有事，你也可以找我。不用先想「会不会麻烦我」。','不用回，也记得我说过。','真的，谢谢。','欠你的人情我记着，下次还。']
+  },
+  bye: {
+    open:['这封信我是站在阳台上写的，风挺大。','看到你发的消息，我坐在原地没动。','我不太会告别，所以只能用写。','行李收完了，信还没写。'],
+    body:[
+      '该说的都说过了，再写就成煽情了。\n但我还是想让你知道：这段时间我是真的开心，不是客套。',
+      '分开之后，各自的路应该会更好走一点。\n这句话我对自己也说过几遍，所以我知道它是真的。',
+      '我们大概不会再有那么多可以浪费的晚上一起了。\n这个事实我到现在才算接受。',
+      '走之前想把这封信留在你这儿。\n以后哪天翻到了，就当那天我们还在一起说话。'
+    ],
+    end:['保重。有空写信。','各自珍重。','再见不是结束，是换一种方式记着。','别回头看太久，往前走吧。']
+  },
+  cheer: {
+    open:['刚看到你这封信，我立刻回信，因为我知道你现在不想听大道理。','我不打算说「你可以的」，我只说点实在的。','我猜你看到这封信的时候，正打算再撑一天。','这封信我是当天下午就写完的。'],
+    body:[
+      '事情不会因为你多熬一晚就变好，但你多熬一晚会累。\n先停一天，天塌不下来，谁塌谁补。',
+      '你现在做的已经比很多人多了。\n你不是不行，你只是累了，这一点要分清楚。',
+      '进度慢下来不是你退步了，是你在修补之前没发现的问题。\n这也算往前走。',
+      '我不需要你现在就有结果。\n你只需要今天还在做，就已经在赢别人了。'
+    ],
+    end:['需要人陪就说一声，我随时在。','别一个人扛太久。','撑不住就给我打电话，凌晨也行。','慢一点没关系，我等。']
+  },
+  vent: {
+    open:['我看到你写的这些，没有马上回，是因为不想随便安慰你。','这封信我读了两遍。第二遍更难受。','你现在不用坚强，写信的时候可以不装。','收到信的时候我正在喝水，喝了一半忘了喝。'],
+    body:[
+      '你描述的那种"明明什么都没做错却还是很难受"，我知道。\n那不是矫情，是真的撑太多了。',
+      '难受的时候人容易觉得全世界都在为难自己，其实只是你那一块特别沉。\n这块我陪你分担一点。',
+      '你不用跟我解释为什么会这么糟。\n你只要知道我收到了，而且我不打算说「想开点」。',
+      '这世界上有些事就是不公平，不是你的问题。\n但这句安慰没意义，我知道。所以我只说我能做到的：我在这儿。'
+    ],
+    end:['想说话的时候随时找我，我不一定秒回，但我一定在。','今天先别管别的，把饭吃了。','我在。真的在。','你不用回报我什么。']
+  },
+  daily: {
+    open:['刚下班，路上看到一只很像你形容的猫，就回信了。','我这边下雨了，想起你上次说讨厌下雨。','没什么大事，就是想写点什么。','今天的云很好看，突然就想到你了。'],
+    body:[
+      '今天路过我们上次说的那家店，我进去坐了会儿，点的是你上次点的那个。\n味道一般，但位置很好。',
+      '今天的风有点大，我把围巾戴上了。\n也不知道写这个干什么，就是想跟你讲讲今天。',
+      '今天开会走神了，因为想到你说过的那句话。\n我到现在还觉得挺有道理的。',
+      '今天买了两份一样的早餐，结账的时候才反应过来只有我一个人吃。'
+    ],
+    end:['没什么事，就是想让你知道今天我也在。','明天再写。晚安。','你那边天气怎么样？','明天见。']
+  },
+  roast: {
+    open:['看到你这封信我笑了半天，差点把水喷在键盘上。','你这封信的信息量我需要消化一下。','本来想严肃回你，但这个实在绷不住。','我一边看一边在工位上笑，同事以为我出问题了。'],
+    body:[
+      '你这事我听完的结论是：离谱到需要写进族谱当 cautionary tale。\n但说真的，换我我也炸。',
+      '所以你现在是在气头上。气头是应该的，气完记得吃饭。',
+      '我不评价谁对谁错，我就想说一句：委屈你了。\n下次这种事提前叫我，我去帮你理论。',
+      '这事儿离谱到我已经在脑子里写小作文了。\n八百字的那种。'
+    ],
+    end:['要不要我帮你骂回去？专业对口。','笑完了，别气太久。','明天再吐槽，我接着。','气完了记得喝水。']
+  },
+  hi: {
+    open:['在。','我一直都在，手机没静音。','看到消息的时候正好在想你会不会找我。','刚放下东西，就看到信了。'],
+    body:[
+      '信收到了。字比上次少了一点，是很忙吗？\n不忙的话你慢慢打，我等着。',
+      '你说在吗，那我就回一句在。\n具体的等你愿意说的时候再说，不着急。',
+      '我这边的灯还亮着。你什么时候发都行，哪怕就一个字。',
+      '有时候人只是想确认有人在，不一定要有事。\n那我在。'
+    ],
+    end:['不用回，或者说点什么也行。','在的。真的在。','晚点也行，我不太睡。','随时都在。']
+  },
+  general: {
+    open:['信我收到了，读了两遍。','纸飞机落在门口的时候，我刚好看了一眼窗外。','不知道该怎么回，但我不打算装作没收到。','这封没有落款，我就当是你。'],
+    body:[
+      '你说这句话的时候，大概已经想过很多遍了。\n我不确定自己理解得对不对，但我想试着理解。',
+      '这封信我先收着。有些话我需要想一想再回你。',
+      '纸飞机这种东西很奇怪，明明只有一张纸，砸过来却很重。\n我这边接住了。',
+      '有些话说出来太轻，写下来才刚好。\n所以我把这封信放在这里，等它自己变重。'
+    ],
+    end:['等我一下，我慢慢想。','如果我回得慢，不是没收到。','你先别急。','等我组织好语言。']
+  }
+};
+
+/* 特殊彩蛋回复 */
+var EASTERS = [
+  { test:function(t){ return /喜欢你|爱你|心动|暗恋/.test(t); },
+    tag:'这一封被 TA 藏起来了',
+    text:'（这封没有回信。\n但第二天，它出现在 TA 的书里，压在那一页。）' },
+  { test:function(t){ return /生日快乐|新年|圣诞|中秋/.test(t); },
+    tag:'节日限定',
+    text:'（回信上多了一行小字：\n「我把日期记在日历上了，红笔。」）' },
+  { test:function(t){ return /加班|上班|开会|工作|老板/.test(t); },
+    tag:'打工人频道',
+    text:'（回信只有一行，是你的口吻：\n「我也是。我们算是互相收到回信了。」）' },
+  { test:function(t){ return /在吗|在么|忙吗|睡了吗/.test(t) && t.length<=6; },
+    tag:'秒回',
+    text:'（几乎是一瞬间，信就回来了。）\n在。\n一直在。' }
+];
+
+/* ---------- 纯逻辑：分类 + 生成 ---------- */
+function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+
+function matchCat(text){
+  var t = (text||'').toLowerCase();
+  var order = ['love','hi','sorry','thanks','bye','cheer','vent','miss','roast','daily'];
+  for(var i=0;i<order.length;i++){
+    var c = order[i];
+    for(var j=0;j<CATS[c].keys.length;j++){
+      if(t.indexOf(CATS[c].keys[j])>=0) return c;
+    }
+  }
+  return 'general';
+}
+
+function buildReply(text, toName){
+  var cat = matchCat(text);
+  var b = BANK[cat];
+  var open = pick(b.open);
+  var body = pick(b.body);
+  /* 防呆：同一封里不重复同一句（open/body/end 三段撞车时重roll） */
+  var end = pick(b.end), guard = 0;
+  while((end === open || open.indexOf(end) >= 0 || body.indexOf(end) >= 0) && guard < 8){
+    end = pick(b.end); guard++;
+  }
+  var nm = (toName||'').trim() || '你';
+  return {
+    cat: cat,
+    catName: cat==='general' ? '未命名' : CATS[cat].name,
+    color: cat==='general' ? 't-general' : CATS[cat].color,
+    full: open + '\n\n' + body.split('\n').join('\n\n') + '\n\n' + end
+  };
+}
+
+function findEaster(text){
+  for(var i=0;i<EASTERS.length;i++){
+    if(EASTERS[i].test(text)) return EASTERS[i];
+  }
+  return null;
+}
+
+/* ---------- 存档 ---------- */
+var S = { list: [], sfxOn: true };
+function load(){
+  try{
+    var raw = localStorage.getItem(KEY);
+    if(raw){ var d = JSON.parse(raw); if(d && d.list) { S.list = d.list; } }
+  }catch(e){ S.list = []; }
+}
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify({list:S.list})); }catch(e){}
+}
+function pad(n){ return n<10 ? '0'+n : ''+n; }
+function fmtDate(d){
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+}
+function fmtTime(d){
+  return pad(d.getHours())+':'+pad(d.getMinutes());
+}
+function planeNo(plane){
+  return '#' + pad(plane.idx);
+}
+
+/* ---------- 屏幕切换 ---------- */
+var SCREENS = ['screenWrite','screenFold','screenFly','screenReply','screenBox'];
+function show(name){
+  for(var i=0;i<SCREENS.length;i++){
+    var el = $(SCREENS[i]);
+    if(SCREENS[i]===name){ el.classList.add('on'); el.style.display='block'; }
+    else { el.classList.remove('on'); el.style.display='none'; }
+  }
+  if(name!=='screenFly'){ window.scrollTo(0,0); }
+}
+
+/* ---------- 天空氛围 ---------- */
+function initSky(){
+  var s = $('stars'), html = '';
+  for(var i=0;i<46;i++){
+    var l = (Math.random()*100).toFixed(1), t = (Math.random()*62).toFixed(1);
+    var sz = (1.2+Math.random()*1.8).toFixed(1);
+    var d = (Math.random()*3.6).toFixed(2);
+    html += '<div class="star-dot" style="left:'+l+'%;top:'+t+'%;width:'+sz+'px;height:'+sz+'px;animation-delay:'+d+'s"></div>';
+  }
+  s.innerHTML = html;
+}
+function refreshSky(){
+  var h = new Date().getHours();
+  var night = (h >= 19 || h < 6);
+  $('sky').className = 'sky' + (night ? ' night' : '');
+  $('stars').className = 'stars' + (night ? ' on' : '');
+}
+
+/* ---------- toast ---------- */
+var toastT = null;
+function toast(msg){
+  var t = $('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastT);
+  toastT = setTimeout(function(){ t.classList.remove('on'); }, 2200);
+}
+function esc(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ---------- 纸飞机飞行 ---------- */
+var flyRAF = null;
+function flyPlane(done){
+  var cv = $('flyCv'), ctx = cv.getContext('2d');
+  var W = cv.width = window.innerWidth, H = cv.height = window.innerHeight;
+  var dpr = Math.min(2, window.devicePixelRatio||1);
+  cv.width = W*dpr; cv.height = H*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+
+  var p0 = {x:-40, y:H*0.78};
+  var p1 = {x:W*0.30, y:H*0.20};
+  var p2 = {x:W*0.72, y:H*0.52};
+  var p3 = {x:W+60,  y:H*0.10};
+  var DUR = 2600, t0 = performance.now();
+  var trail = [];
+
+  function bez(t){
+    var mt = 1-t, a = mt*mt*mt, b = 3*mt*mt*t, c = 3*mt*t*t, d = t*t*t;
+    return {
+      x: a*p0.x + b*p1.x + c*p2.x + d*p3.x,
+      y: a*p0.y + b*p1.y + c*p2.y + d*p3.y
+    };
+  }
+
+  function drawPlane(g, p, ang, sc){
+    g.save();
+    g.translate(p.x, p.y);
+    g.rotate(ang);
+    g.scale(sc, sc);
+    g.beginPath();
+    g.moveTo(30,0); g.lineTo(-26,-14); g.lineTo(-17,0); g.lineTo(-26,14); g.closePath();
+    g.fillStyle = '#fdf6e4'; g.fill();
+    g.beginPath();
+    g.moveTo(30,0); g.lineTo(-17,0); g.lineTo(-26,14); g.closePath();
+    g.fillStyle = '#e2d2ae'; g.fill();
+    g.beginPath();
+    g.moveTo(30,0); g.lineTo(-17,0); g.lineTo(-13,-7); g.closePath();
+    g.fillStyle = '#c9b78f'; g.fill();
+    g.restore();
+  }
+
+  function frame(now){
+    var el = now - t0, t = Math.min(1, el/DUR);
+    var e = t<.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2;
+    var p = bez(e);
+    var pPrev = bez(Math.max(0, e-0.02));
+    var ang = Math.atan2(p.y-pPrev.y, p.x-pPrev.x);
+    var sc = 1.1 - e*0.86;
+
+    ctx.clearRect(0,0,W,H);
+    trail.push({x:p.x,y:p.y});
+    if(trail.length>34) trail.shift();
+    for(var i=0;i<trail.length;i++){
+      var q = i/trail.length;
+      ctx.beginPath();
+      ctx.arc(trail[i].x, trail[i].y, Math.max(.4, 3.2*q), 0, 6.2832);
+      ctx.fillStyle = 'rgba(255,236,198,'+(q*0.5).toFixed(3)+')';
+      ctx.fill();
+    }
+    drawPlane(ctx, p, ang, sc);
+
+    if(t<1){ flyRAF = requestAnimationFrame(frame); }
+    else {
+      flyRAF = null;
+      setTimeout(done, 320);
+    }
+  }
+  flyRAF = requestAnimationFrame(frame);
+}
+
+/* ---------- 折纸动画 ---------- */
+function foldAnim(onDone){
+  var sheet = $('sheet'), plane = $('planeMini');
+  var tips = ['第一折 · 把难开口的那面压进去','第二折 · 折掉多余的话','第三折 · 收成一个不必回答的形状','好了 · 扔'];
+  var i = 0;
+  sheet.style.transform = '';
+  plane.style.opacity = '0';
+  $('foldTip').textContent = tips[0];
+
+  var timer = setInterval(function(){
+    i++;
+    if(i<=3){
+      $('foldTip').textContent = tips[i-1];
+      AudioC.tick();
+      if(i===1) sheet.style.transform = 'perspective(900px) rotateX(52deg) scaleY(.72)';
+      if(i===2) sheet.style.transform = 'perspective(900px) rotateX(76deg) scaleY(.42) translateY(18px)';
+      if(i===3){
+        sheet.style.transform = 'perspective(900px) rotateX(90deg) scale(.2)';
+        sheet.style.opacity = '0';
+        plane.style.opacity = '1';
+      }
+    } else {
+      clearInterval(timer);
+      $('foldTip').textContent = tips[3];
+      setTimeout(function(){
+        document.body.classList.add('flying');
+        show('screenFly');
+        flyPlane(function(){
+          document.body.classList.remove('flying');
+          onDone();
+        });
+      }, 420);
+    }
+  }, 560);
+}
+
+/* ---------- 主流程 ---------- */
+var busy = false;
+function send(){
+  if(busy) return;
+  var to = $('fTo').value.trim();
+  var txt = $('fText').value.trim();
+  var from = $('fFrom').value.trim();
+
+  if(!txt){ toast('先写一句吧。哪怕只有一个标点。'); $('fText').focus(); return; }
+
+  var now = new Date();
+  var plane = {
+    id: 'p' + now.getTime() + Math.random().toString(36).slice(2,6),
+    to: to, from: from, text: txt,
+    date: fmtDate(now), time: fmtTime(now),
+    ts: now.getTime(),
+    idx: S.list.length + 1,
+    delayMin: 3 + Math.floor(Math.random()*40),
+    reply: null, cat: null
+  };
+
+  var rep = buildReply(txt, to);
+  plane.reply = rep.full;
+  plane.cat = rep.cat;
+  plane.easter = findEaster(txt);
+
+  S.list.unshift(plane);
+  save();
+
+  busy = true;
+  AudioC.fold();
+  show('screenFold');
+  foldAnim(function(){ arrive(plane, rep); });
+}
+
+function arrive(plane, rep){
+  AudioC.done();
+  renderReply(plane, rep, true);
+  busy = false;
+  $('fText').value = '';
+  $('fTo').value = '';
+  $('fFrom').value = '';
+  updateCounter();
+}
+
+/* 回信屏渲染（animate=true 走打字机，否则直接铺内容） */
+var CUR = null;
+function renderReply(plane, rep, animate){
+  CUR = plane;
+  show('screenReply');
+
+  var toName = plane.to || '你';
+  $('rWho').textContent = toName + ' 的回信';
+  $('rWhen').textContent = '纸飞机 ' + planeNo(plane) + ' · ' + plane.date + ' ' + plane.time + ' 折好 · 回信耗时 ' + plane.delayMin + ' 分钟';
+
+  /* 元信息标签 */
+  var meta = '<span class="tag ' + rep.color + '">' + rep.catName + '</span>';
+  meta += '<span class="tag ' + rep.color + '">' + planeNo(plane) + '</span>';
+  if(plane.from) meta += '<span class="tag t-general">来自 ' + esc(plane.from) + '</span>';
+  $('rMeta').innerHTML = meta;
+
+  /* 彩蛋 */
+  if(plane.easter){
+    $('easterBox').innerHTML = '<div class="easter">✦ ' + plane.easter.tag + '<br/>' + esc(plane.easter.text).replace(/\n/g,'<br/>') + '</div>';
+  } else { $('easterBox').innerHTML = ''; }
+
+  /* 同收件人提醒 */
+  var warn = $('mailWarn');
+  var sameTo = 0;
+  for(var i=0;i<S.list.length;i++){ if(S.list[i].to === plane.to) sameTo++; }
+  if(sameTo>=3){
+    warn.style.display = 'block';
+    warn.textContent = '这是你给「' + (plane.to||'TA') + '」扔的第 ' + sameTo + ' 张了。要不要先看看 TA 前几次回了什么？';
+  } else { warn.style.display = 'none'; }
+
+  /* 打字机 */
+  var typing = $('typing'), body = $('lBody');
+  var full = rep.full + '\n\n—— ' + toName;
+  if(animate){
+    typing.style.display = 'flex';
+    body.style.display = 'none';
+    body.textContent = '';
+    setTimeout(function(){
+      typing.style.display = 'none';
+      body.style.display = 'block';
+      typeOut(full, body, 13);
+    }, 1500);
+  } else {
+    typing.style.display = 'none';
+    body.style.display = 'block';
+    body.textContent = full;
+  }
+}
+
+function typeOut(text, el, sp){
+  var i = 0;
+  var timer = setInterval(function(){
+    i += 2;
+    if(i >= text.length){ clearInterval(timer); el.textContent = text; return; }
+    el.textContent = text.slice(0, i);
+  }, sp);
+}
+
+/* ---------- 信箱 ---------- */
+function renderBox(){
+  var list = $('boxList');
+  updateBoxBtns();
+  if(!S.list.length){
+    list.innerHTML = '<div class="emptybox"><span class="ic">📭</span>信箱还是空的。<br/>去折第一张纸飞机吧。</div>';
+    return;
+  }
+  var html = '';
+  for(var i=0;i<S.list.length;i++){
+    var p = S.list[i];
+    var repColor = (!p.cat || p.cat==='general') ? 't-general' : (CATS[p.cat] ? CATS[p.cat].color : 't-general');
+    var repName = (!p.cat || p.cat==='general') ? '未命名' : (CATS[p.cat] ? CATS[p.cat].name : '未命名');
+    html += '<div class="item">'
+      + '<div class="imeta"><span>' + p.date + ' ' + p.time + '</span><span class="tag ' + repColor + '">' + repName + '</span></div>'
+      + '<div class="itext">' + esc((p.to ? '致 ' + p.to + '：' : '')) + esc(p.text) + '</div>'
+      + '<div class="ireply">' + esc(p.reply || '（TA 还没回）') + '</div>'
+      + '<div class="iact"><button class="btn ghost mini" data-copy="' + esc(p.id) + '">复制回信</button>'
+      + '<button class="btn ghost mini" data-open="' + esc(p.id) + '">回看这封</button></div>'
+      + '</div>';
+  }
+  list.innerHTML = html;
+}
+
+/* 从存档还原某封回信（不重放打字机） */
+function openReply(p){
+  if(!p || !p.reply){ show('screenWrite'); return; }
+  var isGen = (!p.cat || p.cat==='general');
+  var rep = {
+    cat: p.cat, catName: isGen ? '未命名' : CATS[p.cat].name,
+    color: isGen ? 't-general' : CATS[p.cat].color,
+    full: p.reply
+  };
+  renderReply(p, rep, false);
+}
+
+/* ---------- 复制 ---------- */
+function copyText(txt, okMsg){
+  function fallback(){
+    var ta = document.createElement('textarea');
+    ta.value = txt;
+    ta.style.position = 'fixed'; ta.style.left = '-9999px';
+    document.body.appendChild(ta); ta.select();
+    var ok = false;
+    try{ ok = document.execCommand('copy'); }catch(e){ ok = false; }
+    document.body.removeChild(ta);
+    toast(ok ? okMsg : '复制失败，请长按信纸手动复制');
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(function(){ toast(okMsg); }, fallback);
+  } else { fallback(); }
+}
+
+function shareText(){
+  var p = CUR || S.list[0];
+  if(!p) return '';
+  var to = p.to || '你';
+  return '我给你扔了一张纸飞机 🛩 ' + planeNo(p) + '\n\n「' + p.text + '」\n\n'
+    + '——— 回信 ———\n' + (p.reply||'') + '\n\n—— ' + p.date + ' 于' + to + '签收';
+}
+
+/* ---------- 事件 ---------- */
+function bind(){
+  $('fText').addEventListener('input', updateCounter);
+  $('btnSend').addEventListener('click', send);
+  $('btnBox').addEventListener('click', function(){ renderBox(); show('screenBox'); });
+  $('btnBox2').addEventListener('click', function(){ renderBox(); show('screenBox'); });
+  $('btnBack').addEventListener('click', function(){
+    openReply(CUR);
+  });
+  $('btnAgain').addEventListener('click', function(){
+    show('screenWrite');
+    setTimeout(function(){ try{ $('fText').focus(); }catch(e){} }, 120);
+  });
+  $('btnCopy').addEventListener('click', function(){
+    copyText(shareText(), '已复制，直接发给 TA 吧');
+  });
+  $('boxList').addEventListener('click', function(e){
+    var t = e.target;
+    if(!t || !t.getAttribute) return;
+    var cid = t.getAttribute('data-copy'), oid = t.getAttribute('data-open');
+    if(cid){
+      var p = null;
+      for(var i=0;i<S.list.length;i++){ if(S.list[i].id===cid) p = S.list[i]; }
+      if(p) copyText(p.reply || '（TA 还没回）', '回信已复制');
+    } else if(oid){
+      var q = null;
+      for(var j=0;j<S.list.length;j++){ if(S.list[j].id===oid) q = S.list[j]; }
+      if(q){ openReply(q); }
+    }
+  });
+  $('btnSfx').addEventListener('click', function(){
+    var on = AudioC.toggle();
+    this.textContent = on ? '🔊' : '🔇';
+    this.className = 'sfx' + (on ? '' : ' off');
+  });
+  window.addEventListener('resize', function(){
+    if($('screenFly').classList.contains('on') && flyRAF){ cancelAnimationFrame(flyRAF); flyRAF=null; }
+  });
+}
+
+function updateCounter(){
+  var n = $('fText').value.length;
+  $('counter').textContent = n + ' / 60';
+}
+function updateBoxBtns(){
+  var n = S.list.length;
+  $('btnBox').textContent = '我的信箱（' + n + '）';
+  $('boxCnt').textContent = n + ' 张';
+}
+
+/* ---------- 启动 ---------- */
+function init(){
+  load();
+  initSky();
+  refreshSky();
+  bind();
+  updateCounter();
+  updateBoxBtns();
+}
+if(document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', init); }
+else { init(); }
+
+/* 暴露纯逻辑供自动化验证 */
+window.__pp = {
+  matchCat: matchCat,
+  buildReply: buildReply,
+  findEaster: findEaster,
+  CATS: CATS,
+  state: S
+};
+</script>
+</body>
+</html>
