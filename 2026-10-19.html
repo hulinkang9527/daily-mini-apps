@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>人类使用说明书 · 给你身边的人出一本</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23f4f0e4'/%3E%3Crect x='12' y='8' width='40' height='48' rx='3' fill='%23fff' stroke='%231f2933' stroke-width='2'/%3E%3Cg stroke='%23c0392b' stroke-width='3'%3E%3Cpath d='M20 20h24M20 28h24M20 36h14'/%3E%3C/g%3E%3Crect x='18' y='44' width='14' height='8' fill='%231f2933'/%3E%3C/svg%3E" />
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  :root{
+    --desk:#cfc6b4; --desk2:#bdb3a0;
+    --paper:#f6f2e6; --paper2:#fffef9;
+    --ink:#1f2933; --ink2:#4a5661; --ink3:#7d8792;
+    --red:#b03a24; --red2:#d4552f;
+    --blue:#2c5f7c; --stamp:#9a3412;
+    --line:#c3bbaa; --line2:#a79e8c;
+  }
+  html,body{height:100%}
+  body{
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    background:
+      radial-gradient(circle at 20% 10%,rgba(255,255,255,.28),transparent 45%),
+      repeating-linear-gradient(45deg,rgba(0,0,0,.022) 0 3px,transparent 3px 7px),
+      linear-gradient(160deg,var(--desk),var(--desk2));
+    color:var(--ink); min-height:100vh; padding:14px 0 40px;
+  }
+  .mono{font-family:"SF Mono",Consolas,"Courier New",monospace}
+  .screen{display:none}
+  .screen.on{display:block}
+  #screenForm.on,#screenPrint.on,#screenDoc.on{display:block}
+
+  /* ============ 封面屏 ============ */
+  .cover{max-width:720px;margin:0 auto}
+  .plate{
+    background:linear-gradient(180deg,#e8e3d5,#d9d3c3);
+    border:1px solid var(--line2);border-radius:4px;padding:14px 16px;margin-bottom:12px;
+    box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 2px 6px rgba(0,0,0,.14);
+  }
+  .plate-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .screw{width:11px;height:11px;border-radius:50%;background:radial-gradient(circle at 34% 30%,#d8d3c6,#8d8677);border:1px solid #6f6857;flex:0 0 auto}
+  .plate-head b{font-size:13px;letter-spacing:2px;color:var(--ink2)}
+  .plate-head span{margin-left:auto;font-size:11px;color:var(--ink3);letter-spacing:1px}
+
+  .doc-sheet{
+    background:var(--paper2);border:1px solid var(--line2);border-radius:3px;
+    box-shadow:0 8px 26px rgba(0,0,0,.2);
+    position:relative;overflow:hidden;
+  }
+  .doc-sheet::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(0deg,rgba(31,41,51,.022) 0 1px,transparent 1px 4px);
+  }
+  .sheet-pad{padding:26px 20px 22px}
+  .brand{display:flex;align-items:flex-end;gap:10px;border-bottom:2.5px solid var(--ink);padding-bottom:8px;margin-bottom:6px}
+  .brand .mk{
+    font-size:12px;letter-spacing:3px;font-weight:800;color:var(--paper2);background:var(--ink);
+    padding:3px 8px;border-radius:2px;
+  }
+  .brand .co{font-size:11px;color:var(--ink3);letter-spacing:1px}
+  h1.title{font-size:26px;line-height:1.22;margin:14px 0 4px;letter-spacing:-.5px}
+  .sub-title{font-size:12px;color:var(--ink3);letter-spacing:.5px;margin-bottom:16px}
+  .redbar{
+    background:repeating-linear-gradient(45deg,var(--red) 0 12px,#8f2c1b 12px 24px);
+    color:#fff;font-size:11px;letter-spacing:2px;padding:5px 10px;margin:14px 0;font-weight:700;
+  }
+  .intro{font-size:14px;line-height:1.85;color:var(--ink2)}
+  .intro b{color:var(--ink)}
+  .blueline{height:1px;background:var(--line);margin:18px 0}
+
+  .field{margin-top:16px}
+  .field label{display:block;font-size:12px;font-weight:700;letter-spacing:1px;color:var(--ink2);margin-bottom:7px}
+  .field label i{font-style:normal;color:var(--red);margin-left:6px;font-weight:400;font-size:11px}
+  input#nameIn{
+    width:100%;min-height:50px;font-size:18px;padding:12px 14px;border:2px solid var(--ink);
+    background:#fff;border-radius:2px;color:var(--ink);font-family:inherit;letter-spacing:1px;
+  }
+  input#nameIn:focus{outline:3px solid rgba(44,95,124,.35);outline-offset:1px}
+  input#nameIn::placeholder{color:#b3aa99;letter-spacing:0;font-size:15px}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+  .chip{
+    min-height:44px;padding:8px 14px;font-size:13.5px;border:1.5px dashed var(--line2);
+    background:#fbf9f3;border-radius:2px;color:var(--ink2);cursor:pointer;font-family:inherit;
+  }
+  .chip:active{background:#efeade}
+  .btn{
+    display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+    min-height:54px;border-radius:3px;font-size:17px;font-weight:800;letter-spacing:2px;
+    font-family:inherit;cursor:pointer;border:2px solid var(--ink);
+    background:linear-gradient(180deg,#2f3b46,#1f2933);color:#fff;
+    box-shadow:0 3px 0 #12181e,0 6px 12px rgba(0,0,0,.25);margin-top:16px;
+  }
+  .btn:active{transform:translateY(2px);box-shadow:0 1px 0 #12181e}
+  .btn.alt{background:linear-gradient(180deg,#f6f2e6,#e6e0d0);color:var(--ink);box-shadow:0 3px 0 var(--line2),0 6px 12px rgba(0,0,0,.14);font-size:15px;letter-spacing:1px}
+  .btn.alt:active{box-shadow:0 1px 0 var(--line2)}
+  .btn-row{display:flex;gap:10px;margin-top:10px}
+  .btn-row .btn{margin-top:0}
+  .tiny{font-size:11.5px;color:var(--ink3);line-height:1.7;margin-top:12px;text-align:center}
+  .bluesvg{width:100%;max-width:260px;margin:6px auto 0;display:block}
+
+  /* ============ 打印动画屏 ============ */
+  #screenPrint{padding-top:8vh}
+  .printer{
+    max-width:420px;margin:0 auto;background:linear-gradient(180deg,#d9d3c3,#c2bbaa);
+    border:1px solid var(--line2);border-radius:6px;padding:18px 16px 0;text-align:center;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+  }
+  .pr-t{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:14px}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--red2);box-shadow:0 0 8px var(--red2)}
+  .slot{height:12px;background:#3b3a35;border-radius:2px;box-shadow:inset 0 2px 5px rgba(0,0,0,.7);position:relative;overflow:hidden}
+  .paper-out{
+    width:86%;margin:0 auto;background:var(--paper2);border:1px solid var(--line2);
+    height:0;overflow:hidden;transition:height 1.5s cubic-bezier(.2,.8,.25,1);
+  }
+  .paper-out.grow{height:230px}
+  .paper-in{padding:14px 16px}
+  .pr-txt{font-size:13px;color:var(--ink2);letter-spacing:1px;margin-top:16px;min-height:20px}
+  .dots::after{content:"▋";animation:blink .7s steps(1) infinite;color:var(--ink)}
+  @keyframes blink{0%,50%{opacity:1}50.01%,100%{opacity:0}}
+
+  /* ============ 说明书屏 ============ */
+  .doc{max-width:720px;margin:14px auto 0}
+  .topbar{
+    display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#e8e3d5,#d9d3c3);
+    position:sticky;top:0;z-index:20;
+    border-radius:3px 3px 0 0;
+    box-shadow:0 2px 6px rgba(0,0,0,.1);
+  }
+  .topbar .tag{font-size:11px;letter-spacing:2px;color:var(--ink2)}
+  .iconbtn{
+    min-width:44px;min-height:44px;border:1px solid var(--line2);background:#fbf9f3;border-radius:3px;
+    display:inline-flex;align-items:center;justify-content:center;gap:5px;font-size:12px;
+    color:var(--ink2);cursor:pointer;font-family:inherit;padding:0 9px;
+  }
+  .iconbtn:active{background:#efeade}
+  .iconbtn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .sbar{display:flex;justify-content:space-between;align-items:center;padding:14px 20px 10px;border-bottom:1px solid var(--ink)}
+  .sbar .l{font-size:11px;letter-spacing:2px;color:var(--ink3)}
+  .sbar .r{font-size:11px;letter-spacing:1px;color:var(--ink3);text-align:right}
+
+  .sect{border-bottom:1px solid var(--line);padding:16px 20px}
+  .sect-h{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+  .sect-n{
+    flex:0 0 auto;min-width:26px;height:26px;padding:0 6px;border-radius:2px;background:var(--ink);color:#fff;
+    font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;letter-spacing:.5px;
+  }
+  .sect-t{font-size:16px;font-weight:800;letter-spacing:.5px}
+  .sect-e{margin-left:auto;font-size:10px;color:var(--ink3);letter-spacing:1px;text-transform:uppercase}
+
+  table.spec{width:100%;border-collapse:collapse;font-size:13.5px}
+  table.spec td{padding:8px 6px;border-bottom:1px dotted var(--line);vertical-align:top;line-height:1.6}
+  table.spec td:first-child{width:38%;color:var(--ink3);letter-spacing:.5px}
+  table.spec td:last-child{color:var(--ink);font-weight:600}
+  table.spec tr:last-child td{border-bottom:none}
+  .bar{height:6px;background:#e3ddce;border-radius:3px;overflow:hidden;margin-top:5px;max-width:130px}
+  .bar i{display:block;height:100%;background:var(--blue)}
+  .bar.warn i{background:var(--red2)}
+
+  ol.steps{margin:0;padding-left:20px}
+  ol.steps li{font-size:13.5px;line-height:1.85;color:var(--ink2);margin-bottom:7px}
+  ol.steps li b{color:var(--ink)}
+  ol.steps li::marker{color:var(--red);font-weight:800}
+
+  .warnbox{border:2px solid var(--red);border-radius:2px;padding:0;overflow:hidden;margin:4px 0}
+  .warnbox .wh{background:var(--red);color:#fff;font-size:12px;font-weight:800;letter-spacing:2px;padding:5px 10px;display:flex;align-items:center;gap:7px}
+  .warnbox ul{margin:0;padding:10px 12px 10px 28px;background:#fdf3ef}
+  .warnbox li{font-size:13.5px;line-height:1.8;color:var(--ink2)}
+
+  .fault{border:1px solid var(--line2);border-radius:2px;margin-bottom:9px;background:#fdfcf7;overflow:hidden}
+  .fault .fh{display:flex;align-items:center;gap:8px;background:#eee9dc;padding:8px 10px;border-bottom:1px solid var(--line2)}
+  .fault .code{font-size:11.5px;font-weight:800;color:var(--paper2);background:var(--red);padding:2px 7px;border-radius:2px;letter-spacing:1px}
+  .fault .sym{font-size:13px;color:var(--ink);line-height:1.5}
+  .fault .fb{padding:9px 10px;font-size:13px;line-height:1.75;color:var(--ink2);display:flex;gap:8px}
+  .fault .fb em{font-style:normal;font-weight:800;color:var(--blue);flex:0 0 auto}
+
+  .terms{font-size:12.5px;line-height:1.9;color:var(--ink2)}
+  .terms p{margin-bottom:7px}
+  .terms mark{background:rgba(212,85,47,.16);color:var(--stamp);padding:0 3px;font-weight:700}
+
+  #dChart{width:100%;max-width:220px;margin:4px auto 0;display:block}
+
+  .sign{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-top:14px;padding-top:12px;border-top:1px dashed var(--line2)}
+  .stamp{
+    transform:rotate(-11deg);border:3px solid var(--stamp);color:var(--stamp);border-radius:4px;
+    padding:5px 11px;font-size:12.5px;font-weight:800;letter-spacing:2px;opacity:.82;text-align:center;line-height:1.4;
+  }
+  .sign .sig{font-size:11.5px;color:var(--ink3);line-height:1.7;text-align:right}
+
+  .padf{padding:18px 20px 22px}
+  .acts{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+  .acts .btn{margin-top:0}
+  .acts .two{display:flex;gap:10px}
+  .acts .two .btn{flex:1}
+
+  .toast{
+    position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);opacity:0;pointer-events:none;
+    background:var(--ink);color:#fff;font-size:14px;letter-spacing:1px;padding:11px 20px;border-radius:3px;
+    transition:.25s;z-index:99;max-width:86vw;text-align:center;box-shadow:0 8px 20px rgba(0,0,0,.3);
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  @media (max-width:430px){
+    .sheet-pad{padding:20px 15px 18px}
+    .sect{padding:14px 15px}
+    .sbar{padding:12px 15px 9px}
+    .padf{padding:16px 15px 20px}
+    h1.title{font-size:22px}
+    table.spec{font-size:12.5px}
+  }
+  @media print{
+    body{background:#fff;padding:0}
+    .topbar,.acts,.toast,#screenForm,#screenPrint{display:none !important}
+    .doc-sheet{box-shadow:none;border:none;border-radius:0}
+    .doc-sheet::before{display:none}
+    .sect{border-bottom:1px solid #ccc;break-inside:avoid}
+    .redbar{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .sect-n,.fault .code,.warnbox .wh,.stamp{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== 封面 ========== -->
+<section id="screenForm" class="screen on">
+  <div class="cover">
+    <div class="plate">
+      <div class="plate-head"><span class="screw"></span><b>ZHONGHUA INSTRUMENT CO.</b><span class="mono">MODEL H-2000</span></div>
+      <div class="doc-sheet">
+        <div class="sheet-pad">
+          <div class="brand"><span class="mk">HUMAN</span><span class="co">型号说明书 · 单文件实体</span></div>
+          <h1 class="title">人类使用说明书</h1>
+          <div class="sub-title">USER MANUAL FOR ONE (1) HUMAN · 本机随机附带，无从退货</div>
+          <div class="redbar">⚠ 警告 · 阅读前请确认对方不是你自己</div>
+          <p class="intro">
+            本手册用于生成<b>指定人类的专属说明书</b>。填入一个名字，本机将现场编译其<b>规格参数</b>、<b>常见故障</b>与<b>拆机维修流程</b>，可直接打印张贴或转发至当事人。<br/>
+            生成结果<b>纯属虚构</b>，如与本人高度吻合，请勿与其对视。
+          </p>
+          <div class="blueline"></div>
+          <div class="field">
+            <label for="nameIn">被检对象 · SUBJECT <i>必填，留空则随机分配</i></label>
+            <input id="nameIn" type="text" maxlength="12" placeholder="例如：小林 / 我妈 / 组长 / 猫" autocomplete="off" />
+            <div class="chips">
+              <button class="chip" data-n="我妈">我妈</button>
+              <button class="chip" data-n="组长">组长</button>
+              <button class="chip" data-n="对象">对象</button>
+              <button class="chip" data-n="我自己">我自己</button>
+              <button class="chip" data-n="老板">老板</button>
+              <button class="chip" data-n="猫">猫</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="btn" id="btnGen">▶ 生成说明书</button>
+      <div class="btn-row">
+        <button class="btn alt" id="btnRand">🎲 随机分配一位</button>
+      </div>
+      <svg class="bluesvg" viewBox="0 0 260 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="技术示意图：人形通用结构">
+        <g fill="none" stroke="#2c5f7c" stroke-width="1.4">
+          <rect x="70" y="14" width="120" height="120" stroke-dasharray="4 4" opacity=".45"/>
+          <path d="M70 34V14M190 34V14M190 134h30M70 134H40" stroke-width="1" opacity=".6"/>
+          <circle cx="130" cy="50" r="16"/>
+          <circle cx="130" cy="50" r="26" opacity=".5" stroke-dasharray="3 3"/>
+          <path d="M130 66v40M130 79l-27 19M130 79l27 19M130 106l-15 26M130 106l15 26" stroke-linecap="round"/>
+          <circle cx="130" cy="50" r="3.2" fill="#2c5f7c"/>
+        </g>
+        <g fill="#2c5f7c" font-family="Consolas,monospace" font-size="8.5">
+          <text x="10" y="31">280mm</text>
+          <text x="206" y="137">48</text>
+          <text x="12" y="146">FIG.1 人形通用结构</text>
+        </g>
+        <g stroke="#2c5f7c" stroke-width=".9" opacity=".75">
+          <path d="M150 44h44l14-16" fill="none"/>
+          <path d="M168 82h42l12 14" fill="none"/>
+        </g>
+        <g fill="#2c5f7c" font-family="Consolas,monospace" font-size="8.5">
+          <text x="200" y="24">头部</text>
+          <text x="176" y="112">主体</text>
+        </g>
+      </svg>
+      <div class="tiny">本机支持打印 · 手机与电脑通用 · 生成一次约需 1.5 秒</div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 打印中 ========== -->
+<section id="screenPrint" class="screen">
+  <div class="printer">
+    <div class="pr-t"><span class="led"></span><b class="mono" style="letter-spacing:2px;font-size:13px">THERMAL PRINTER · READY</b></div>
+    <div class="slot"></div>
+    <div class="paper-out" id="paperOut"><div class="paper-in">
+      <div class="mono" style="font-size:10px;letter-spacing:1px;color:#7d8792">COMPILING MANUAL…</div>
+      <div id="prName" style="font-size:19px;font-weight:800;margin:8px 0 6px">— —</div>
+      <div style="height:5px;background:#e3ddce;border-radius:3px;margin-bottom:6px"><i id="prBar" style="display:block;height:100%;width:0;background:#2c5f7c;transition:width .3s"></i></div>
+      <div class="mono" style="font-size:10px;color:#7d8792" id="prStep">读取情绪缓存…</div>
+    </div></div>
+    <div class="pr-txt dots" id="prTxt">正在编译</div>
+  </div>
+</section>
+
+<!-- ========== 说明书 ========== -->
+<section id="screenDoc" class="screen">
+  <div class="doc">
+    <div class="topbar">
+      <button class="iconbtn" id="btnBack">‹ 返回</button>
+      <span class="tag">人类使用说明书</span>
+      <button class="iconbtn" id="btnTop">顶部</button>
+    </div>
+    <div class="doc-sheet">
+      <div class="sbar">
+        <div class="l mono">ZHCI · H-2000</div>
+        <div class="r mono"><span id="dModel">—</span><br/><span id="dSn">SN —</span></div>
+      </div>
+
+      <div class="sect" style="border-bottom:2px solid var(--ink)">
+        <div style="display:flex;gap:14px;align-items:flex-start">
+          <div style="flex:1;min-width:0">
+            <div class="mono" style="font-size:10.5px;letter-spacing:2px;color:var(--ink3)">PRODUCT NAME</div>
+            <div style="font-size:24px;font-weight:800;line-height:1.25;margin:5px 0 3px" id="dName">—</div>
+            <div class="mono" style="font-size:11px;color:var(--red2);letter-spacing:1px" id="dVariant">—</div>
+          </div>
+          <div id="dBarcode" style="flex:0 0 auto;text-align:center"></div>
+        </div>
+        <div class="barcode-cap mono" style="font-size:9.5px;color:var(--ink3);letter-spacing:1px;margin-top:5px;text-align:right" id="dBarcodeCap"></div>
+      </div>
+
+      <div class="sect">
+        <div class="sect-h"><span class="sect-n">1</span><span class="sect-t">规格参数</span><span class="sect-e">SPEC</span></div>
+        <table class="spec" id="dSpec"></table>
+        <div style="margin-top:12px">
+          <div class="mono" style="font-size:10px;color:var(--ink3);letter-spacing:1.5px;margin-bottom:5px">FIG.2 情绪带宽分布</div>
+          <div id="dChart"></div>
+        </div>
+      </div>
+
+      <div class="sect">
+        <div class="sect-h"><span class="sect-n">2</span><span class="sect-t">开箱清单</span><span class="sect-e">PACKING LIST</span></div>
+        <div id="dBox" class="terms"></div>
+      </div>
+
+      <div class="sect">
+        <div class="sect-h"><span class="sect-n">3</span><span class="sect-t">警告事项</span><span class="sect-e">CAUTION</span></div>
+        <div class="warnbox">
+          <div class="wh">⚠ 请在阅读余下内容前确认以下事项</div>
+          <ul id="dWarn"></ul>
+        </div>
+      </div>
+
+      <div class="sect">
+        <div class="sect-h"><span class="sect-n">4</span><span class="sect-t">常见故障及排除</span><span class="sect-e">TROUBLE</span></div>
+        <div id="dFault"></div>
+      </div>
+
+      <div class="sect">
+        <div class="sect-h"><span class="sect-n">5</span><span class="sect-t">日常维护与保养</span><span class="sect-e">UPKEEP</span></div>
+        <table class="spec" id="dCare"></table>
+      </div>
+
+      <div class="sect">
+        <div class="sect-h"><span class="sect-n">6</span><span class="sect-t">拆机维修指南</span><span class="sect-e">DISASSEMBLY</span></div>
+        <ol class="steps" id="dSteps"></ol>
+      </div>
+
+      <div class="sect">
+        <div class="sect-h"><span class="sect-n">7</span><span class="sect-t">保修条款</span><span class="sect-e">WARRANTY</span></div>
+        <div class="terms" id="dTerms"></div>
+        <div class="sign">
+          <div class="stamp">出厂检验合格<br/>ZHCI 质检科</div>
+          <div class="sig">签发日期<br/><span class="mono" id="dDate">—</span></div>
+        </div>
+      </div>
+
+      <div class="sect" style="border-bottom:none">
+        <div class="sect-h"><span class="sect-n">8</span><span class="sect-t">售后服务</span><span class="sect-e">SERVICE</span></div>
+        <div class="terms" id="dAfter"></div>
+      </div>
+
+      <div class="padf" style="border-top:2px dashed var(--line2)">
+        <div class="tiny" style="margin:0 0 4px;text-align:left">本说明书由「人类使用说明书」自动生成器现场编译 · 仅供娱乐</div>
+        <div class="acts">
+          <div class="two">
+            <button class="btn alt" id="btnCopy">📋 复制全文</button>
+            <button class="btn alt" id="btnPrint">🖨 打印</button>
+          </div>
+          <button class="btn" id="btnAgain">给另一位生成</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- 工具 ---------- */
+function hash(s){var h=2166136261,i;for(i=0;i<s.length;i++){h^=s.charCodeAt(i);h=(h*16777619)>>>0;}return h>>>0;}
+function rng(seed){var s=seed>>>0||1;return function(){s^=s<<13;s>>>=0;s^=s>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
+function pickN(arr,n,r){var c=arr.slice(),out=[];n=Math.min(n,c.length);while(out.length<n){out.push(c.splice(Math.floor(r()*c.length),1)[0]);}return out;}
+function $(id){return document.getElementById(id);}
+var toastT=null;
+function toast(m){var t=$('toast');t.textContent=m;t.classList.add('show');if(toastT)clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('show');},1900);}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+/* ---------- 文料库 ---------- */
+var CPU=['情绪脑 · 八核高频','心跳 · 72BPM 稳频','五感 · 主动降噪版','幽默感 · 高功耗旗舰','共情力 · 超线程','记忆力 · 低配版'];
+var MEM=['短期记忆 2GB（支持多任务开窗，但极易崩溃）','短期记忆 4GB（多数窗口已长满）','短期记忆 512MB（连验证码都留不住）'];
+var STO=['情绪缓存 128GB，已用 96GB，需定期清理','情绪缓存 64GB，其中旧消息 41GB','情绪缓存 256GB，快照备份到 2019 年'];
+var BAT=['待机 18 小时','高负载 4 小时','省电模式可撑 2 天，靠充电宝续命','边充电边使用，续航归零'];
+var SOC_TXT={92:'社交电量 92%，属于罕见的高续航机型',78:'社交电量 78%，可支撑一整个下午的寒暄',55:'社交电量 55%，聊得下去但需要中场休息',41:'社交电量 41%，正在寻找安静的角落',28:'社交电量 28%，回复已开始使用单个标点',6:'社交电量 6%，已进入低功耗静默'};
+var SOCN=[92,78,55,41,28,6];
+var TEAR=['泪点 3/10（不宜在公共场合测试）','泪点 7/10（一段旋律即可触发）','泪点 9/10（看过三遍的短视频仍会破防）'];
+var TEMP=['冷却时间约 20 分钟','冷却时间约 2 小时','冷却时间约一晚上，勿在睡前争论','无冷却设计（罕见机型）'];
+var PROC=['走神大师 · 认证工程师','深夜活跃型 · 月相驱动','日落型 · 18:30 后性能翻倍','随缘型 · 性能由心情决定','常驻摸鱼模式 · 无法关闭'];
+var LIFE=['每天 3 段深度摸鱼，2 次假笑，1 次真心话','每天 6 小时待机，2 小时启动，剩余时间在找充电线','每天 1 次想辞职，3 次打开招聘软件，0 次投递','每天 4 次「算了」，2 次「都行」，1 次「好」'];
+
+var BOXITEMS=[
+ '备用脑洞 ×1（一次性，用完需自行充值）',
+ '创可贴 ×2（贴住嘴，防止说出「随便」）',
+ '万能「都行」卡 ×1（副作用：随机失效）',
+ '静音模式安装包 ×1（社交场合自动生效）',
+ '记不住事的笔 ×1（写完即失忆）',
+ '充电宝 ×1（电量仅剩 1%）',
+ '吃灰健身卡 ×1（有效期未知）',
+ '「我没事」默认设置 ×1（可在设置中关闭）',
+ '半瓶见底的口红 / 剃须泡沫 ×1',
+ '一个存了三年没看的歌单 ×1',
+ '备用钥匙 ×1（已遗失概率 60%）',
+ '情绪急救包 ×1（内含 3 句夸奖）'
+];
+
+var WARN=[
+ '切勿在凌晨 3 点做人生决定。',
+ '切勿连续两次回答「都行」，系统将判定为故障。',
+ '切勿在空腹状态下打开外卖软件。',
+ '切勿在会议最后一分钟提出新议题。',
+ '切勿把「随便」当作一个有效选项提交。',
+ '切勿在其看剧时询问「你爱不爱我」。',
+ '切勿试图用逻辑说服一个正在气头上的人。',
+ '切勿在其加班时只发「辛苦了」两个字。'
+];
+
+var FAULTS=[
+ {c:'E-01',s:'打开冰箱后站在原地 3 分钟',f:'关上冰箱，走开 30 秒再回来。'},
+ {c:'E-03',s:'躺下 20 分钟后突然想起明天还有事',f:'写下来放在枕边，第二天睁眼立刻处理。'},
+ {c:'E-07',s:'被问「想吃什么」时回答「随便」',f:'提前收藏 3 家店，每家点一次，轮着说。'},
+ {c:'E-12',s:'手机剩 1% 时找不到充电宝',f:'充电宝与手机分开放置，不要住在同一个包里。'},
+ {c:'E-18',s:'睡前刷手机 2 小时，事后毫无收获',f:'设 30 分钟闹钟，响了就伸手把手机放远。'},
+ {c:'E-21',s:'周末发出「在吗」后失联 6 小时',f:'承认自己只是想找人说话，不必绕弯。'},
+ {c:'E-26',s:'决定「明天一定早睡」，凌晨 1:40 还在刷',f:'把充电器移到客厅，物理阻断最有效。'},
+ {c:'E-33',s:'边充电边看剧，醒来发现只充了 3%',f:'充电时不要同床，或改用一根够长的线。'},
+ {c:'E-41',s:'在群里发「收到」但什么都没做',f:'补一句具体动作与时间，避免被判定为敷衍。'},
+ {c:'E-52',s:'频繁查看手机却不知在看什么',f:'设定一个具体目的再解锁，否则锁屏键白装了。'}
+];
+
+var CARE=[
+ ['每日','喝够 1500ml 水，至少吃一顿热的'],
+ ['每周','晒太阳 15 分钟，补一次户外电量'],
+ ['每月','更换一次头像，宣告版本更新'],
+ ['每季','清理衣柜一次，清除历史包袱'],
+ ['每年','重启一次（换发型 / 换城市 / 换工作任选）'],
+ ['异常时','先关机冷静 10 分钟，再尝试对话']
+];
+
+var STEPS=[
+ ['断开所有社交连接','包括但不限于群聊、朋友圈与「对方正在输入…」。'],
+ ['取出情绪备份','建议先完整导出近期聊天记录，不可逆。'],
+ ['松动外壳','沿耳廓方向轻拧两颗螺丝，切勿使用蛮力。'],
+ ['清理缓存垃圾','丢弃所有超过 48 小时未回复的消息，释放空间。'],
+ ['更换情绪主控板','市场价约两杯奶茶，工费另计，需排队。'],
+ ['复原出厂设置','此操作将清除全部自定义设置，包括「我没事」。']
+];
+
+var TERMS=[
+ '本机<b>保修期</b>为出厂前 3 天；此后进入按心情延保阶段，延保时长由本机自行决定。',
+ '以下情形<b>不予保修</b>：说了「我没事」、长期硬撑、自律失败、以及在被追问时沉默超过 5 秒。',
+ '维修请前往<b>售后服务网点</b>或联系<b>未来</b>的你。返修往返时间约 3–5 个工作年。',
+ '本机不支持升级。强行升级（逼它成长）可能导致数据丢失与<b>永久性嘴硬</b>。',
+ '保修凭证为「TA 曾经说过的一句好话」，遗失不补，请及时截图。'
+];
+
+var AFTER=[
+ '<b>客服热线：</b>转接「随便」，如提示音为忙，请改打「我错了」。',
+ '<b>服务时间：</b>想你的时候，随时（通常在凌晨两点最通畅）。',
+ '<b>上门服务：</b>不提供，请将本机送至对方身边，费用自备。',
+ '<b>召回政策：</b>连续 3 次「随便」即可申请召回，召回成功率随亲密度上升。'
+];
+
+var NAMES=['小王','组长','我妈','对象','同事K','楼下张阿姨','前台小猫','健身房私教','甲方爸爸','我弟','室友老陈','便利店店员','hr','体育老师','隔壁老王'];
+
+/* ---------- 型号后缀（彩蛋） ---------- */
+function variant(n){
+  var has=function(s){return n.indexOf(s)>=0;};
+  if(has('老板')||has('boss')||has('BOSS')) return {tag:'商务加固版 · 承压增强',note:'出厂即开启会议模式，抗压值受限，建议勿在其周五下午提出需求。',acc:1};
+  if(has('猫')) return {tag:'毛绒限定版 · 绒毛涂层',note:'掉毛属正常现象，请勿使用粘毛器以外的清洁方式。白天需强制休眠 14 小时。',acc:0};
+  if(has('我妈')||has('老爸')||has('爸')) return {tag:'长辈关怀版 · 大字模式',note:'附带语音朗读功能（你说的话会不自觉重复一遍），共享键不可撤销。',acc:2};
+  if(has('对象')||(has('男')&&has('朋友'))||has('女朋友')||has('男朋友')||has('对象')) return {tag:'双人协同版',note:'本机需两台设备同时在线才能正常输出，单机运行会出现「你怎么不说话」。',acc:1};
+  if(has('我自己')||has('我')) return {tag:'自用原装版 · 未拆封',note:'你就是这台机器，拆机即失保。且你已经知道故障在哪了。',acc:3};
+  if(has('组')||has('经理')||has('总监')) return {tag:'管理权限版 · 只读',note:'可查看他人状态，自身状态为「仅自己可见」且长期显示在线。',acc:2};
+  if(/[0-9]/.test(n)) return {tag:'数码增强版',note:'支持指纹解锁与心率同步，但电量永远在 1%。',acc:1};
+  if(n.length===1) return {tag:'便携迷你版 · 单字名',note:'体积小、待机长，但内存极易不足，建议随身携带一颗备用脑。',acc:0};
+  if(n.length>=8) return {tag:'大容量旗舰版',note:'内存充裕，可同时缓存 5 段未说出口的话；代价是启动缓慢。',acc:3};
+  return {tag:'标准零售版',note:'通用配置，无明显短板，也无明显长板。请按说明书正常佩戴。',acc:0};
+}
+
+/* ---------- 编译 ---------- */
+function compile(name){
+  var seed=hash(name+'::'+name.length);
+  var r=rng(seed);
+  var v=variant(name);
+  var socN=SOCN[Math.floor(r()*SOCN.length)];
+  var stress=Math.min(99,Math.max(12,Math.round(28+r()*62+v.acc*6)));
+  var talk=Math.min(99,Math.max(15,Math.round(30+r()*60)));
+  var model='HUM-'+seed.toString(36).toUpperCase().slice(0,4)+'-'+String(100+Math.floor(r()*899));
+  var sn='SN'+(seed%99999999).toString().padStart(8,'0');
+  var d=new Date();
+  var dates=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+
+  var spec=[
+    ['处理器',pickN(CPU,1,r)[0]],
+    ['内存',pickN(MEM,1,r)[0]],
+    ['存储',pickN(STO,1,r)[0]],
+    ['续航',pickN(BAT,1,r)[0]],
+    ['社交电量',SOC_TXT[socN]],
+    ['抗压指数',stress+'/100'],
+    ['话痨指数',talk+'/100'],
+    ['泪点',pickN(TEAR,1,r)[0]],
+    ['脾气冷却',pickN(TEMP,1,r)[0]],
+    ['出厂行为',pickN(PROC,1,r)[0]],
+    ['日均能耗',pickN(LIFE,1,r)[0]]
+  ];
+  var chart={stress:stress,talk:talk,soc:socN,warm:Math.min(99,Math.round(35+r()*60))};
+  return {
+    name:name,model:model,sn:sn,date:dates,variant:v,seed:seed,
+    spec:spec,box:pickN(BOXITEMS,4,r),warn:pickN(WARN,4,r),
+    fault:pickN(FAULTS,4,r),care:CARE,steps:STEPS,terms:TERMS,after:AFTER,
+    chart:chart
+  };
+}
+
+/* ---------- 条码（装饰性，按 hash 生成） ---------- */
+function barcode(seed){
+  var r=rng(seed^0x9e37);
+  var bars='';var x=0;
+  while(x<44){
+    var w=1+Math.floor(r()*2);
+    bars+='<rect x="'+x+'" y="0" width="'+w+'" height="34" fill="#1f2933"/>';
+    x+=w+1+Math.floor(r()*3);
+  }
+  return '<svg width="94" height="42" viewBox="0 0 52 42" xmlns="http://www.w3.org/2000/svg">'
+    +'<rect width="52" height="42" fill="#fff"/>'
+    +'<g transform="translate(0,4) scale(0.9,1)" transform-origin="0 0">'+bars+'</g></svg>';
+}
+
+/* ---------- 情绪带宽图 ---------- */
+function chart(c){
+  var keys=[['抗压',c.stress,'#2c5f7c'],['话痨',c.talk,'#4a7f9e'],['社交电量',c.soc,'#d4552f'],['情绪温度',c.warm,'#b03a24']];
+  var out='';var y=10;
+  for(var i=0;i<keys.length;i++){
+    var k=keys[i];
+    var w=Math.max(4,Math.round(k[1]/100*118));
+    out+='<text x="0" y="'+(y+7)+'" font-size="8" fill="#4a5661">'+k[0]+'</text>';
+    out+='<rect x="36" y="'+y+'" width="118" height="9" fill="#e3ddce" rx="1"/>';
+    out+='<rect x="36" y="'+y+'" width="'+w+'" height="9" fill="'+k[2]+'" rx="1"/>';
+    out+='<text x="160" y="'+(y+7)+'" font-size="8" fill="#7d8792" font-family="Consolas,monospace">'+k[1]+'</text>';
+    y+=17;
+  }
+  return '<svg width="100%" height="96" viewBox="0 0 184 96" xmlns="http://www.w3.org/2000/svg">'
+    +'<g>'+out+'</g>'
+    +'<path d="M36 86h118M36 86v-2" stroke="#a79e8c" stroke-width="1"/>'
+    +'<text x="112" y="96" font-size="7.5" fill="#a79e8c">0</text>'
+    +'<text x="146" y="96" font-size="7.5" fill="#a79e8c">100</text></svg>';
+}
+
+/* ---------- 渲染 ---------- */
+function render(m){
+  $('dName').textContent=m.name;
+  $('dVariant').textContent=m.variant.tag;
+  $('dModel').textContent=m.model;
+  $('dSn').textContent=m.sn;
+  $('dBarcode').innerHTML=barcode(m.seed);
+  $('dBarcodeCap').textContent=m.sn;
+  $('dDate').textContent=m.date;
+  $('dChart').innerHTML=chart(m.chart);
+  $('dSpec').innerHTML=m.spec.map(function(row){
+    var bar='';
+    if(/\/100$/.test(row[1])){
+      var n=parseInt(row[1],10);
+      bar='<div class="bar'+(n<40?' warn':'')+'"><i style="width:'+n+'%"></i></div>';
+    }
+    return '<tr><td>'+row[0]+'</td><td>'+row[1]+bar+'</td></tr>';
+  }).join('');
+  $('dBox').innerHTML=m.box.map(function(b){return '· '+esc(b);}).join('<br/>')
+    +'<br/><span style="color:var(--ink3);font-size:11.5px">以上配件若遗失，可在情绪失控时凭记忆索取。</span>';
+  $('dWarn').innerHTML=m.warn.map(function(w){return '<li>'+esc(w)+'</li>';}).join('');
+  $('dFault').innerHTML=m.fault.map(function(f){
+    return '<div class="fault"><div class="fh"><span class="code mono">'+f.c+'</span><span class="sym">'+esc(f.s)+'</span></div>'
+      +'<div class="fb"><em>排除方法</em><span>'+esc(f.f)+'</span></div></div>';
+  }).join('');
+  $('dCare').innerHTML=m.care.map(function(c){return '<tr><td>'+c[0]+'</td><td>'+c[1]+'</td></tr>';}).join('');
+  $('dSteps').innerHTML=m.steps.map(function(s,i){
+    return '<li><b>第 '+(i+1)+' 步 · '+esc(s[0])+'</b><br/>'+esc(s[1])+'</li>';
+  }).join('');
+  $('dTerms').innerHTML=m.terms.map(function(t){return '<p>'+t+'</p>';}).join('');
+  $('dAfter').innerHTML=m.after.join('');
+  $('prName').textContent=m.name;
+  $('prStep').textContent='写入规格 '+(m.spec.length)+' 项 / 故障 '+m.fault.length+' 条 / 签发 '+m.model;
+}
+
+function plain(m){
+  var L=[];
+  L.push('《人类使用说明书》');
+  L.push('型号 '+m.model+' · '+m.sn+' · '+m.date);
+  L.push('被检对象：'+m.name+'（'+m.variant.tag+'）');
+  L.push('');
+  L.push('【设计用途】'+m.variant.note);
+  L.push('');
+  L.push('一、规格参数');
+  m.spec.forEach(function(r){L.push('  · '+r[0]+'：'+r[1]);});
+  L.push('');
+  L.push('二、开箱清单');
+  m.box.forEach(function(b){L.push('  · '+b);});
+  L.push('');
+  L.push('三、警告事项');
+  m.warn.forEach(function(w){L.push('  ⚠ '+w);});
+  L.push('');
+  L.push('四、常见故障及排除');
+  m.fault.forEach(function(f){L.push('  ['+f.c+'] '+f.s);L.push('    排除：'+f.f);});
+  L.push('');
+  L.push('五、日常维护');
+  m.care.forEach(function(c){L.push('  · '+c[0]+'：'+c[1]);});
+  L.push('');
+  L.push('六、拆机维修指南');
+  m.steps.forEach(function(s,i){L.push('  '+(i+1)+'. '+s[0]+'——'+s[1]);});
+  L.push('');
+  L.push('七、保修条款');
+  m.terms.forEach(function(t){L.push('  '+t.replace(/<\/?b>/g,''));});
+  L.push('');
+  L.push('八、售后服务');
+  m.after.forEach(function(a){L.push('  '+a.replace(/<[^>]+>/g,''));});
+  L.push('');
+  L.push('—— 纯属虚构，如与本人高度吻合，请勿与其对视。');
+  return L.join('\n');
+}
+
+/* ---------- 屏幕切换（显式 block，避免 CSS 覆盖） ---------- */
+function show(id){
+  ['screenForm','screenPrint','screenDoc'].forEach(function(x){ $(x).classList.remove('on'); });
+  $(id).classList.add('on');
+  window.scrollTo(0,0);
+}
+
+/* ---------- 打印流程 ---------- */
+var PRINT_STEPS=['读取情绪缓存…','编译规格参数…','生成故障代码…','加盖质检章…','吐纸中…'];
+var timers=[];
+function clearTimers(){timers.forEach(clearTimeout);timers=[];}
+function generate(name){
+  if(!name)name=NAMES[Math.floor(Math.random()*NAMES.length)];
+  name=name.trim().slice(0,12);
+  var m=compile(name);
+  window.__manual=m;
+  show('screenPrint');
+  var out=$('paperOut'),bar=$('prBar'),step=$('prStep'),txt=$('prTxt');
+  out.classList.remove('grow');bar.style.width='0%';
+  render(m);
+  timers.push(setTimeout(function(){out.classList.add('grow');},60));
+  for(var i=0;i<PRINT_STEPS.length;i++){
+    (function(i){
+      timers.push(setTimeout(function(){
+        bar.style.width=Math.round((i+1)/PRINT_STEPS.length*100)+'%';
+        step.textContent=PRINT_STEPS[i];
+      },420+i*280));
+    })(i);
+  }
+  timers.push(setTimeout(function(){
+    txt.textContent='编译完成';
+    show('screenDoc');
+  },420+PRINT_STEPS.length*280+520));
+}
+
+/* ---------- 事件 ---------- */
+$('btnGen').addEventListener('click',function(){
+  clearTimers();
+  generate($('nameIn').value);
+});
+$('btnRand').addEventListener('click',function(){
+  clearTimers();
+  var p='';
+  do{p=NAMES[Math.floor(Math.random()*NAMES.length)];}while(p===($('nameIn').value||'').trim());
+  $('nameIn').value=p;
+  generate(p);
+});
+$('nameIn').addEventListener('keydown',function(e){
+  if(e.key==='Enter'){clearTimers();generate(this.value);}
+});
+Array.prototype.forEach.call(document.querySelectorAll('.chip'),function(c){
+  c.addEventListener('click',function(){
+    $('nameIn').value=this.dataset.n;
+    clearTimers();
+    generate(this.dataset.n);
+  });
+});
+$('btnBack').addEventListener('click',function(){clearTimers();show('screenForm');});
+$('btnAgain').addEventListener('click',function(){clearTimers();show('screenForm');$('nameIn').focus();});
+$('btnTop').addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+$('btnPrint').addEventListener('click',function(){toast('已调起打印 · 选 A4 效果最好');setTimeout(function(){window.print();},420);});
+$('btnCopy').addEventListener('click',function(){
+  var m=window.__manual;if(!m)return;
+  var txt=plain(m);
+  var ok=function(){toast('说明书已复制 · 发给对方试试');};
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(ok,function(){fallback(txt,ok);});
+  }else{fallback(txt,ok);}
+});
+function fallback(txt,ok){
+  var ta=document.createElement('textarea');
+  ta.value=txt;ta.style.position='fixed';ta.style.left='-9999px';
+  document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');ok();}catch(e){toast('复制失败，请长按选择文本');}
+  document.body.removeChild(ta);
+}
+window.__compile=compile;
+})();
+</script>
+</body>
+</html>
