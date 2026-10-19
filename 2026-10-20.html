@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>方块工位 · 把待办全消了</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23e8e2d4'/%3E%3Crect x='8' y='12' width='48' height='30' rx='3' fill='%239bbc0f' stroke='%234a4038' stroke-width='2.5'/%3E%3Cg fill='%230f380f'%3E%3Crect x='14' y='18' width='8' height='8'/%3E%3Crect x='26' y='26' width='8' height='8'/%3E%3Crect x='38' y='18' width='8' height='8'/%3E%3Crect x='38' y='30' width='8' height='8'/%3E%3C/g%3E%3Ccircle cx='18' cy='50' r='4' fill='%23a07bb5'/%3E%3Ccircle cx='46' cy='50' r='4' fill='%23a07bb5'/%3E%3C/svg%3E" />
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  :root{
+    --shell:#e9e3d5; --shell2:#d6cfc0; --shell3:#c3bbab;
+    --shellink:#3f3a33;
+    --lcd:#9bbc0f; --lcd2:#8bac0f; --lcd3:#306230; --lcd4:#0f380f;
+    --btn:#a07bb5; --btn2:#7f5c9b; --btnink:#f4eef8;
+    --red:#d2452e; --amber:#e8a33d;
+    --paper:#f2efe4;
+  }
+  html,body{height:100%}
+  body{
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    background:
+      radial-gradient(circle at 78% 8%,rgba(160,123,181,.14),transparent 42%),
+      radial-gradient(circle at 12% 88%,rgba(155,188,15,.12),transparent 46%),
+      repeating-linear-gradient(0deg,rgba(63,58,51,.022) 0 1px,transparent 1px 5px),
+      #ddd7c9;
+    color:var(--shellink); min-height:100vh; padding:12px 0 40px;
+  }
+  .mono{font-family:ui-monospace,SFMono-Regular,Consolas,"Courier New",monospace}
+  .screen{display:none}
+  .screen.on{display:block}
+  #screenIdle.on,#screenPlay.on,#screenOver.on{display:block}
+
+  /* ============ 掌机 ============ */
+  .handheld{
+    max-width:392px;margin:0 auto;background:linear-gradient(170deg,var(--shell) 0%,var(--shell2) 58%,var(--shell3) 100%);
+    border-radius:22px 22px 44px 22px;border:1.5px solid #b3ab9a;
+    box-shadow:0 14px 34px rgba(40,34,24,.3),inset 0 2px 0 rgba(255,255,255,.7),inset 0 -3px 0 rgba(0,0,0,.09);
+    padding:14px 14px 18px;position:relative;overflow:hidden;
+  }
+  .handheld::after{
+    content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+    background:repeating-linear-gradient(115deg,rgba(255,255,255,.05) 0 2px,transparent 2px 6px);
+  }
+  .hbrand{display:flex;align-items:center;gap:8px;padding:0 4px 9px}
+  .hbrand .dot{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 6px rgba(210,69,46,.7);flex:0 0 auto}
+  .hbrand b{font-size:11.5px;letter-spacing:2.4px}
+  .hbrand span{margin-left:auto;font-size:10px;letter-spacing:1.4px;color:#7a7263}
+  .screw{position:absolute;width:8px;height:8px;border-radius:50%;
+    background:radial-gradient(circle at 34% 30%,#efe9dc,#8d8676);border:1px solid #6f6957}
+  .screw.tl{top:8px;left:8px}.screw.tr{top:8px;right:8px}
+  .screw.bl{bottom:8px;left:8px}.screw.br{bottom:8px;right:8px}
+
+  .leds{display:flex;align-items:center;gap:9px;padding:0 4px 10px}
+  .leds .lab{font-size:9.5px;letter-spacing:1.2px;color:#7a7263}
+  .led{width:7px;height:7px;border-radius:50%;background:#8f8a7c}
+  .led.on{background:var(--red);box-shadow:0 0 7px rgba(210,69,46,.85)}
+  .led.on.g{background:#5fbf3a;box-shadow:0 0 7px rgba(95,191,58,.8)}
+  .bat{width:26px;height:11px;border:1.5px solid #8f8a7c;border-radius:2px;position:relative;padding:1.5px}
+  .bat i{display:block;height:100%;width:82%;background:#5fbf3a;border-radius:1px}
+  .bat::after{content:"";position:absolute;right:-4px;top:3px;width:2.5px;height:5px;background:#8f8a7c;border-radius:0 1px 1px 0}
+
+  .lcdwrap{
+    background:linear-gradient(180deg,#5c5a52,#484639);border-radius:10px;padding:11px 11px 13px;
+    box-shadow:inset 0 3px 8px rgba(0,0,0,.55),0 1px 0 rgba(255,255,255,.45);
+    position:relative;
+  }
+  .lcdwrap .pw{position:absolute;top:3px;left:50%;transform:translateX(-50%);width:34px;height:3px;border-radius:2px;background:rgba(255,255,255,.1)}
+  .lcd{
+    display:block;width:100%;max-width:268px;margin:0 auto;aspect-ratio:1/1;
+    image-rendering:pixelated;image-rendering:crisp-edges;
+    background:var(--lcd);border:2px solid #2f3a1c;border-radius:3px;
+    box-shadow:inset 0 0 14px rgba(15,56,15,.45);
+  }
+  .lcd.flash{animation:lcdflash .14s steps(1) 5}
+  @keyframes lcdflash{0%,100%{filter:none}50%{filter:brightness(2.4) saturate(.5)}}
+  .handheld.alert .lcdwrap{box-shadow:inset 0 3px 8px rgba(0,0,0,.55),0 0 0 3px var(--red),0 0 20px rgba(210,69,46,.75)}
+  .handheld.alert .hbrand .dot{background:var(--red);box-shadow:0 0 10px var(--red)}
+
+  .scorebar{display:flex;gap:8px;margin:11px 2px 0}
+  .sbox{flex:1;background:#cfc7b6;border:1.5px solid #b3ab9a;border-radius:5px;padding:5px 7px;text-align:center}
+  .sbox em{display:block;font-style:normal;font-size:9px;letter-spacing:1.6px;color:#7a7263}
+  .sbox b{display:block;font-size:17px;letter-spacing:1px;color:var(--lcd4);line-height:1.25}
+  .sbox b.pulse{animation:pulse .22s ease-out}
+  @keyframes pulse{0%{transform:scale(1.32);color:var(--red)}100%{transform:scale(1)}}
+
+  .msg{height:19px;text-align:center;font-size:11.5px;letter-spacing:1.3px;color:#7a7263;margin-top:8px}
+  .msg b{color:var(--red)}
+  .msg .cb{color:var(--btn2);font-weight:800}
+
+  .pads{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding:0 2px}
+  .dpad{position:relative;width:136px;height:136px;flex:0 0 auto}
+  .dpad .cross{position:absolute;inset:0}
+  .dpad .cross i{position:absolute;background:linear-gradient(180deg,#5a544a,#3f3a33);border:1.5px solid #322e28;border-radius:5px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 2px 0 #2a2620}
+  .dpad .cross i:active{transform:translateY(1px);background:#332f29;box-shadow:none}
+  .dpad .u{left:45px;top:0;width:46px;height:46px;border-radius:5px 5px 0 0}
+  .dpad .d{left:45px;bottom:0;width:46px;height:46px;border-radius:0 0 5px 5px}
+  .dpad .l{left:0;top:45px;width:46px;height:46px;border-radius:5px 0 0 5px}
+  .dpad .r{right:0;top:45px;width:46px;height:46px;border-radius:0 5px 5px 0}
+  .dpad .hub{left:45px;top:45px;width:46px;height:46px;background:#3f3a33;border:1.5px solid #322e28}
+  .dpad .hub:active{transform:none;box-shadow:none}
+  .dpad .arw{position:absolute;color:#9a9384;font-size:10px;line-height:1;pointer-events:none}
+  .dpad .arw.u{left:65px;top:17px}.dpad .arw.d{left:65px;bottom:16px}
+  .dpad .arw.l{left:17px;top:64px}.dpad .arw.r{right:16px;top:64px}
+  .dpad .ctr{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:12px;height:12px;border-radius:50%;background:#2a2620;pointer-events:none}
+
+  .ab{display:flex;gap:14px;align-items:center}
+  .ab .btn{
+    width:58px;height:58px;border-radius:50%;border:1.5px solid #5f3f78;
+    background:radial-gradient(circle at 36% 28%,#c3a3d8,var(--btn) 62%,var(--btn2));
+    color:var(--btnink);font-size:14px;font-weight:800;font-family:inherit;cursor:pointer;
+    box-shadow:0 3px 0 #5f3f78,inset 0 1px 0 rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;
+    flex:0 0 auto;
+  }
+  .ab .btn:active{transform:translateY(2px);box-shadow:0 1px 0 #5f3f78,inset 0 1px 0 rgba(255,255,255,.25)}
+
+  .sysbtns{display:flex;gap:12px;align-items:center;margin-top:12px;justify-content:center}
+  .sys{
+    min-width:88px;min-height:46px;border-radius:23px;border:1.5px solid #b3ab9a;
+    background:linear-gradient(180deg,#d8d1c1,#bdb6a5);color:#4a4438;font-size:12px;letter-spacing:1.6px;
+    font-family:inherit;cursor:pointer;box-shadow:0 2px 0 #9d9686;font-weight:700;
+  }
+  .sys:active{transform:translateY(1px);box-shadow:0 1px 0 #9d9686}
+  .sys.mini{min-width:62px;min-height:46px}
+
+  .speaker{position:absolute;right:16px;bottom:14px;width:38px;height:38px;display:grid;grid-template-columns:repeat(6,1fr);gap:2.5px;transform:rotate(-16deg);opacity:.55}
+  .speaker i{background:#7a7263;border-radius:50%}
+
+  .tips{max-width:392px;margin:12px auto 0;font-size:11.5px;line-height:1.85;color:#6f685c;text-align:center}
+  .tips kbd{background:#d8d1c1;border:1px solid #b3ab9a;border-bottom-width:2px;border-radius:3px;padding:0 5px;font-size:10.5px;font-family:ui-monospace,monospace}
+
+  /* ============ 待机 ============ */
+  .intro{max-width:392px;margin:12px auto 0;background:var(--paper);border:1.5px solid #b3ab9a;border-radius:8px;padding:15px 15px 17px}
+  .intro h2{font-size:18px;letter-spacing:.6px;margin-bottom:6px}
+  .intro .lead{font-size:12.5px;line-height:1.85;color:#6f685c}
+  .intro .lead b{color:var(--shellink)}
+  .idfield{display:flex;gap:8px;margin-top:12px}
+  .idfield input{
+    flex:1;min-height:48px;border:2px solid var(--shellink);border-radius:5px;background:#fff;
+    padding:10px 12px;font-size:15px;font-family:inherit;letter-spacing:1.5px;color:var(--shellink);
+  }
+  .idfield input:focus{outline:3px solid rgba(160,123,181,.4);outline-offset:1px}
+  .idfield input::placeholder{color:#b3ab99;letter-spacing:0;font-size:13.5px}
+  .bigbtn{
+    width:100%;min-height:56px;margin-top:11px;border:2px solid #2a2620;border-radius:6px;
+    background:linear-gradient(180deg,#4a4438,#332f29);color:#e9e3d5;font-size:17px;font-weight:800;letter-spacing:3px;
+    font-family:inherit;cursor:pointer;box-shadow:0 3px 0 #1f1c17,0 6px 14px rgba(40,34,24,.28);
+  }
+  .bigbtn:active{transform:translateY(2px);box-shadow:0 1px 0 #1f1c17}
+  .bigbtn.alt{background:linear-gradient(180deg,#f4f0e4,#e2dbca);color:#3f3a33;box-shadow:0 3px 0 #b3ab9a,0 6px 14px rgba(40,34,24,.16);letter-spacing:1.5px;font-size:14.5px}
+  .bigbtn.alt:active{box-shadow:0 1px 0 #b3ab9a}
+
+  /* ============ 结算 ============ */
+  .over{max-width:392px;margin:12px auto 0;background:var(--paper);border:2px solid var(--shellink);border-radius:6px;overflow:hidden}
+  .over .oh{background:var(--lcd4);color:var(--lcd);padding:9px 14px;display:flex;align-items:center;gap:9px}
+  .over .oh b{font-size:14px;letter-spacing:2px}
+  .over .oh span{margin-left:auto;font-size:10px;letter-spacing:1.4px;opacity:.85}
+  .rank{display:flex;align-items:center;gap:12px;padding:13px 14px;border-bottom:1.5px dashed #b3ab9a}
+  .rank .r{
+    width:58px;height:58px;flex:0 0 auto;border-radius:4px;background:var(--lcd);border:2px solid var(--lcd4);
+    color:var(--lcd4);font-size:29px;font-weight:800;display:flex;align-items:center;justify-content:center;
+    box-shadow:inset 0 0 10px rgba(15,56,15,.3);
+  }
+  .rank .rt{flex:1;min-width:0}
+  .rank .rt b{font-size:16px;display:block;margin-bottom:3px}
+  .rank .rt em{font-style:normal;font-size:12px;color:#6f685c;line-height:1.6;display:block}
+  table.stats{width:100%;border-collapse:collapse;font-size:13px}
+  table.stats td{padding:8px 14px;border-bottom:1px dotted #b3ab9a;line-height:1.55}
+  table.stats td:first-child{width:44%;color:#7a7263;letter-spacing:.5px}
+  table.stats td:last-child{font-weight:700}
+  table.stats tr:last-child td{border-bottom:none}
+  .quips{padding:12px 14px;border-top:1.5px dashed #b3ab9a;background:#eae6d8}
+  .quips li{font-size:12.5px;line-height:1.8;color:#5c564a;list-style:none;padding-left:14px;position:relative}
+  .quips li::before{content:"\25B8";position:absolute;left:0;color:var(--btn2)}
+  .over .acts{padding:14px}
+  .over .acts .two{display:flex;gap:10px}
+  .over .acts .two .bigbtn{flex:1;margin-top:0}
+
+  .toast{
+    position:fixed;left:50%;bottom:26px;transform:translate(-50%,18px);opacity:0;pointer-events:none;
+    background:#332f29;color:#e9e3d5;font-size:13.5px;letter-spacing:1px;padding:11px 20px;border-radius:4px;
+    transition:.24s;z-index:99;max-width:86vw;text-align:center;box-shadow:0 8px 20px rgba(0,0,0,.32);
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  @media (max-width:420px){
+    .handheld{padding:12px 11px 15px}
+    .dpad{width:126px;height:126px}
+    .dpad .u{left:40px;top:0;width:46px;height:46px}.dpad .d{left:40px;bottom:0;width:46px;height:46px}
+    .dpad .l{left:0;top:40px;width:46px;height:46px}.dpad .r{right:0;top:40px;width:46px;height:46px}
+    .dpad .hub{left:40px;top:40px;width:46px;height:46px}
+    .dpad .arw.u{left:60px;top:17px}.dpad .arw.d{left:60px;bottom:16px}
+    .dpad .arw.l{left:17px;top:59px}.dpad .arw.r{right:16px;top:59px}
+    .ab .btn{width:54px;height:54px}
+    .sys{min-width:78px}
+    .sys.mini{min-width:54px}
+  }
+  @media print{
+    body{background:#fff}
+    .handheld,.sysbtns,.acts,.toast{display:none !important}
+    .over{border-color:#333;box-shadow:none}
+    .over .oh,.rank .r{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .quips li{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== 待机 ========== -->
+<section id="screenIdle" class="screen on">
+  <div class="handheld">
+    <span class="screw tl"></span><span class="screw tr"></span><span class="screw bl"></span><span class="screw br"></span>
+    <div class="hbrand"><span class="dot"></span><b>PIXEL WORKS</b><span class="mono">GB-1989</span></div>
+    <div class="leds">
+      <span class="lab">POWER</span><span class="led on g"></span>
+      <span class="lab">BATTERY</span><span class="bat"><i></i></span>
+      <span class="lab mono" style="margin-left:auto">v1.0</span>
+    </div>
+    <div class="lcdwrap">
+      <span class="pw"></span>
+      <canvas class="lcd" id="lcdIdle" width="128" height="128"></canvas>
+    </div>
+    <div class="scorebar">
+      <div class="sbox"><em>HI-SCORE</em><b class="mono" id="idleHi">0</b></div>
+      <div class="sbox"><em>今日岗位</em><b id="idleJob" style="font-size:13px">随机</b></div>
+    </div>
+    <div class="msg" id="idleMsg">按 START 开机 · 输入工号决定岗位</div>
+    <div class="sysbtns">
+      <button class="sys" id="btnStart">▶ START</button>
+      <button class="sys mini" id="btnMute2">🔊 音效</button>
+    </div>
+    <div class="speaker"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+
+  <div class="intro">
+    <h2>方块工位 · 把待办全消了</h2>
+    <p class="lead">
+      你的工位是一台掌机。掉下来的不是方块，是<b>需求 / 会议 / 邮件 / 周报 / Bug / 团建 / 出差</b>——
+      把它们<b>码齐一行</b>，整行待办当场清空。四行齐消触发「四喜丸子」，全屏炸开。<br/>
+      小心<b>老板视察</b>：屏幕突然惨白、方块疯狂加速，撑住别慌。<br/>
+      工号随便填，它会决定你今天的<b>岗位</b>和<b>手速</b>。
+    </p>
+    <div class="idfield">
+      <input id="idIn" type="text" maxlength="10" placeholder="输入工号，如 A1024（可留空）" autocomplete="off" />
+    </div>
+    <button class="bigbtn" id="btnStart2">开始搬砖</button>
+  </div>
+  <div class="tips">键盘：<kbd>←</kbd><kbd>→</kbd> 移动 · <kbd>↑</kbd> 旋转 · <kbd>↓</kbd> 软降 · <kbd>空格</kbd> 硬降 · <kbd>P</kbd> 暂停 · <kbd>C</kbd> 暂存</div>
+</section>
+
+<!-- ========== 游戏中 ========== -->
+<section id="screenPlay" class="screen">
+  <div class="handheld" id="hh">
+    <span class="screw tl"></span><span class="screw tr"></span><span class="screw bl"></span><span class="screw br"></span>
+    <div class="hbrand"><span class="dot"></span><b>PIXEL WORKS</b><span class="mono" id="hhJob">GB-1989</span></div>
+    <div class="lcdwrap">
+      <span class="pw"></span>
+      <canvas class="lcd" id="lcd" width="128" height="128"></canvas>
+    </div>
+    <div class="scorebar">
+      <div class="sbox"><em>SCORE</em><b class="mono" id="uiScore">0</b></div>
+      <div class="sbox"><em>LINES</em><b class="mono" id="uiLines">0</b></div>
+      <div class="sbox"><em>LV</em><b class="mono" id="uiLv">1</b></div>
+    </div>
+    <div class="msg" id="uiMsg">&nbsp;</div>
+    <div class="pads">
+      <div class="dpad">
+        <div class="cross">
+          <i class="u" data-k="up"></i><i class="d" data-k="down"></i><i class="l" data-k="left"></i><i class="r" data-k="right"></i><i class="hub"></i>
+        </div>
+        <span class="arw u">▲</span><span class="arw d">▼</span><span class="arw l">◀</span><span class="arw r">▶</span>
+        <span class="ctr"></span>
+      </div>
+      <div class="ab">
+        <button class="btn" data-k="hard">硬降</button>
+        <button class="btn" data-k="up">旋转</button>
+      </div>
+    </div>
+    <div class="sysbtns">
+      <button class="sys" id="btnPause">⏸ PAUSE</button>
+      <button class="sys mini" id="btnMute">🔊 音效</button>
+      <button class="sys mini" id="btnQuit">退出</button>
+    </div>
+    <div class="speaker"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+  <div class="tips">消满一行即清空该行待办 · 四行齐消 = 四喜丸子 · <kbd>C</kbd> 键或点击暂存区可存块</div>
+</section>
+
+<!-- ========== 结算 ========== -->
+<section id="screenOver" class="screen">
+  <div class="over">
+    <div class="oh"><b>今日工作战报</b><span class="mono" id="ovSn">—</span></div>
+    <div class="rank">
+      <div class="r mono" id="ovRank">C</div>
+      <div class="rt"><b id="ovTitle">—</b><em id="ovSub">—</em></div>
+    </div>
+    <table class="stats" id="ovStats"></table>
+    <ul class="quips" id="ovQuips"></ul>
+    <div class="acts">
+      <div class="two">
+        <button class="bigbtn alt" id="btnCopy">📋 复制战报</button>
+        <button class="bigbtn alt" id="btnPrint">🖨 打印</button>
+      </div>
+      <button class="bigbtn" id="btnRetry">再来一局</button>
+    </div>
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ================= 基础 ================= */
+function $(id){return document.getElementById(id);}
+function hash(s){var h=2166136261,i;for(i=0;i<s.length;i++){h^=s.charCodeAt(i);h=(h*16777619)>>>0;}return h>>>0;}
+function rng(seed){var s=(seed>>>0)||1;return function(){s^=s<<13;s>>>=0;s^=s>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
+var toastT=null;
+function toast(m){var t=$('toast');t.textContent=m;t.classList.add('show');if(toastT)clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('show');},1900);}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+/* ================= 音效（8-bit 方波） ================= */
+var AC=null,muted=false;
+function audio(){
+  if(AC)return AC;
+  var C=window.AudioContext||window.webkitAudioContext;if(!C)return null;
+  AC=new C();
+  var g=AC.createGain();g.gain.value=.15;g.connect(AC.destination);
+  master=g;AC.__g=g;
+  return AC;
+}
+var master=null;
+function beep(freq,dur,type,vol){
+  if(muted)return;var ac=audio();if(!ac)return;
+  if(ac.state==='suspended')ac.resume();
+  var o=ac.createOscillator(),g=ac.createGain();
+  o.type=type||'square';o.frequency.value=freq;
+  g.gain.setValueAtTime(0,ac.currentTime);
+  g.gain.linearRampToValueAtTime(vol||1,ac.currentTime+.008);
+  g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+dur);
+  o.connect(g);g.connect(master);o.start();o.stop(ac.currentTime+dur+.03);
+}
+var SFX={
+  move:function(){beep(196,.045,'square',.5);},
+  rot:function(){beep(392,.06,'square',.6);},
+  drop:function(){beep(131,.09,'triangle',.9);},
+  lock:function(){beep(98,.05,'square',.5);},
+  clear:function(n){var b=[523,659,784,1047];for(var i=0;i<Math.min(n+1,4);i++)(function(f){setTimeout(function(){beep(f,.13,'square',.85);},i*70);})(b[i]);},
+  tetris:function(){beep(1047,.5,'square',1);setTimeout(function(){beep(1568,.5,'square',1);},110);},
+  boss:function(){beep(110,.5,'sawtooth',1);setTimeout(function(){beep(87,.6,'sawtooth',1);},160);},
+  over:function(){var f=[523,415,330,247,175];f.forEach(function(x,i){setTimeout(function(){beep(x,.22,'triangle',.9);},i*130);});},
+  start:function(){beep(659,.09,'square',.8);setTimeout(function(){beep(880,.16,'square',.8);},110);},
+  lv:function(){beep(880,.1,'square',.8);setTimeout(function(){beep(1175,.14,'square',.8);},90);}
+};
+
+/* ================= 方块定义 ================= */
+var COLS=10,ROWS=18,VROWS=16,CELL=8,GW=COLS*CELL,GH=VROWS*CELL;
+var GB=['#9bbc0f','#8bac0f','#306230','#0f380f'];
+var SHAPES=[
+  [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
+  [[2,2],[2,2]],
+  [[0,3,0],[3,3,3],[0,0,0]],
+  [[0,4,4],[4,4,0],[0,0,0]],
+  [[5,5,0],[0,5,5],[0,0,0]],
+  [[6,0,0],[6,6,6],[0,0,0]],
+  [[0,0,7],[7,7,7],[0,0,0]]
+];
+var ITEMS=['需求','会议','邮件','周报','Bug','团建','出差'];
+function pattern(k){
+  var p=[],x,y;
+  for(y=0;y<8;y++){p.push([]);for(x=0;x<8;x++){
+    var v=3;
+    if(k===1)v=(y%2)?2:3;
+    else if(k===2)v=(x%2)?2:3;
+    else if(k===3)v=((x%4<2)===(y%4<2))?2:3;
+    else if(k===4)v=((x+y)%4<2)?2:3;
+    else if(k===5)v=((x+y)%2)?2:3;
+    else if(k===6)v=(x===0||y===0||x===7||y===7)?2:3;
+    else v=(x>=2&&x<=5&&y>=2&&y<=5)?2:3;
+    p[y].push(v);
+  }}
+  return p;
+}
+var PAT=[];for(var pi=0;pi<7;pi++)PAT.push(pattern(pi+1));
+
+/* ================= 岗位 ================= */
+var JOBS=[
+  {n:'实习生',g:.85,bonus:1.15,note:'手速生疏，但主管看你可怜，分数加成 +15%'},
+  {n:'熟练专员',g:1,bonus:1,note:'标准人类，标准工时，标准疲惫'},
+  {n:'部门主管',g:1.22,bonus:1.08,note:'上面有老板，下面有你，两边都催'},
+  {n:'卷王本王',g:1.5,bonus:1.2,note:'你不需要睡眠，你只需要绩效'},
+  {n:'外包兄弟',g:1.35,bonus:1.12,note:'工牌是别人的，命是自己的'}
+];
+function jobOf(id){
+  var h=hash(id||'anon');
+  return JOBS[h%JOBS.length];
+}
+
+/* ================= 状态 ================= */
+var board,cur,nxt,hold,holdUsed,score,lines,level,combo,maxCombo,tetrisCount,pieces,startAt,over,paused;
+var gravityAcc=0,lockT=0,lockResets=0,landed=false,clearing=null,clearT=0,bossWarn=0,bossOn=false,bossT=0,bossAt=false;
+var bag=[],rnd=null,seedId='anon';
+var lastT=0,rafId=null,msgTimer=null;
+var repT=null,repI=null;
+
+function newBoard(){var b=[],y,x;for(y=0;y<ROWS;y++){b.push([]);for(x=0;x<COLS;x++)b[y].push(0);}return b;}
+function refill(){
+  bag=[];for(var i=0;i<7;i++)bag.push(i+1);
+  for(var j=bag.length-1;j>0;j--){var k=Math.floor(rnd()*(j+1)),t=bag[j];bag[j]=bag[k];bag[k]=t;}
+}
+function nextType(){if(!bag.length)refill();return bag.pop();}
+function mk(type){
+  var s=SHAPES[type-1];
+  return {t:type,m:s,h:s.length,w:s[0].length,x:Math.floor((COLS-s[0].length)/2),y:0};
+}
+function rot(m){
+  var h=m.length,w=m[0].length,o=[],y,x;
+  for(y=0;y<w;y++){o.push([]);for(x=0;x<h;x++)o[y].push(m[h-1-x][y]);}
+  return o;
+}
+function hit(m,px,py){
+  var y,x;
+  for(y=0;y<m.length;y++)for(x=0;x<m[y].length;x++){
+    if(!m[y][x])continue;
+    var bx=px+x,by=py+y;
+    if(bx<0||bx>=COLS||by>=ROWS)return true;
+    if(by>=0&&board[by][bx])return true;
+  }
+  return false;
+}
+function spawn(){
+  cur=mk(nxt);nxt=nextType();
+  landed=false;lockT=0;lockResets=0;gravityAcc=0;
+  if(hit(cur.m,cur.x,cur.y)){endGame();return;}
+}
+function ghostY(){var y=cur.y;while(!hit(cur.m,cur.x,y+1))y++;return y;}
+function move(dx){
+  if(over||paused||clearing)return false;
+  if(!hit(cur.m,cur.x+dx,cur.y)){cur.x+=dx;if(landed){lockT=0;lockResets++;}SFX.move();return true;}
+  return false;
+}
+function rotate(){
+  if(over||paused||clearing)return;
+  var m=rot(cur.m);
+  for(var i=0;i<[0,-1,1,-2,2].length;i++){
+    var k=[0,-1,1,-2,2][i];
+    if(!hit(m,cur.x+k,cur.y)){cur.m=m;cur.w=m[0].length;cur.h=m.length;cur.x+=k;if(landed){lockT=0;lockResets++;}SFX.rot();return;}
+  }
+}
+function softDrop(){
+  if(over||paused||clearing)return;
+  if(!hit(cur.m,cur.x,cur.y+1)){cur.y++;score++;syncUI();SFX.move();}
+}
+function hardDrop(){
+  if(over||paused||clearing)return;
+  var y=cur.y;while(!hit(cur.m,cur.x,y+1))y++;
+  score+=(y-cur.y)*2;cur.y=y;syncUI();SFX.drop();lock();
+}
+function holdSwap(){
+  if(over||paused||clearing||holdUsed)return;
+  var t=cur.t;
+  if(hold){cur=mk(hold);hold=t;}
+  else{hold=t;cur=mk(nxt);nxt=nextType();}
+  holdUsed=true;landed=false;lockT=0;lockResets=0;
+  if(hit(cur.m,cur.x,cur.y)){endGame();return;}
+  SFX.rot();
+}
+function step(){
+  if(over||paused||clearing)return;
+  if(!hit(cur.m,cur.x,cur.y+1)){cur.y++;landed=false;gravityAcc=0;}
+  else{
+    if(!landed){landed=true;lockT=0;}
+    lockT+=16.7;
+    if(lockT>380||lockResets>14)lock();
+  }
+}
+function lock(){
+  var y,x;
+  for(y=0;y<cur.m.length;y++)for(x=0;x<cur.m[y].length;x++){
+    if(cur.m[y][x]){
+      var by=cur.y+y,bx=cur.x+x;
+      if(by<0){endGame();return;}
+      board[by][bx]=cur.t;
+    }
+  }
+  pieces++;holdUsed=false;SFX.lock();
+  var full=[];
+  for(y=0;y<ROWS;y++){var f=true;for(x=0;x<COLS;x++)if(!board[y][x]){f=false;break;}if(f)full.push(y);}
+  if(full.length)startClear(full);
+  else{combo=0;spawn();}
+}
+function startClear(rows){
+  clearing={rows:rows,n:rows.length};clearT=0;
+  SFX.clear(rows.length);
+  if(rows.length===4){SFX.tetris();tetrisCount++;flash();}
+}
+function finishClear(){
+  var rows=clearing.rows.slice(),n=rows.length;
+  rows.sort(function(a,b){return a-b;});
+  rows.forEach(function(r){board.splice(r,1);var nr=[];for(var x=0;x<COLS;x++)nr.push(0);board.unshift(nr);});
+  lines+=n;combo++;if(combo>maxCombo)maxCombo=combo;
+  var base=[0,100,300,500,800][n]||800;
+  var bonus=combo>1?combo*60:0;
+  score+=Math.round((base+bonus)*level*jobOf(seedId).bonus);
+  var lv=Math.floor(lines/8)+1;
+  clearing=null;
+  syncUI();
+  pulse($('uiScore'));pulse($('uiLines'));
+  if(lv>level){level=lv;syncUI();SFX.lv();toast('升到 LV'+level+' · 手速跟上！');}
+  var qs=['这批待办清得漂亮','领导看了都沉默','终于不是你的锅了','一行清空，情绪稳定','绩效+1','本周最佳清空'];
+  setMsg((n===4?'四喜丸子！全屏炸开 · ':'')+qs[Math.floor(Math.random()*qs.length)]);
+  spawn();
+}
+function togglePause(){
+  if(over)return;
+  paused=!paused;
+  $('btnPause').textContent=paused?'▶ RESUME':'⏸ PAUSE';
+  if(paused)setMsg('已暂停');else{lastT=0;setMsg('继续');}
+}
+
+/* ================= 老板视察 ================= */
+function bossCheck(){
+  if(bossOn||bossWarn>0||over)return;
+  if(lines>0&&lines%6===0&&!bossAt){bossWarn=1.5;SFX.boss();$('hh').classList.add('alert');setMsg('老板正在靠近工位…');}
+  else if(rnd()<0.008){bossWarn=1.5;SFX.boss();$('hh').classList.add('alert');setMsg('老板正在靠近工位…');}
+}
+function bossStart(){
+  bossOn=true;bossWarn=0;bossT=5200;flash();
+  setMsg('老板视察中！手别停，撑住');
+  beep(220,.3,'sawtooth',1);
+}
+function bossEnd(){
+  bossOn=false;$('hh').classList.remove('alert');bossAt=true;
+  setMsg('老板走了，继续');
+  beep(523,.1,'square',.7);
+}
+
+/* ================= 渲染 ================= */
+var cv=null,ctx=null;
+function initCv(){cv=$('lcd');ctx=cv.getContext('2d');ctx.imageSmoothingEnabled=false;}
+function px(x,y,c){ctx.fillStyle=c;ctx.fillRect(x,y,1,1);}
+function drawCell(cx,cy,type){
+  var p=PAT[type-1],x,y;
+  for(y=0;y<8;y++)for(x=0;x<8;x++){var v=p[y][x];if(v)px(cx*CELL+x,cy*CELL+y,GB[v]);}
+}
+function draw(){
+  if(!ctx)return;
+  var y,x;
+  ctx.fillStyle=GB[0];ctx.fillRect(0,0,128,128);
+  /* 只画外框 + 地面线，不画满格网格（真掌机游戏都不画） */
+  ctx.fillStyle=GB[1];
+  ctx.fillRect(0,0,GW,1);ctx.fillRect(0,GH-1,GW,1);ctx.fillRect(0,0,1,GH);ctx.fillRect(GW-1,0,1,GH);
+  ctx.fillStyle=GB[2];ctx.fillRect(0,GH-3,GW,2);
+  if(stackTop()>=12){
+    ctx.fillStyle=GB[3];
+    if(Math.floor(Date.now()/220)%2)for(x=0;x<GW;x++)ctx.fillRect(x,12*8,1,1);
+  }
+  var off=ROWS-VROWS;
+  for(y=off;y<ROWS;y++)for(x=0;x<COLS;x++){
+    if(board[y][x]&&clearing&&clearing.rows.indexOf(y)>=0)continue;
+    if(board[y][x])drawCell(x,y-off,board[y][x]);
+  }
+  if(clearing){
+    ctx.fillStyle=(Math.floor(clearT/90)%2)===0?GB[3]:GB[1];
+    clearing.rows.forEach(function(r){if(r>=off)ctx.fillRect(0,(r-off)*8,GW,8);});
+  }
+  if(cur&&!over&&!clearing){
+    var gy=ghostY();
+    if(gy!==cur.y){
+      ctx.fillStyle=GB[1];
+      for(y=0;y<cur.h;y++)for(x=0;x<cur.w;x++){
+        if(!cur.m[y][x])continue;
+        var by=gy+y-off;if(by<0)continue;
+        var bx=(cur.x+x)*8;
+        ctx.fillRect(bx,by*8,7,1);ctx.fillRect(bx,by*8+7,7,1);
+        ctx.fillRect(bx,by*8,1,7);ctx.fillRect(bx+7,by*8,1,7);
+      }
+    }
+    for(y=0;y<cur.h;y++)for(x=0;x<cur.w;x++){
+      if(!cur.m[y][x])continue;
+      var cy2=cur.y+y-off;if(cy2<0)continue;
+      drawCell(cur.x+x,cy2,cur.t);
+    }
+  }
+  var ix=GW+4;
+  ctx.fillStyle=GB[3];ctx.fillRect(ix,0,1,GH);
+  ctx.fillStyle=GB[3];ctx.fillRect(ix+2,3,42,10);
+  ctx.fillStyle=GB[0];ctx.font='7px ui-monospace,monospace';ctx.textBaseline='top';
+  ctx.fillText('NEXT',ix+5,4);
+  ctx.fillStyle=GB[1];ctx.fillRect(ix+2,14,42,26);
+  if(nxt)drawMini(nxt,ix+8,20);
+  ctx.fillStyle=GB[3];ctx.fillRect(ix+2,50,42,10);
+  ctx.fillStyle=GB[0];ctx.fillText('HOLD',ix+5,51);
+  ctx.fillStyle=GB[1];ctx.fillRect(ix+2,61,42,26);
+  if(hold)drawMini(hold,ix+8,67);
+  ctx.fillStyle=GB[3];ctx.fillRect(ix+2,95,42,10);
+  ctx.fillStyle=GB[0];ctx.fillText('JOB',ix+5,96);
+  ctx.fillStyle=GB[1];ctx.fillRect(ix+2,106,42,20);
+  var jn=jobOf(seedId).n;
+  ctx.fillStyle=GB[3];ctx.font='6px ui-monospace,monospace';
+  ctx.fillText(jn.slice(0,4),ix+4,107);ctx.fillText(jn.slice(4),ix+4,114);
+  if(bossOn){
+    ctx.fillStyle=GB[3];
+    var yy=Math.floor(Date.now()/70)%2?0:1;
+    for(y=0;y<GH;y+=4)ctx.fillRect(0,y+yy,GW,2);
+  }
+  if(paused&&!over){
+    ctx.fillStyle=GB[1];ctx.fillRect(14,52,100,24);
+    ctx.fillStyle=GB[3];ctx.fillRect(15,53,98,22);
+    ctx.fillStyle=GB[0];ctx.font='9px ui-monospace,monospace';
+    ctx.fillText('PAUSED',38,60);
+  }
+  if(over){
+    ctx.fillStyle=GB[1];ctx.fillRect(10,44,108,40);
+    ctx.fillStyle=GB[3];ctx.fillRect(11,45,106,38);
+    ctx.fillStyle=GB[0];ctx.font='11px ui-monospace,monospace';
+    ctx.fillText('GAME',44,49);ctx.fillText('OVER',44,62);
+  }
+}
+function drawMini(type,ox,oy){
+  var s=SHAPES[type-1],y,x,minx=9,maxx=-1,miny=9,maxy=-1;
+  for(y=0;y<s.length;y++)for(x=0;x<s[y].length;x++)if(s[y][x]){if(x<minx)minx=x;if(x>maxx)maxx=x;if(y<miny)miny=y;if(y>maxy)maxy=y;}
+  var w=(maxx-minx+1),h=(maxy-miny+1);
+  var sx=ox+Math.floor((6-w)/2)*6,sy=oy+Math.floor((5-h)/2)*6;
+  var p=PAT[type-1];
+  for(y=miny;y<=maxy;y++)for(x=minx;x<=maxx;x++){
+    if(!s[y][x])continue;
+    var bx=sx+(x-minx)*6,by=sy+(y-miny)*6;
+    for(var py=0;py<6;py++)for(var pxx=0;pxx<6;pxx++)px(bx+pxx,by+py,GB[p[py][pxx]]);
+  }
+}
+function stackTop(){
+  for(var y=0;y<ROWS;y++)for(var x=0;x<COLS;x++)if(board[y][x])return y;
+  return ROWS;
+}
+function flash(){
+  var c=$('lcd');c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash');
+}
+function syncUI(){
+  $('uiScore').textContent=score.toLocaleString();
+  $('uiLines').textContent=lines;
+  $('uiLv').textContent=level;
+}
+function pulse(el){el.classList.remove('pulse');void el.offsetWidth;el.classList.add('pulse');}
+function setMsg(t){
+  $('uiMsg').innerHTML=t;
+  if(msgTimer)clearTimeout(msgTimer);
+  msgTimer=setTimeout(function(){$('uiMsg').innerHTML='&nbsp;';},2600);
+}
+
+/* ================= 主循环 ================= */
+function loop(t){
+  rafId=requestAnimationFrame(loop);
+  if(!lastT)lastT=t;
+  var dt=Math.min(60,t-lastT);lastT=t;
+  if(over||paused){draw();return;}
+  if(bossWarn>0){bossWarn-=dt;if(bossWarn<=0)bossStart();}
+  if(bossOn){bossT-=dt;if(bossT<=0)bossEnd();}
+  if(clearing){clearT+=dt;if(clearT>460)finishClear();draw();return;}
+  var g=(0.55+level*0.11)*jobOf(seedId).g*(bossOn?3.2:1);
+  gravityAcc+=dt;
+  var guard=0;
+  while(gravityAcc>=g*1000&&guard++<8){gravityAcc-=g*1000;step();if(over||clearing)break;}
+  bossCheck();
+  draw();
+}
+
+/* ================= 开始 / 结束 ================= */
+function start(id){
+  seedId=(id||'').trim()||'anon';
+  rnd=rng(hash(seedId+'|block'));
+  board=newBoard();refill();
+  nxt=nextType();
+  score=0;lines=0;level=1;combo=0;maxCombo=0;tetrisCount=0;pieces=0;
+  over=false;paused=false;hold=null;holdUsed=false;clearing=null;
+  bossOn=false;bossWarn=0;bossT=0;bossAt=false;landed=false;lockT=0;lockResets=0;gravityAcc=0;
+  startAt=Date.now();
+  $('hh').classList.remove('alert');
+  $('uiScore').textContent='0';$('uiLines').textContent='0';$('uiLv').textContent='1';
+  $('hhJob').textContent='GB-1989 · '+jobOf(seedId).n;
+  $('btnPause').textContent='⏸ PAUSE';
+  $('uiMsg').innerHTML='&nbsp;';
+  show('screenPlay');
+  initCv();
+  spawn();
+  lastT=0;
+  if(rafId)cancelAnimationFrame(rafId);
+  rafId=requestAnimationFrame(loop);
+  SFX.start();
+  setMsg('开工！'+jobOf(seedId).note);
+}
+function endGame(){
+  if(over)return;
+  over=true;paused=false;
+  if(rafId)cancelAnimationFrame(rafId);
+  draw();
+  SFX.over();
+  try{
+    var hi=parseInt(localStorage.getItem('gb_hi')||'0',10)||0;
+    if(score>hi){localStorage.setItem('gb_hi',String(score));$('idleHi').textContent=score;}
+  }catch(e){}
+  setTimeout(showReport,700);
+}
+
+/* ================= 战报 ================= */
+var RANKS=[
+  {r:'C',t:'原地待命',s:'一块都没消掉，工位保住了，绩效没保住'},
+  {r:'B',t:'实习生水准',s:'能消几行，但大部分时间在犹豫'},
+  {r:'A',t:'熟练专员',s:'节奏稳定，老板挑不出毛病'},
+  {r:'S',t:'部门支柱',s:'你的待办清空速度就是部门的血压'},
+  {r:'SS',t:'卷王本王',s:'建议立即休息，但我知道你不会'}
+];
+var QUIPS=[
+  '你的待办不是被消掉了，只是换了个方式堆在心里。',
+  '「需求」永远消不完，但手掌机会没电。',
+  '如果你把这份战报发给人事，可能算加班证明。',
+  '老板视察时你撑住了，现实中可没有重开按钮。',
+  '本次工位建议起身接杯水，屏幕不拦你。'
+];
+function quips(){
+  return QUIPS.concat([
+    '四喜丸子出现 '+tetrisCount+' 次，比本月团建还难得。',
+    '最高连击 '+maxCombo+'，说明你偶尔能进入状态。',
+    '本次工位运行 '+Math.max(1,Math.round((Date.now()-startAt)/60000))+' 分钟。'
+  ]);
+}
+function showReport(){
+  var mins=Math.max(0.03,(Date.now()-startAt)/60000);
+  var rk;
+  if(lines===0)rk=RANKS[0];
+  else if(lines<6)rk=RANKS[1];
+  else if(lines<16)rk=RANKS[2];
+  else if(lines<30)rk=RANKS[3];
+  else rk=RANKS[4];
+  $('ovRank').textContent=rk.r;
+  $('ovTitle').textContent=rk.t;
+  $('ovSub').textContent=rk.s;
+  $('ovSn').textContent='工号 '+seedId+' · '+jobOf(seedId).n;
+  var ot=lines>0?(mins/lines).toFixed(1):'0.0';
+  var rows=[
+    ['最终得分',score.toLocaleString()],
+    ['消除待办',lines+' 行'],
+    ['四喜丸子',tetrisCount+' 次'],
+    ['最高连击',maxCombo+' 连'],
+    ['掉落事项',pieces+' 个'],
+    ['到达等级','LV '+level],
+    ['工位时长',Math.round(mins*60)+' 秒'],
+    ['加班指数',ot+' 分/行'],
+    ['今日岗位',jobOf(seedId).n]
+  ];
+  $('ovStats').innerHTML=rows.map(function(r){return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>';}).join('');
+  var r2=rng(hash(seedId+lines));
+  var qs=quips(),out=[];
+  while(out.length<3&&qs.length)out.push(qs.splice(Math.floor(r2()*qs.length),1)[0]);
+  $('ovQuips').innerHTML=out.map(function(q){return '<li>'+q+'</li>';}).join('');
+  window.__report={rank:rk.r,title:rk.t,sub:rk.s,score:score,lines:lines,tetris:tetrisCount,combo:maxCombo,pieces:pieces,level:level,mins:mins,id:seedId,job:jobOf(seedId).n};
+  show('screenOver');
+}
+function plainReport(){
+  var r=window.__report;if(!r)return '';
+  var L=[];
+  L.push('【方块工位 · 今日工作战报】');
+  L.push('工号：'+r.id+' · 岗位：'+r.job);
+  L.push('评级：'+r.rank+' · '+r.title);
+  L.push('「'+r.sub+'」');
+  L.push('');
+  L.push('最终得分：'+r.score.toLocaleString());
+  L.push('消除待办：'+r.lines+' 行');
+  L.push('四喜丸子：'+r.tetris+' 次');
+  L.push('最高连击：'+r.combo+' 连');
+  L.push('掉落事项：'+r.pieces+' 个');
+  L.push('到达等级：LV '+r.level);
+  L.push('工位时长：'+Math.round(r.mins*60)+' 秒');
+  L.push('');
+  L.push('—— 来自一台 1989 年的掌机');
+  return L.join('\n');
+}
+
+/* ================= 屏幕切换 ================= */
+function show(id){
+  ['screenIdle','screenPlay','screenOver'].forEach(function(x){$(x).classList.remove('on');});
+  $(id).classList.add('on');
+  window.scrollTo(0,0);
+}
+
+/* ================= 输入 ================= */
+function act(k){
+  if(over||paused||clearing)return;
+  if(k==='left')move(-1);
+  else if(k==='right')move(1);
+  else if(k==='down')softDrop();
+  else if(k==='up')rotate();
+  else if(k==='hard')hardDrop();
+  else if(k==='hold')holdSwap();
+}
+function stopRep(){if(repT)clearTimeout(repT);if(repI)clearInterval(repI);repT=repI=null;}
+function bindHold(el,k){
+  el.addEventListener('pointerdown',function(e){
+    e.preventDefault();
+    audio();
+    act(k);
+    stopRep();
+    repT=setTimeout(function(){repI=setInterval(function(){act(k);},75);},170);
+  });
+  ['pointerup','pointercancel','pointerleave','lostpointercapture'].forEach(function(ev){el.addEventListener(ev,stopRep);});
+}
+Array.prototype.forEach.call(document.querySelectorAll('[data-k]'),function(el){bindHold(el,el.dataset.k);});
+
+var KEYMAP={ArrowLeft:'left',ArrowRight:'right',ArrowDown:'down',ArrowUp:'up',' ':'hard',Spacebar:'hard',x:'up',X:'up',z:'up',Z:'up',p:'pause',P:'pause',c:'hold',C:'hold'};
+document.addEventListener('keydown',function(e){
+  var k=KEYMAP[e.key];
+  if(!k)return;
+  e.preventDefault();
+  if(e.repeat)return;
+  audio();
+  if(k==='pause'){if($('screenPlay').classList.contains('on'))togglePause();return;}
+  if(!$('screenPlay').classList.contains('on'))return;
+  act(k);
+  stopRep();
+  repT=setTimeout(function(){repI=setInterval(function(){act(k);},80);},170);
+});
+document.addEventListener('keyup',function(e){if(KEYMAP[e.key])stopRep();});
+
+/* ================= 待机屏动画 ================= */
+var idleCv=null,idleCtx=null,idleT=0;
+function px2(x,y,col){idleCtx.fillStyle=col;idleCtx.fillRect(x,y,1,1);}
+function idleLoop(t){
+  requestAnimationFrame(idleLoop);
+  idleT=t||0;
+  if(!idleCtx)return;
+  var c=idleCtx;
+  c.fillStyle=GB[0];c.fillRect(0,0,128,128);
+  var off=Math.floor(idleT/70)%8;
+  c.fillStyle=GB[1];
+  for(var x=0;x<128;x+=8)c.fillRect(x,96+((x/8)%2?off:0),1,2);
+  for(var y=0;y<32;y+=8)c.fillRect(0,96+y,128,1);
+  var items=[[1,3],[4,7],[2,4],[6,6],[3,5],[5,8],[7,4]];
+  items.forEach(function(it,i){
+    var ph=(idleT/16+i*40)%160;
+    var y2=Math.floor(ph)-24;
+    if(y2<-8||y2>128)return;
+    var p=PAT[it[0]-1];
+    for(var yy=0;yy<8;yy++)for(var xx=0;xx<8;xx++)if(p[yy][xx])px2(it[1]*8+xx,y2+yy,GB[p[yy][xx]]);
+  });
+  c.fillStyle=GB[3];c.font='bold 13px ui-monospace,monospace';c.textBaseline='top';
+  c.fillText('BLOCK',26,16);c.fillText('DESK',30,31);
+  c.fillStyle=GB[2];c.font='7px ui-monospace,monospace';
+  c.fillText('PIXEL WORKS GB-1989',16,50);
+  if(Math.floor(idleT/500)%2){c.fillStyle=GB[3];c.fillText('- PRESS START -',30,66);}
+}
+
+/* ================= 按钮 ================= */
+$('btnStart').addEventListener('click',function(){audio();start($('idIn').value);});
+$('btnStart2').addEventListener('click',function(){audio();start($('idIn').value);});
+$('idIn').addEventListener('keydown',function(e){if(e.key==='Enter'){audio();start(this.value);}});
+$('btnPause').addEventListener('click',function(){if($('screenPlay').classList.contains('on'))togglePause();});
+$('btnQuit').addEventListener('click',function(){
+  over=true;paused=false;
+  if(rafId)cancelAnimationFrame(rafId);
+  show('screenIdle');
+});
+$('btnRetry').addEventListener('click',function(){start(seedId);});
+$('btnCopy').addEventListener('click',function(){
+  var txt=plainReport();
+  function ok(){toast('战报已复制 · 发给同事看看');}
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok,function(){fb(txt,ok);});
+  else fb(txt,ok);
+});
+function fb(txt,ok){
+  var ta=document.createElement('textarea');
+  ta.value=txt;ta.style.position='fixed';ta.style.left='-9999px';
+  document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');ok();}catch(e){toast('复制失败，请长按选择');}
+  document.body.removeChild(ta);
+}
+$('btnPrint').addEventListener('click',function(){toast('已调起打印 · 选 A4 效果最好');setTimeout(function(){window.print();},400);});
+function setMute(m){
+  muted=m;
+  $('btnMute').textContent=m?'🔇 静音':'🔊 音效';
+  $('btnMute2').textContent=m?'🔇 静音':'🔊 音效';
+}
+$('btnMute').addEventListener('click',function(){audio();setMute(!muted);});
+$('btnMute2').addEventListener('click',function(){audio();setMute(!muted);});
+
+/* ================= 初始化 ================= */
+function init(){
+  var hi=0;try{hi=parseInt(localStorage.getItem('gb_hi')||'0',10)||0;}catch(e){}
+  $('idleHi').textContent=hi;
+  idleCv=$('lcdIdle');idleCtx=idleCv.getContext('2d');
+  idleCtx.imageSmoothingEnabled=false;
+  requestAnimationFrame(idleLoop);
+  $('idIn').addEventListener('input',function(){
+    var v=this.value.trim();
+    $('idleJob').textContent=v?jobOf(v).n:'随机';
+    if(v)$('idleMsg').innerHTML='工号 '+esc(v)+' → <b>'+jobOf(v).n+'</b>';
+    else $('idleMsg').textContent='按 START 开机 · 输入工号决定岗位';
+  });
+  window.__game={
+    start:start,jobOf:jobOf,pattern:pattern,SHAPES:SHAPES,ITEMS:ITEMS,PAT:PAT,
+    COLS:COLS,ROWS:ROWS,VROWS:VROWS,
+    state:function(){return{score:score,lines:lines,level:level,over:over,paused:paused,tetris:tetrisCount,combo:maxCombo,pieces:pieces,bossOn:bossOn};},
+    board:function(){return board.map(function(r){return r.slice();});},
+    fill:function(n){for(var i=0;i<n;i++){board[ROWS-1-i]=[1,1,1,1,1,1,1,1,1,1];}},
+    clear:function(n){var a=[];for(var j=0;j<n;j++)a.push(ROWS-1-j);startClear(a);},
+    setBoss:function(){bossWarn=.05;},
+    hit:function(m,x,y){return hit(m,x,y);},
+    curInfo:function(){return cur?{m:cur.m.map(function(r){return r.slice();}),h:cur.h,w:cur.w,x:cur.x,y:cur.y,t:cur.t}:null;},
+    mk:mk,rot:rot,step:step,lock:lock,move:move,rotate:rotate,hardDrop:hardDrop,softDrop:softDrop,
+    ghostY:ghostY,stackTop:stackTop,draw:draw
+  };
+}
+init();
+})();
+</script>
+</body>
+</html>
