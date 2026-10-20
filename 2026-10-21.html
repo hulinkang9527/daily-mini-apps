@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>涂鸦留声机 · 你画的东西会唱歌</title>
+<meta name="description" content="SCRIBBLE FM 涂鸦留声机：随手画一笔，它就变成一首歌。可以下载音乐和海报。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23FFC93C'/%3E%3Cpath d='M12 42c8-22 14 6 22-10s12 10 18-6' stroke='%23141414' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='48' cy='18' r='7' fill='%23FF4D3D' stroke='%23141414' stroke-width='4'/%3E%3C/svg%3E">
+<style>
+:root{
+  --paper:#F4F1E8; --ink:#141414; --red:#FF4D3D; --yellow:#FFC93C;
+  --blue:#2B5CE6; --green:#17B890; --violet:#8E44C7; --pink:#FF7BAC;
+  --card:#FFFFFF; --sh:4px 4px 0 var(--ink);
+  --f:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --fm:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper); color:var(--ink); font-family:var(--f);
+  min-height:100vh; overflow-x:hidden; line-height:1.6;
+  background-image:
+    radial-gradient(circle at 12% 8%, rgba(255,201,60,.20), transparent 42%),
+    radial-gradient(circle at 88% 22%, rgba(43,92,230,.14), transparent 40%),
+    radial-gradient(circle at 50% 96%, rgba(255,77,61,.12), transparent 46%);
+}
+button{font-family:inherit}
+.wrap{width:100%; max-width:1000px; margin:0 auto; padding:14px 14px 30px}
+.screen{display:none; animation:fade .34s ease both}
+.screen.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.screen{animation:none}}
+
+/* ---------- 通用元件 ---------- */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  min-height:46px; padding:11px 20px; border:3px solid var(--ink); border-radius:14px;
+  background:var(--card); color:var(--ink); font-size:15px; font-weight:800; cursor:pointer;
+  box-shadow:var(--sh); transition:transform .1s, box-shadow .1s; text-decoration:none; line-height:1.2;
+}
+.btn:active{transform:translate(4px,4px); box-shadow:0 0 0 var(--ink)}
+.btn.big{min-height:60px; padding:16px 30px; font-size:20px; border-radius:18px; border-width:4px; box-shadow:6px 6px 0 var(--ink)}
+.btn.y{background:var(--yellow)} .btn.r{background:var(--red); color:#fff}
+.btn.b{background:var(--blue); color:#fff} .btn.g{background:var(--green); color:#fff}
+.btn.sm{min-height:44px; padding:8px 14px; font-size:14px; border-width:2.5px; box-shadow:3px 3px 0 var(--ink)}
+.btn:disabled{opacity:.42; cursor:not-allowed; transform:none; box-shadow:var(--sh)}
+.row{display:flex; gap:10px; flex-wrap:wrap}
+.tag{
+  display:inline-block; padding:4px 12px; border:2.5px solid var(--ink); border-radius:999px;
+  background:var(--card); font-size:12.5px; font-weight:800; letter-spacing:.04em;
+}
+.mono{font-family:var(--fm)}
+.hr{height:3px;background:var(--ink);margin:16px 0;border-radius:2px; opacity:.85}
+
+/* ---------- INTRO ---------- */
+#screenIntro{position:relative; overflow:hidden; min-height:100vh}
+.deco{position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:0}
+.deco i{position:absolute; display:block; animation:float 9s ease-in-out infinite}
+.deco .sh1{width:74px;height:74px;border:5px solid var(--ink);border-radius:50%;background:var(--red);top:2%;left:1%}
+.deco .sh2{width:0;height:0;border-left:38px solid transparent;border-right:38px solid transparent;border-bottom:66px solid var(--blue);top:11%;right:8%;animation-delay:-2s}
+.deco .sh3{width:96px;height:96px;border:5px solid var(--ink);background:var(--green);bottom:12%;left:9%;border-radius:20px;animation-delay:-4s}
+.deco .sh4{width:120px;height:120px;border:5px solid var(--ink);background:var(--yellow);bottom:6%;right:12%;border-radius:50%;animation-delay:-1s}
+.deco .sh5{top:auto;bottom:30%;left:2%;width:64px;height:64px;border:5px solid var(--ink);background:var(--violet);border-radius:50% 50% 4px 50%;animation-delay:-3s}
+@keyframes float{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-20px) rotate(9deg)}}
+.intro{position:relative; z-index:1; text-align:center; padding:22px 0; min-height:100vh; display:flex; flex-direction:column; justify-content:center}
+.stamp{
+  display:inline-block; border:4px solid var(--ink); border-radius:16px; background:var(--yellow);
+  padding:5px 18px; font-weight:900; letter-spacing:.22em; font-size:13px; box-shadow:var(--sh); transform:rotate(-2deg)
+}
+h1.title{
+  font-size:clamp(42px,12vw,88px); line-height:1.02; margin:20px 0 6px; font-weight:900; letter-spacing:-.02em;
+}
+h1.title em{font-style:normal; color:var(--red); -webkit-text-stroke:3px var(--ink); text-shadow:5px 5px 0 var(--ink)}
+.sub{font-size:clamp(15px,4vw,20px); font-weight:700; margin:8px auto 22px; max-width:640px}
+.pill{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:26px}
+.pill .tag{background:var(--card)}
+.pill .tag:nth-child(1){background:var(--red);color:#fff}
+.pill .tag:nth-child(2){background:var(--blue);color:#fff}
+.pill .tag:nth-child(3){background:var(--green);color:#fff}
+.howto{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:26px 0 30px; text-align:left
+}
+.howto div{border:3px solid var(--ink); border-radius:16px; padding:14px; background:var(--card); box-shadow:var(--sh)}
+.howto b{display:block; font-size:15px; margin-bottom:4px}
+.howto span{font-size:13px; opacity:.8; line-height:1.5}
+.howto i{font-style:normal; display:inline-flex; width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;align-items:center;justify-content:center;font-size:13px;font-weight:900;margin-bottom:8px}
+.hist{margin-top:34px; text-align:left}
+.hist h3{font-size:14px; letter-spacing:.14em; opacity:.6; margin:0 0 12px; text-transform:uppercase}
+.hcards{display:flex; gap:12px; overflow-x:auto; padding:4px 4px 10px}
+.hcard{flex:0 0 132px; border:3px solid var(--ink); border-radius:14px; background:var(--card); overflow:hidden; box-shadow:var(--sh)}
+.hcard img{width:100%; display:block; border-bottom:3px solid var(--ink)}
+.hcard div{padding:7px 9px; font-size:11.5px; font-weight:800; line-height:1.35}
+.hcard div small{display:block; font-weight:600; opacity:.55; font-size:10.5px; margin-top:2px}
+.histEmpty{font-size:13px; opacity:.55; border:2.5px dashed var(--ink); border-radius:14px; padding:16px; text-align:center}
+.hidden-b{display:none; margin-top:18px}
+.hidden-b.on{display:inline-flex}
+
+/* ---------- STUDIO ---------- */
+.studioHead{display:flex; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap}
+.studioHead h2{font-size:19px; margin:0; font-weight:900; letter-spacing:-.01em; flex:1; min-width:120px}
+.tools{
+  display:flex; gap:9px; flex-wrap:wrap; align-items:center; margin-bottom:12px;
+  border:3px solid var(--ink); border-radius:16px; background:var(--card); padding:10px; box-shadow:var(--sh)
+}
+.tools .lab{font-size:11px; font-weight:900; letter-spacing:.1em; opacity:.55; margin:0 2px 0 4px}
+.swatch{
+  width:44px;height:44px;border:3px solid var(--ink);border-radius:12px;cursor:pointer;padding:0;
+  box-shadow:2px 2px 0 var(--ink); position:relative; background:var(--card)
+}
+.swatch.sel{box-shadow:0 0 0 4px var(--yellow), 2px 2px 0 var(--ink); transform:translate(-1px,-1px)}
+.brushBtn{
+  min-height:44px;min-width:44px;padding:8px 12px;border:3px solid var(--ink);border-radius:12px;background:var(--card);
+  font-size:13px;font-weight:800;cursor:pointer;box-shadow:2px 2px 0 var(--ink)
+}
+.brushBtn.sel{background:var(--ink);color:#fff}
+.brushBtn.sel .sw{display:inline-block;width:20px;height:6px;background:#fff;border-radius:3px;vertical-align:middle}
+.brushBtn .sw{display:inline-block;width:20px;height:6px;background:var(--ink);border-radius:3px;vertical-align:middle}
+.canvasBox{position:relative; border:3px solid var(--ink); border-radius:18px; background:var(--card); box-shadow:6px 6px 0 var(--ink); overflow:hidden}
+#cv{display:block; width:100%; height:auto; touch-action:none; cursor:crosshair; background:#fff}
+.cvHint{
+  padding:9px 12px; font-size:12.5px; font-weight:700;
+  background:#F4F1E8; border-top:3px solid var(--ink); display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap
+}
+.cvHint b{font-family:var(--fm)}
+.playbar{display:flex; align-items:center; gap:10px; margin-top:12px; flex-wrap:wrap}
+.track{flex:1; min-width:180px; height:20px; border:3px solid var(--ink); border-radius:999px; background:var(--card); overflow:hidden; position:relative}
+.track i{display:block; height:100%; width:0; background:var(--green); transition:width .1s linear}
+.playnote{font-size:12.5px; font-weight:800; opacity:.75; min-width:56px; text-align:right; font-family:var(--fm)}
+.studioFoot{margin-top:14px; display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+.studioFoot .grow{flex:1}
+.badgeRow{display:flex; gap:7px; flex-wrap:wrap}
+.bdg{
+  border:2.5px solid var(--ink); border-radius:999px; padding:3px 11px; font-size:11.5px; font-weight:900;
+  background:var(--card); display:inline-flex; align-items:center; gap:4px
+}
+.bdg.on{background:var(--yellow)}
+.err{color:#fff;background:var(--red);border:3px solid var(--ink);border-radius:12px;padding:9px 14px;font-size:13.5px;font-weight:800;margin-top:12px;display:none}
+.err.on{display:block}
+
+/* ---------- RESULT ---------- */
+.resultGrid{display:grid; gap:16px}
+@media(min-width:860px){.resultGrid{grid-template-columns:minmax(360px,460px) 1fr; align-items:start}}
+@media(min-width:1200px){.resultGrid{grid-template-columns:520px 1fr; gap:30px}}
+.posterBox{border:3px solid var(--ink); border-radius:16px; overflow:hidden; box-shadow:6px 6px 0 var(--ink); background:var(--card)}
+#poster{display:block; width:100%; height:auto}
+.meta h3{font-size:clamp(24px,6vw,36px); margin:0 0 4px; font-weight:900; line-height:1.15; letter-spacing:-.01em}
+.meta .sid{font-family:var(--fm); font-size:13px; opacity:.6; margin-bottom:12px}
+@media(min-width:860px){
+  .meta{position:sticky; top:16px}
+  .meta h3{font-size:40px}
+}
+.quote{
+  border-left:6px solid var(--ink); padding:6px 0 6px 14px; margin:0 0 14px; font-size:15px; font-weight:700; line-height:1.65
+}
+.kv{display:grid; grid-template-columns:auto 1fr; gap:6px 14px; font-size:14px; margin-bottom:16px}
+.kv dt{opacity:.55; font-weight:800} .kv dd{margin:0; font-weight:700}
+.sharebox{
+  border:3px dashed var(--ink); border-radius:14px; padding:12px 14px; background:var(--card); font-size:13.5px; line-height:1.7;
+  margin-bottom:14px; white-space:pre-wrap; word-break:break-word
+}
+.toast{
+  position:fixed; left:50%; bottom:26px; transform:translate(-50%,20px); opacity:0; pointer-events:none;
+  background:var(--ink); color:#fff; padding:12px 22px; border-radius:999px; font-size:14px; font-weight:800; z-index:99;
+  transition:opacity .22s, transform .22s; max-width:88vw; text-align:center
+}
+.toast.on{opacity:1; transform:translate(-50%,0)}
+@media(max-width:480px){
+  .howto{grid-template-columns:1fr}
+  .studioHead h2{font-size:17px}
+  .wrap{padding:10px 10px 24px}
+  .deco .sh1{width:52px;height:52px;top:1%;left:-2%}
+  .deco .sh2{border-left-width:26px;border-right-width:26px;border-bottom-width:46px;top:8%;right:3%}
+  .deco .sh4{width:76px;height:76px}
+  .deco .sh3{width:64px;height:64px}
+  .deco .sh5{width:46px;height:46px}
+  h1.title{font-size:44px}
+}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- ============ INTRO ============ -->
+<section class="screen on" id="screenIntro">
+  <div class="deco"><i class="sh1"></i><i class="sh2"></i><i class="sh3"></i><i class="sh4"></i><i class="sh5"></i></div>
+  <div class="wrap intro">
+    <span class="stamp" id="brandStamp">SCRIBBLE FM</span>
+    <h1 class="title" id="bigTitle">涂鸦<br><em>留声机</em></h1>
+    <p class="sub">你随手画的每一笔，都会被翻译成一首歌。<br>横着是时间，纵着是音高 —— 画完就能下载，能带走。</p>
+    <div class="pill">
+      <span class="tag">落笔即出声</span>
+      <span class="tag">真·能下载的 WAV</span>
+      <span class="tag">自动生成单曲海报</span>
+    </div>
+    <div class="howto">
+      <div><i>1</i><b>随便画</b><span>手指拖动就是一笔。想画圆画圆，想划线划线，没有正确答案。</span></div>
+      <div><i>2</i><b>听它唱</b><span>每条笔画会变成一段旋律，从左往右依次奏响。</span></div>
+      <div><i>3</i><b>带走它</b><span>导出成音乐文件或一张海报，发给那个会画画的朋友。</span></div>
+    </div>
+    <div class="row" style="justify-content:center">
+      <button class="btn big r" id="btnStart">开始涂鸦</button>
+      <button class="btn big y" id="btnDemo">听个现成的</button>
+    </div>
+    <div class="row" style="justify-content:center;margin-top:14px">
+      <button class="btn hidden-b" id="btnBSide">◉ B 面电台 · 深夜特别放送</button>
+    </div>
+    <div class="hist">
+      <h3>往期单曲</h3>
+      <div id="histBox"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ STUDIO ============ -->
+<section class="screen" id="screenStudio">
+  <div class="wrap">
+    <div class="studioHead">
+      <button class="btn sm" id="btnHome">← 首页</button>
+      <h2>涂鸦台 <span class="mono" id="strokeCount" style="font-size:14px;opacity:.6">0 笔</span></h2>
+      <span class="tag" id="clockTag">T</span>
+    </div>
+
+    <div class="tools">
+      <span class="lab">笔刷</span>
+      <button class="brushBtn sel" data-brush="marker"><span class="sw"></span> 马克笔</button>
+      <button class="brushBtn" data-brush="flat"><span class="sw"></span> 扁头</button>
+      <button class="brushBtn" data-brush="ball"><span class="sw"></span> 圆珠</button>
+      <span class="lab" style="margin-left:6px">颜色</span>
+      <span id="swatches" class="row" style="gap:7px"></span>
+    </div>
+
+    <div class="canvasBox">
+      <canvas id="cv" width="1000" height="640"></canvas>
+      <div class="cvHint"><span id="hintText">在画布上拖动，落笔就有声音</span><b id="lenTag">0 笔 · 0 音符</b></div>
+    </div>
+    <div class="playbar">
+      <button class="btn g" id="btnPlay">▶ 播放我的涂鸦</button>
+      <div class="track"><i id="trackFill"></i></div>
+      <span class="playnote" id="timeTag">0.0s</span>
+    </div>
+
+    <div class="studioFoot">
+      <button class="btn sm" id="btnUndo">↩ 撤销</button>
+      <button class="btn sm" id="btnClear">✕ 清空</button>
+      <button class="btn sm" id="btnKick" style="background:var(--violet);color:#fff">♩ 鼓点 开</button>
+      <span class="grow"></span>
+      <button class="btn b" id="btnFinish">做成一张单曲 →</button>
+    </div>
+    <div class="badgeRow" id="badgeRow" style="margin-top:12px"></div>
+    <div class="err" id="errBox"></div>
+  </div>
+</section>
+
+<!-- ============ RESULT ============ -->
+<section class="screen" id="screenResult">
+  <div class="wrap">
+    <div class="resultGrid">
+      <div class="posterBox"><canvas id="poster" width="1080" height="1350"></canvas></div>
+      <div class="meta">
+        <h3 id="rTitle">—</h3>
+        <div class="sid" id="rSid">SCR-0000</div>
+        <p class="quote" id="rQuote">—</p>
+        <dl class="kv">
+          <dt>笔刷</dt><dd id="rBrush">—</dd>
+          <dt>颜色</dt><dd id="rColor">—</dd>
+          <dt>音符</dt><dd id="rNotes">—</dd>
+          <dt>时长</dt><dd id="rDur">—</dd>
+          <dt>称号</dt><dd id="rBadges">—</dd>
+        </dl>
+        <div class="sharebox" id="rShare">—</div>
+        <div class="row">
+          <button class="btn r" id="btnWav">⬇ 下载音乐 WAV</button>
+          <button class="btn b" id="btnPng">⬇ 下载海报 PNG</button>
+          <button class="btn y" id="btnCopy">复制分享文案</button>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn" id="btnAgain">再画一张</button>
+          <button class="btn sm" id="btnBackHome">回首页</button>
+        </div>
+        <div class="err" id="errBox2"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function(){
+"use strict";
+
+/* ================= 常量 ================= */
+var ISSUE_DATE = '2026-10-21';       // 本期发布日期（与文件名一致）
+var REF_W = 1000, REF_H = 640;        // 海报/缩略图参考坐标系（固定，跨设备一致）
+var W = 1000, H = 640;                 // 画布逻辑坐标（笔画存归一化坐标，换 H 不丢数据）
+var BRUSHES = {
+  marker:{ w:15, gain:.30, wave:'triangle', lp:1500, name:'马克笔' },
+  flat:  { w:27, gain:.26, wave:'square',   lp:900,  name:'扁头笔' },
+  ball:  { w:8,  gain:.34, wave:'sine',     lp:3200, name:'圆珠笔' }
+};
+var COLORS = ['#141414','#FF4D3D','#2B5CE6','#17B890','#FFC93C','#8E44C7'];
+var COLOR_NAME = {'#141414':'墨黑','#FF4D3D':'朱红','#2B5CE6':'群青','#17B890':'松绿','#FFC93C':'柠黄','#8E44C7':'紫罗兰'};
+var SCALE = [0,2,4,7,9];
+var TITLE_A = ['失焦的','潮湿的','礼貌的','发烫的','半途而废的','不肯承认的','午后三点的','会呼吸的','下坠的','透明的','不肯结束的','偷偷加倍的','正在加载的','假装平静的','凌晨四点的','不太情愿的'];
+var TITLE_B = ['星期三','电梯','便利店','走廊','一场雨','未读消息','试用期','天台','琴键','耳机','台风眼','路灯','回音','副本','空白键','下午茶'];
+var QUOTE_HEAD = [
+  '这一手 {n} 笔，{c} 种颜色，听起来像{s}。',
+  '{n} 笔画完，{s}。',
+  '从左到右 {n} 个音，{c} 种颜色，{s}。',
+  '一共 {n} 笔，混了 {c} 种颜色，{s}。',
+  '这 {n} 笔的走向说明了一件事：{s}。',
+  '{n} 笔，{c} 色，{s}。',
+  '写 {n} 笔，用了 {c} 种颜色，{s}。',
+  '就 {n} 笔，说完了，而且{s}。',
+  '{n} 笔里藏了 {c} 种颜色，{s}。',
+  '数了数，{n} 笔，{c} 种颜色，{s}。',
+  '一共就 {n} 笔的事，{s}。',
+  '{n} 笔落完，{c} 种颜色，{s}。'
+];
+var QUOTE_TAIL = [
+  '而且中间还绕回了自己的起点。',
+  '整首歌平得像没起伏。',
+  '颜色比旋律还忙。',
+  '听第二遍会发现第一遍没听出来的东西。',
+  '像随手写的，但落笔那下不随意。',
+  '结尾比开头潦草。',
+  '中间有一段其实是想重来的。',
+  '不吵，但占地方。',
+  '有点像在跟谁解释，又没解释清楚。',
+  '听着像很普通的一天。',
+  '仔细听有点像在赶时间。',
+  '音量不大，但一直没停。',
+  '有几个音是歪的，留着了。',
+  '听着挺松，其实挺用力。'
+];
+var MOOD = {
+  high:'有点太用力了',
+  mid:'还算正常',
+  low:'闷闷的',
+  fast:'着急',
+  slow:'拖沓',
+  few:'欲言又止',
+  many:'根本停不下来',
+  loop:'绕不出去了',
+  tall:'踮着脚',
+  flat:'躺平状态'
+};
+var BADGE_INFO = {
+  loop:{t:'完美闭环', d:'画了一个闭合的圈', c:'#FF4D3D'},
+  wide:{t:'一横到底', d:'有笔画横穿了整张画布', c:'#2B5CE6'},
+  colorful:{t:'调色盘暴徒', d:'用上了全部 6 种颜色', c:'#8E44C7'},
+  busy:{t:'八笔成诗', d:'画了 8 笔以上', c:'#17B890'},
+  tiny:{t:'一笔成歌', d:'只画了一笔', c:'#FFC93C'},
+  flatline:{t:'心电图', d:'全是水平线', c:'#141414'}
+};
+
+/* ================= 状态 ================= */
+var strokes = [];          // {pts:[{x,y}], brush, color}
+var cur = null;            // 正在画的笔画
+var brush = 'marker';
+var color = '#FF4D3D';
+var kick = true;
+var playing = false;
+var stopFlag = false;
+var lastSong = null;
+var keepDraft = false;     // 从画布回首页时保留草稿，避免误丢作品
+var audioCtx = null;
+var kickNodes = [];
+
+/* ================= 工具 ================= */
+function $(id){ return document.getElementById(id); }
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function hashStr(s){ var h=2166136261; for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+function pad(n){ return (n<10?'0':'')+n; }
+function dstr(d){ return ISSUE_DATE; }
+function toast(msg){
+  var t=$('toast'); t.textContent=msg; t.classList.add('on');
+  clearTimeout(t._tm); t._tm=setTimeout(function(){ t.classList.remove('on'); }, 1900);
+}
+function err(boxId,msg){ var b=$(boxId); b.textContent=msg; b.classList.add('on'); clearTimeout(b._tm); b._tm=setTimeout(function(){ b.classList.remove('on'); }, 4200); }
+function screen(id){
+  var all=document.querySelectorAll('.screen');
+  for(var i=0;i<all.length;i++){ all[i].classList.remove('on'); all[i].style.display='none'; }
+  var el=$(id); el.classList.add('on'); el.style.display='block';
+  window.scrollTo(0,0);
+}
+
+/* ================= 音频 ================= */
+function getCtx(){
+  if(!audioCtx){
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return null;
+    audioCtx = new AC();
+    audioCtx._master = audioCtx.createGain();
+    audioCtx._master.gain.value = .5;         // 留足余量，避免叠加后削波
+    var comp = audioCtx.createDynamicsCompressor();
+    comp.threshold.value=-18; comp.ratio.value=10; comp.attack.value=.002; comp.release.value=.22;
+    // 左右声道分路 → 不同延迟 → 合并，产生真正的立体声宽度
+    try{
+      var split=audioCtx.createChannelSplitter(2);
+      var mrg=audioCtx.createChannelMerger(2);
+      var dL=audioCtx.createDelay(0.5), dR=audioCtx.createDelay(0.5);
+      dL.delayTime.value=0.009; dR.delayTime.value=0.019;
+      var gL=audioCtx.createGain(), gR=audioCtx.createGain();
+      gL.gain.value=0.70; gR.gain.value=0.70;
+      audioCtx._master.connect(comp);
+      comp.connect(split);
+      split.connect(dL,0); dL.connect(gL); gL.connect(mrg,0,0);
+      split.connect(dR,1); dR.connect(gR); gR.connect(mrg,0,1);
+      mrg.connect(audioCtx.destination);
+    }catch(e){ audioCtx._master.connect(comp); comp.connect(audioCtx.destination); }
+    // 简易混响
+    try{
+      var dur=1.5, len=Math.floor(audioCtx.sampleRate*dur);
+      var ir=audioCtx.createBuffer(2,len,audioCtx.sampleRate);
+      for(var ch=0;ch<2;ch++){ var d=ir.getChannelData(ch); for(var i=0;i<len;i++){ d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.4); } }
+      var rev=audioCtx.createConvolver(); rev.buffer=ir;
+      var wet=audioCtx.createGain(); wet.gain.value=.26;
+      audioCtx._master.connect(rev); rev.connect(wet); wet.connect(comp);
+    }catch(e){}
+  }
+  if(audioCtx.state==='suspended' && audioCtx.resume) { try{audioCtx.resume();}catch(e){} }
+  return audioCtx;
+}
+function yToMidi(y){
+  var t = 1 - clamp(y,0,1);
+  var f = t*2.6;
+  var oct = Math.min(2, Math.floor(f));
+  var idx = Math.min(4, Math.floor((f-oct)*5));
+  return 48 + oct*12 + SCALE[idx];
+}
+function synthNote(ctx, note, when, dest){
+  var b = BRUSHES[note.brush] || BRUSHES.marker;
+  var freq = 440*Math.pow(2,(note.midi-69)/12);
+  var dur = note.dur;
+  var osc = ctx.createOscillator();
+  osc.type = b.wave;
+  osc.frequency.setValueAtTime(freq, when);
+  if(note.brush==='ball'){
+    var lfo = ctx.createOscillator(); lfo.type='sine'; lfo.frequency.value = 5.5 + (note.si%4);
+    var lg = ctx.createGain(); lg.gain.value = freq*.012;
+    lfo.connect(lg); lg.connect(osc.frequency);
+    lfo.start(when); lfo.stop(when+dur+.12);
+  }
+  var flt = ctx.createBiquadFilter();
+  flt.type='lowpass'; flt.frequency.setValueAtTime(b.lp*2.2, when);
+  flt.frequency.exponentialRampToValueAtTime(Math.max(220,b.lp), when+dur*.9);
+  flt.Q.value=.7;
+  var g = ctx.createGain();
+  var peak = b.gain * (note.vel||1) * (note.gain||1);
+  g.gain.setValueAtTime(0.0001, when);
+  g.gain.exponentialRampToValueAtTime(Math.max(.001,peak), when+.012);
+  g.gain.exponentialRampToValueAtTime(Math.max(.0002,peak*.35), when+Math.min(dur,.5));
+  g.gain.setValueAtTime(Math.max(.0002,peak*.35), when+Math.max(dur-.05,.02));
+  g.gain.exponentialRampToValueAtTime(0.0001, when+dur+.06);
+  osc.connect(flt); flt.connect(g); g.connect(dest||ctx._master);
+  osc.start(when); osc.stop(when+dur+.1);
+}
+function noiseHit(ctx, when, dur, freq, vol, dest){
+  var len=Math.max(1,Math.floor(ctx.sampleRate*dur));
+  var buf=ctx.createBuffer(1,len,ctx.sampleRate);
+  var d=buf.getChannelData(0);
+  for(var i=0;i<len;i++){ d[i]=(Math.random()*2-1); }
+  var src=ctx.createBufferSource(); src.buffer=buf;
+  var f=ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=freq;
+  var g=ctx.createGain();
+  g.gain.setValueAtTime(vol,when); g.gain.exponentialRampToValueAtTime(.0001, when+dur);
+  src.connect(f); f.connect(g); g.connect(dest||ctx._master);
+  src.start(when); src.stop(when+dur+.02);
+}
+
+/* ================= 乐谱生成 ================= */
+function buildNotes(strokeList, T){
+  var groups = [];
+  for(var si=0; si<strokeList.length; si++){
+    var s = strokeList[si];
+    if(!s.pts || !s.pts.length) continue;
+    if(s.pts.length===1){
+      // 单点也成一个短音，落笔即出声
+      groups.push({ t:s.pts[0].x*T, dur:.14, y:s.pts[0].y, brush:s.brush, si:si,
+                    midi:yToMidi(s.pts[0].y), vel:.85, gain:1 });
+      continue;
+    }
+    var pts = s.pts.slice().sort(function(a,b){ return a.x-b.x; });
+    var gs = [];
+    for(var i=0;i<pts.length;i++){
+      var p = pts[i];
+      if(gs.length && Math.abs(p.x-gs[gs.length-1].x)<0.006){
+        gs[gs.length-1].ys.push(p.y);
+      } else {
+        gs.push({x:p.x, ys:[p.y]});
+      }
+    }
+    // 采样上限
+    var maxG = 30;
+    if(gs.length>maxG){
+      var step = gs.length/maxG, ng=[];
+      for(var k=0;k<maxG;k++){ ng.push(gs[Math.floor(k*step)]); }
+      gs = ng;
+    }
+    for(var g=0; g<gs.length; g++){
+      var t = gs[g].x * T;
+      var nxt = (g+1<gs.length) ? gs[g+1].x : gs[g].x + 0.02;
+      var dur = clamp((nxt-gs[g].x)*T*0.85, .085, 1.25);
+      // 同刻和弦最多 4 音
+      var ys = gs[g].ys;
+      if(ys.length>4){ ys = ys.filter(function(_,i){ return i%Math.ceil(ys.length/4)===0; }); }
+      for(var q=0;q<ys.length;q++){
+        groups.push({
+          t:t, dur:dur, y:ys[q], brush:s.brush, si:si,
+          midi:yToMidi(ys[q]), vel:.8+.4*Math.random(),
+          gain:1
+        });
+      }
+    }
+  }
+  groups.sort(function(a,b){ return a.t-b.t; });
+  if(groups.length>220){
+    var st = groups.length/220, ng2=[];
+    for(var m=0;m<groups.length;m++){ if(Math.floor(m/st)!==Math.floor((m-1)/st)) ng2.push(groups[m]); }
+    groups = ng2;
+  }
+  return groups;
+}
+function analyze(strokeList){
+  var colors={}, totalLen=0, maxX=-1e9, minX=1e9, sumY=0, n=0, loop=false, wide=false, flat=true;
+  for(var i=0;i<strokeList.length;i++){
+    var s=strokeList[i]; colors[s.color]=1;
+    var p=s.pts; if(!p || p.length<2) continue;
+    for(var j=0;j<p.length;j++){
+      sumY+=p[j].y; n++;
+      if(p[j].x>maxX) maxX=p[j].x;
+      if(p[j].x<minX) minX=p[j].x;
+      if(j>0){
+        var dx=p[j].x-p[j-1].x, dy=p[j].y-p[j-1].y;
+        totalLen += Math.sqrt(dx*dx+dy*dy);
+        if(Math.abs(dy)>0.004) flat=false;
+      }
+    }
+    var a=p[0], b=p[p.length-1];
+    var d=Math.sqrt((a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y));
+    if(d<0.028 && p.length>14) loop=true;
+  }
+  var spans = (maxX>=0) ? (maxX-minX) : 0;
+  if(spans>0.86) wide=true;
+  var avgY = n? sumY/n : .5;
+  var colorCount = Object.keys(colors).length;
+  var badges=[];
+  if(loop) badges.push('loop');
+  if(wide) badges.push('wide');
+  if(colorCount>=6) badges.push('colorful');
+  if(strokeList.length>=8) badges.push('busy');
+  if(strokeList.length===1) badges.push('tiny');
+  if(flat && strokeList.length>0) badges.push('flatline');
+  return {
+    strokes:strokeList.length, colors:colorCount, totalLen:totalLen, span:spans,
+    avgY:avgY, badges:badges, colorList:Object.keys(colors), minX:minX, maxX:maxX
+  };
+}
+function moodOf(a){
+  if(a.strokes<=1) return 'few';
+  if(a.strokes>=10) return 'many';
+  if(a.totalLen>3.2) return 'fast';
+  if(a.totalLen<0.9) return 'slow';
+  if(a.avgY<0.34) return 'tall';
+  if(a.avgY>0.68) return 'low';
+  if(a.span>0.9) return 'flat';
+  if(a.badges.indexOf('loop')>=0) return 'loop';
+  return 'mid';
+}
+function makeTitle(a, salt){
+  var r = mulberry32(hashStr('t'+salt+a.strokes+a.colors+a.totalLen.toFixed(3)));
+  var w = TITLE_A[Math.floor(r()*TITLE_A.length)];
+  var n = TITLE_B[Math.floor(r()*TITLE_B.length)];
+  return '《' + w + n + '》';
+}
+function makeQuote(a, salt){
+  var r = mulberry32(hashStr('q'+salt+a.strokes+a.colors+a.totalLen.toFixed(3)+a.span.toFixed(3)));
+  var tpl = QUOTE_HEAD[Math.floor(r()*QUOTE_HEAD.length)];
+  var s = MOOD[moodOf(a)];
+  var out = tpl.replace('{n}', a.strokes).replace('{c}', a.colors).replace('{s}', s);
+  var tail = QUOTE_TAIL[Math.floor(r()*QUOTE_TAIL.length)];
+  if(a.badges.indexOf('loop')>=0) out += ' 而且中间还绕回了自己的起点。';
+  else if(a.badges.indexOf('flatline')>=0) out += ' 整首歌平得像没起伏。';
+  else if(a.colors>=5) out += ' 颜色比旋律还忙。';
+  else out += ' ' + tail;
+  return out;
+}
+
+/* ================= 画布 ================= */
+var cv = $('cv'), ctx2 = cv.getContext('2d');
+function drawAll(progressX){
+  ctx2.clearRect(0,0,W,H);
+  ctx2.fillStyle='#FFFFFF'; ctx2.fillRect(0,0,W,H);
+  // 淡淡的五线格
+  ctx2.strokeStyle='rgba(20,20,20,.07)'; ctx2.lineWidth=1;
+  for(var y=0;y<=H;y+=64){ ctx2.beginPath(); ctx2.moveTo(0,y+.5); ctx2.lineTo(W,y+.5); ctx2.stroke(); }
+  for(var x=0;x<=W;x+=50){ ctx2.beginPath(); ctx2.moveTo(x+.5,0); ctx2.lineTo(x+.5,H); ctx2.stroke(); }
+  for(var i=0;i<strokes.length;i++){
+    var s=strokes[i], p=s.pts;
+    if(p.length<1) continue;
+    var b=BRUSHES[s.brush];
+    // 影
+    ctx2.save();
+    ctx2.lineCap='round'; ctx2.lineJoin='round';
+    ctx2.strokeStyle=s.color; ctx2.lineWidth=b.w; ctx2.globalAlpha=1;
+    ctx2.beginPath(); ctx2.moveTo(p[0].x*W, p[0].y*H);
+    for(var k=1;k<p.length;k++) ctx2.lineTo(p[k].x*W, p[k].y*H);
+    if(p.length===1){ ctx2.arc(p[0].x*W, p[0].y*H, b.w/2, 0, Math.PI*2); ctx2.fillStyle=s.color; ctx2.fill(); }
+    ctx2.stroke();
+    if(s.brush==='flat'){
+      ctx2.globalAlpha=.35; ctx2.strokeStyle='#fff'; ctx2.lineWidth=b.w*.22;
+      ctx2.beginPath(); ctx2.moveTo(p[0].x*W-2, p[0].y*H-2);
+      for(var k2=1;k2<p.length;k2++) ctx2.lineTo(p[k2].x*W-2, p[k2].y*H-2);
+      ctx2.stroke();
+    }
+    ctx2.restore();
+    // 播放高亮
+    if(progressX!=null){
+      var minx=1e9, maxx=-1e9;
+      for(var q=0;q<p.length;q++){ if(p[q].x<minx)minx=p[q].x; if(p[q].x>maxx)maxx=p[q].x; }
+      if(minx<=progressX){
+        var done = Math.max(minx, Math.min(maxx, progressX));
+        ctx2.save();
+        ctx2.strokeStyle='#FFC93C'; ctx2.lineWidth=b.w+7; ctx2.lineCap='round'; ctx2.lineJoin='round';
+        ctx2.beginPath();
+        var started=false;
+        for(var z=0;z<p.length;z++){
+          if(p[z].x>done) break;
+          if(!started){ ctx2.moveTo(p[z].x*W, p[z].y*H); started=true; }
+          else ctx2.lineTo(p[z].x*W, p[z].y*H);
+        }
+        if(started) ctx2.stroke();
+        ctx2.restore();
+      }
+    }
+  }
+  if(cur && cur.pts.length){
+    var p2=cur.pts, b2=BRUSHES[cur.brush];
+    ctx2.save(); ctx2.strokeStyle=cur.color; ctx2.lineWidth=b2.w; ctx2.lineCap='round'; ctx2.lineJoin='round';
+    ctx2.beginPath(); ctx2.moveTo(p2[0].x*W, p2[0].y*H);
+    for(var m=1;m<p2.length;m++) ctx2.lineTo(p2[m].x*W, p2[m].y*H);
+    ctx2.stroke(); ctx2.restore();
+  }
+}
+function cvPos(e){
+  var r=cv.getBoundingClientRect();
+  return { x: clamp((e.clientX-r.left)/r.width,0,1), y: clamp((e.clientY-r.top)/r.height,0,1) };
+}
+function pushPt(e){
+  var p=cvPos(e);
+  if(cur.pts.length){
+    var last=cur.pts[cur.pts.length-1];
+    var dx=p.x-last.x, dy=p.y-last.y;
+    if(dx*dx+dy*dy < 0.000012) return;   // 抖动过滤
+  }
+  cur.pts.push(p);
+  // 实时出声：每 0.035 单位出一个音
+  if(cur.pts.length%3===0) liveNote(p);
+}
+var liveLast = 0;
+function liveNote(p){
+  var c=getCtx(); if(!c) return;
+  var now=c.currentTime;
+  if(now-liveLast<0.045) return;
+  liveLast=now;
+  var midi=yToMidi(p.y);
+  synthNote(c, {midi:midi, dur:.16, brush:cur?cur.brush:brush, vel:.55, gain:.7, si:0}, now+.001);
+}
+cv.addEventListener('pointerdown', function(e){
+  if(playing) return;
+  e.preventDefault();
+  try{ cv.setPointerCapture(e.pointerId); }catch(err){}
+  cur = { pts:[], brush:brush, color:color };
+  cur.pts.push(cvPos(e));
+  liveLast=0;
+  drawAll(null); refreshCounts();
+});
+cv.addEventListener('pointermove', function(e){
+  if(!cur || playing) return;
+  e.preventDefault();
+  pushPt(e);
+  drawAll(null);
+});
+function endStroke(e){
+  if(!cur) return;
+  if(e && e.type==='pointercancel'){ cur=null; drawAll(null); return; }
+  if(cur.pts.length>1) strokes.push(cur);
+  else if(cur.pts.length===1) strokes.push(cur);
+  cur=null;
+  drawAll(null); refreshCounts();
+}
+cv.addEventListener('pointerup', endStroke);
+cv.addEventListener('pointercancel', endStroke);
+cv.addEventListener('touchstart', function(e){ e.preventDefault(); }, {passive:false});
+cv.addEventListener('touchmove', function(e){ e.preventDefault(); }, {passive:false});
+
+function refreshCounts(){
+  var a=analyze(strokes);
+  var T = durationFor(a);
+  var notes = buildNotes(strokes, T).length;
+  $('strokeCount').textContent = strokes.length + ' 笔';
+  $('lenTag').textContent = strokes.length + ' 笔 · ' + notes + ' 音符';
+  $('clockTag').textContent = 'T = ' + T.toFixed(1) + 's';
+  renderBadges(a);
+  $('btnUndo').disabled = strokes.length===0;
+  $('btnClear').disabled = strokes.length===0;
+}
+function durationFor(a){
+  return clamp(8 + a.strokes*1.6, 10, 20);
+}
+function renderBadges(a){
+  var box=$('badgeRow'); box.innerHTML='';
+  if(!a.badges.length){ box.innerHTML='<span class="bdg" style="opacity:.5">还没有称号 —— 多画几笔试试</span>'; return; }
+  for(var i=0;i<a.badges.length;i++){
+    var b=BADGE_INFO[a.badges[i]]; if(!b) continue;
+    var el=document.createElement('span');
+    el.className='bdg on'; el.style.background=b.c; el.style.color = b.c==='#FFC93C' ? '#141414' : '#fff';
+    el.textContent=b.t;
+    el.title=b.d;
+    box.appendChild(el);
+  }
+}
+
+/* ================= 播放 ================= */
+function playSong(song, onDone){
+  var c=getCtx(); if(!c){ err('errBox','这个浏览器不支持 Web Audio，换个浏览器试试。'); return; }
+  playing=true; stopFlag=false;
+  $('btnPlay').innerHTML='■ 停止';
+  var notes=song.notes, T=song.T;
+  var start=c.currentTime+0.15;
+  var idx=0;
+  var kickIdx=0;
+  var nextKick=0.0;
+  function tick(){
+    if(stopFlag){ finish(true); return; }
+    var now=c.currentTime;
+    var ahead=now+0.28;
+    while(idx<notes.length && start+notes[idx].t<ahead){
+      var n=notes[idx++];
+      synthNote(c, n, start+n.t, c._master);
+    }
+    if(kick){
+      while(nextKick < T && start+nextKick<ahead){
+        var k=nextKick;
+        // 底鼓
+        var kb=c.createOscillator(); kb.type='sine';
+        var kg=c.createGain();
+        kb.frequency.setValueAtTime(140, start+k);
+        kb.frequency.exponentialRampToValueAtTime(46, start+k+0.11);
+        kg.gain.setValueAtTime(.34, start+k);
+        kg.gain.exponentialRampToValueAtTime(.0001, start+k+0.18);
+        kb.connect(kg); kg.connect(c._master);
+        kb.start(start+k); kb.stop(start+k+0.2);
+        // 踩镲
+        if(Math.floor(k*2)%2===1) noiseHit(c, start+k, 0.045, 7200, .075, c._master);
+        nextKick+=0.5;
+      }
+    }
+    var el=now-start;
+    if(el<0) el=0;
+    var prog=clamp(el/T,0,1);
+    $('trackFill').style.width=(prog*100).toFixed(1)+'%';
+    $('timeTag').textContent=el.toFixed(1)+'s';
+    drawAll(prog*W);
+    if(el<T+0.8) requestAnimationFrame(tick);
+    else finish(false);
+  }
+  function finish(stopped){
+    playing=false; stopFlag=false;
+    $('btnPlay').innerHTML='▶ 播放我的涂鸦';
+    $('trackFill').style.width='0%';
+    $('timeTag').textContent='0.0s';
+    drawAll(null);
+    if(!stopped && onDone) onDone();
+  }
+  requestAnimationFrame(tick);
+}
+
+/* ================= 演示曲 ================= */
+function demoStrokes(){
+  var r=mulberry32(20261021);
+  var out=[];
+  var brs=['marker','flat','ball'];
+  var cols=['#FF4D3D','#2B5CE6','#17B890','#141414'];
+  for(var i=0;i<5;i++){
+    var pts=[], n=60, y0=.25+r()*.45, x0=.05+r()*.2, len=.35+r()*.5;
+    var amp=.05+r()*.13, fq=1+Math.floor(r()*3);
+    for(var k=0;k<=n;k++){
+      var u=k/n;
+      pts.push({x:clamp(x0+u*len,0,1), y:clamp(y0+Math.sin(u*Math.PI*2*fq)*amp*(1-u*.3),.03,.97)});
+    }
+    out.push({pts:pts, brush:brs[i%3], color:cols[i%4]});
+  }
+  return out;
+}
+
+/* ================= 海报 ================= */
+function drawPoster(song){
+  var pc=$('poster'); var g=pc.getContext('2d');
+  var PW=1080, PH=1350;
+  g.fillStyle='#F4F1E8'; g.fillRect(0,0,PW,PH);
+  var r=mulberry32(hashStr('p'+song.sid));
+  // 顶条
+  g.fillStyle='#FFC93C'; g.fillRect(0,0,PW,150);
+  g.fillStyle='#141414'; g.fillRect(0,146,PW,8);
+  g.fillStyle='#141414';
+  g.font='900 44px '+FONT; g.textBaseline='middle';
+  g.fillText('SCRIBBLE FM', 56, 66);
+  g.font='700 30px '+FONT;
+  g.fillText('涂鸦留声机 · 你画的东西会唱歌', 56, 116);
+
+  // 曲名（自动换行，宽度避开右侧黑胶）
+  var title = song.title.replace(/[《》]/g,'');
+  g.fillStyle='#141414';
+  g.font='900 76px '+FONT;
+  var lines = wrapText(g, title, 56, 250, 680, 88);
+  lines.forEach(function(ln,i){ g.fillText(ln, 56, 250+i*88); });
+  // 标题带右侧的小花纹（避开黑胶 778~978）
+  g.save();
+  g.globalAlpha=.5; g.strokeStyle='#141414'; g.lineWidth=5;
+  g.fillStyle='#FFC93C';
+  g.beginPath(); g.arc(722, 218, 26, 0, Math.PI*2); g.fill(); g.stroke();
+  g.fillStyle='#FF4D3D';
+  g.beginPath(); g.moveTo(700, 300); g.lineTo(736, 340); g.lineTo(700, 340); g.closePath(); g.fill(); g.stroke();
+  g.strokeStyle='#17B890'; g.lineWidth=8;
+  g.beginPath(); g.moveTo(690, 186); g.lineTo(700, 168); g.lineTo(710, 186); g.lineTo(720, 168); g.stroke();
+  g.restore();
+
+  // 画框（等比缩放居中，涂鸦不变形）
+  var bx=60, by=400, bw=960, bh=600;
+  g.fillStyle='#141414'; g.fillRect(bx+12, by+12, bw, bh);
+  g.fillStyle='#fff'; g.fillRect(bx, by, bw, bh);
+  // 孟菲斯花纹画在画框内，作为涂鸦背景
+  g.save();
+  g.beginPath(); g.rect(bx,by,bw,bh); g.clip();
+  posterConfetti(g, r, bx, by, bw, bh);
+  g.restore();
+  g.save();
+  g.beginPath(); g.rect(bx,by,bw,bh); g.clip();
+  var sc = Math.min(bw/REF_W, bh/REF_H);
+  g.translate(bx + (bw-REF_W*sc)/2, by + (bh-REF_H*sc)/2);
+  g.scale(sc, sc);
+  paintStrokes(g, song.strokes, null, true, REF_W, REF_H);
+  g.restore();
+  g.strokeStyle='#141414'; g.lineWidth=7; g.strokeRect(bx, by, bw, bh);
+
+  // 编号
+  g.fillStyle='#141414';
+  g.font='700 34px '+FONT;
+  g.fillText(song.sid, 60, 1062);
+  g.font='700 30px '+FONT; g.globalAlpha=.65;
+  g.fillText(song.date + '  ·  ' + song.brushName + '  ·  ' + song.noteCount + ' 个音符', 60, 1108);
+  g.globalAlpha=1;
+
+  // 称号
+  var bx2=60;
+  for(var b=0;b<song.badges.length && b<4;b++){
+    var bd=BADGE_INFO[song.badges[b]]; if(!bd) continue;
+    g.font='900 28px '+FONT;
+    var tw=g.measureText(bd.t).width;
+    g.fillStyle=bd.c; g.strokeStyle='#141414'; g.lineWidth=4;
+    roundRect(g, bx2, 1148, tw+44, 54, 27); g.fill(); g.stroke();
+    g.fillStyle = bd.c==='#FFC93C' ? '#141414' : '#fff';
+    g.fillText(bd.t, bx2+22, 1175);
+    bx2 += tw+44+16;
+  }
+
+  // 底部品牌条
+  g.fillStyle='#141414'; g.fillRect(0, 1240, PW, 110);
+  g.fillStyle='#F4F1E8';
+  g.font='900 34px '+FONT;
+  g.fillText('SCRIBBLE FM · 涂鸦留声机', 56, 1281);
+  g.font='700 26px '+FONT; g.globalAlpha=.7;
+  g.fillText('每个编号只属于一个人的一次涂鸦', 56, 1322);
+  g.globalAlpha=1;
+  // 假条形码
+  var bx3=790, seed2=mulberry32(hashStr('bc'+song.sid));
+  for(var k=0;k<44;k++){
+    var bw2=2+Math.floor(seed2()*7);
+    g.fillStyle = seed2()>0.45 ? '#F4F1E8' : '#141414';
+    g.fillRect(bx3, 1262, bw2, 66);
+    bx3 += bw2+2;
+    if(bx3>1024) break;
+  }
+
+  // 黑胶
+  g.save();
+  g.translate(878, 262); g.rotate(-0.2);
+  g.fillStyle='#141414'; g.beginPath(); g.arc(0,0,100,0,Math.PI*2); g.fill();
+  g.strokeStyle='rgba(255,255,255,.22)'; g.lineWidth=2;
+  for(var rr=24; rr<96; rr+=10){ g.beginPath(); g.arc(0,0,rr,0,Math.PI*2); g.stroke(); }
+  g.fillStyle='#FF4D3D'; g.beginPath(); g.arc(0,0,32,0,Math.PI*2); g.fill();
+  g.strokeStyle='#141414'; g.lineWidth=5; g.stroke();
+  g.fillStyle='#141414'; g.beginPath(); g.arc(0,0,5,0,Math.PI*2); g.fill();
+  g.restore();
+}
+var FONT = '"PingFang SC","Microsoft YaHei","Hiragino Sans GB",system-ui,sans-serif';
+function posterConfetti(g, r, bx, by, bw, bh){
+  var used = [];
+  for(var i=0;i<15;i++){
+    var s=34+r()*104, t=Math.floor(r()*4), x=0, y=0, tries=0;
+    do{
+      x = bx+34 + r()*(bw-68);
+      y = by+34 + r()*(bh-68);
+      tries++;
+    } while(tries<12 && used.some(function(u){ return Math.abs(u.x-x)<150 && Math.abs(u.y-y)<140; }));
+    used.push({x:x,y:y});
+    g.save(); g.translate(x,y); g.rotate(r()*1.2);
+    g.globalAlpha=.26; g.strokeStyle='#141414'; g.lineWidth=6;
+    if(t===0){ g.fillStyle=['#FFC93C','#FF4D3D','#2B5CE6','#17B890'][i%4]; g.beginPath(); g.arc(0,0,s/2,0,Math.PI*2); g.fill(); g.stroke(); }
+    else if(t===1){ g.fillStyle=['#2B5CE6','#8E44C7'][i%2]; g.beginPath(); g.moveTo(0,-s/2); g.lineTo(s/2,s/2); g.lineTo(-s/2,s/2); g.closePath(); g.fill(); g.stroke(); }
+    else if(t===2){ g.strokeStyle=['#FF4D3D','#141414','#17B890'][i%3]; g.lineWidth=12; g.beginPath(); for(var q=0;q<=40;q++){ var px=-s/2+q/40*s, py=Math.sin(q/40*Math.PI*3)*22; q===0?g.moveTo(px,py):g.lineTo(px,py); } g.stroke(); }
+    else { g.fillStyle='#FFC93C'; g.fillRect(-s/2,-s/2,s,s); g.strokeRect(-s/2,-s/2,s,s); }
+    g.restore();
+  }
+}
+function roundRect(g,x,y,w,h,r){
+  g.beginPath();
+  g.moveTo(x+r,y); g.lineTo(x+w-r,y); g.quadraticCurveTo(x+w,y,x+w,y+r);
+  g.lineTo(x+w,y+h-r); g.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  g.lineTo(x+r,y+h); g.quadraticCurveTo(x,y+h,x,y+h-r);
+  g.lineTo(x,y+r); g.quadraticCurveTo(x,y,x+r,y); g.closePath();
+}
+function wrapText(g, text, x, y, maxW, lh){
+  var words = text.split(''), line='', out=[];
+  for(var i=0;i<words.length;i++){
+    var t = line + words[i];
+    if(g.measureText(t).width>maxW && line){ out.push(line); line=words[i]; }
+    else line=t;
+  }
+  if(line) out.push(line);
+  return out.slice(0,2);
+}
+function paintStrokes(g, list, progressX, posterMode, rw, rh){
+  var PW2 = rw||W, PH2 = rh||H;
+  for(var i=0;i<list.length;i++){
+    var s=list[i], p=s.pts, b=BRUSHES[s.brush];
+    if(!p || !p.length) continue;
+    g.save();
+    g.lineCap='round'; g.lineJoin='round';
+    g.strokeStyle=s.color; g.lineWidth=b.w;
+    g.beginPath(); g.moveTo(p[0].x*PW2, p[0].y*PH2);
+    for(var k=1;k<p.length;k++) g.lineTo(p[k].x*PW2, p[k].y*PH2);
+    if(p.length===1){ g.fillStyle=s.color; g.beginPath(); g.arc(p[0].x*PW2,p[0].y*PH2,b.w/2,0,Math.PI*2); g.fill(); }
+    else g.stroke();
+    if(s.brush==='flat'){
+      g.globalAlpha=.35; g.strokeStyle='#fff'; g.lineWidth=b.w*.22;
+      g.beginPath(); g.moveTo(p[0].x*PW2-2,p[0].y*PH2-2);
+      for(var k2=1;k2<p.length;k2++) g.lineTo(p[k2].x*PW2-2,p[k2].y*PH2-2);
+      g.stroke();
+    }
+    g.restore();
+  }
+}
+
+/* ================= WAV 导出 ================= */
+function renderSongOffline(song){
+  var c=getCtx(); if(!c) return Promise.reject(new Error('no audio'));
+  var sr=c.sampleRate;
+  var dur=song.T+1.2;
+  var OC=window.OfflineAudioContext||window.webkitOfflineAudioContext;
+  if(!OC) return Promise.reject(new Error('no offline'));
+  var off=new OC(2, Math.ceil(sr*dur), sr);
+  var master=off.createGain(); master.gain.value=.5;
+  var comp=off.createDynamicsCompressor();
+  comp.threshold.value=-18; comp.ratio.value=10; comp.attack.value=.002; comp.release.value=.22;
+  master.connect(comp);
+  // 真正分左右：拆分 → 各走不同延迟 → 合并 → 输出
+  try{
+    var split=off.createChannelSplitter(2);
+    var mrg=off.createChannelMerger(2);
+    var dL=off.createDelay(0.5), dR=off.createDelay(0.5);
+    dL.delayTime.value=0.009; dR.delayTime.value=0.019;
+    var gL=off.createGain(), gR=off.createGain();
+    gL.gain.value=0.70; gR.gain.value=0.70;
+    comp.connect(split);
+    split.connect(dL,0); dL.connect(gL); gL.connect(mrg,0,0);
+    split.connect(dR,1); dR.connect(gR); gR.connect(mrg,0,1);
+    mrg.connect(off.destination);
+  }catch(e){ comp.connect(off.destination); }
+  for(var i=0;i<song.notes.length;i++){
+    var n=song.notes[i];
+    synthNote(off, n, 0.06+n.t, master);
+  }
+  if(song.kick){
+    for(var k=0;k<song.T;k+=0.5){
+      var kb=off.createOscillator(); kb.type='sine';
+      var kg=off.createGain();
+      kb.frequency.setValueAtTime(140,k+0.06);
+      kb.frequency.exponentialRampToValueAtTime(46,k+0.06+0.11);
+      kg.gain.setValueAtTime(.32,k+0.06);
+      kg.gain.exponentialRampToValueAtTime(.0001,k+0.06+0.18);
+      kb.connect(kg); kg.connect(master);
+      kb.start(k+0.06); kb.stop(k+0.06+0.2);
+      if(Math.floor(k*2)%2===1) noiseHit(off, k+0.06, 0.045, 7200, .07, master);
+    }
+  }
+  // 收尾盖章音
+  var st=off.createOscillator(); st.type='triangle'; st.frequency.setValueAtTime(220, song.T+0.1);
+  st.frequency.exponentialRampToValueAtTime(90, song.T+0.5);
+  var sg=off.createGain();
+  sg.gain.setValueAtTime(.22, song.T+0.1);
+  sg.gain.exponentialRampToValueAtTime(.0001, song.T+0.55);
+  st.connect(sg); sg.connect(master); st.start(song.T+0.1); st.stop(song.T+0.6);
+  return off.startRendering();
+}
+function encodeWav(buf){
+  var numCh=buf.numberOfChannels, len=buf.length, sr=buf.sampleRate;
+  var bytesPerSample=2, blockAlign=numCh*bytesPerSample, dataSize=len*blockAlign;
+  var ab=new ArrayBuffer(44+dataSize), v=new DataView(ab);
+  function ws(o,s){ for(var i=0;i<s.length;i++) v.setUint8(o+i, s.charCodeAt(i)); }
+  ws(0,'RIFF'); v.setUint32(4,36+dataSize,true); ws(8,'WAVE'); ws(12,'fmt ');
+  v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,numCh,true);
+  v.setUint32(24,sr,true); v.setUint32(28,sr*blockAlign,true);
+  v.setUint16(32,blockAlign,true); v.setUint16(34,16,true);
+  ws(36,'data'); v.setUint32(40,dataSize,true);
+  var chans=[]; for(var c=0;c<numCh;c++) chans.push(buf.getChannelData(c));
+  var off=44;
+  for(var i=0;i<len;i++){
+    for(var c2=0;c2<numCh;c2++){
+      var s=Math.max(-1,Math.min(1,chans[c2][i]));
+      v.setInt16(off, s<0? s*0x8000 : s*0x7FFF, true); off+=2;
+    }
+  }
+  return new Blob([ab], {type:'audio/wav'});
+}
+function download(blob, name){
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url; a.download=name;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 400);
+}
+
+/* ================= 历史 ================= */
+var HKEY='scrfm-history-v1';
+var DKEY='scrfm-dailycount-v1';
+function loadHist(){
+  try{ var raw=localStorage.getItem(HKEY); var arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }
+  catch(e){ return []; }
+}
+function saveHist(arr){
+  try{ localStorage.setItem(HKEY, JSON.stringify(arr.slice(0,6))); }catch(e){}
+}
+function todayCount(){
+  var d=dstr(new Date());
+  try{
+    var raw=localStorage.getItem(DKEY);
+    var obj=raw?JSON.parse(raw):null;
+    if(!obj || obj.d!==d) { localStorage.setItem(DKEY, JSON.stringify({d:d,n:0})); return 0; }
+    return obj.n|0;
+  }catch(e){ return 0; }
+}
+function bumpToday(){
+  var d=dstr(new Date()), n=todayCount();
+  try{ localStorage.setItem(DKEY, JSON.stringify({d:d,n:n+1})); }catch(e){}
+  return n+1;
+}
+function renderHist(){
+  var h=loadHist(), box=$('histBox');
+  if(!h.length){ box.innerHTML='<div class="histEmpty">还没有往期单曲 —— 你将是第一个。</div>'; return; }
+  var html='<div class="hcards">';
+  for(var i=0;i<h.length;i++){
+    html+='<div class="hcard"><img src="'+h[i].thumb+'" alt="'+h[i].title+'"><div>'+h[i].title+'<small>'+h[i].date+' · '+h[i].sid+'</small></div></div>';
+  }
+  box.innerHTML=html+'</div>';
+}
+function addHist(item){
+  var h=loadHist();
+  h.unshift(item);
+  if(h.length>6) h.length=6;
+  saveHist(h);
+  renderHist();
+}
+
+/* ================= 事件绑定 ================= */
+function buildSwatches(){
+  var box=$('swatches'); box.innerHTML='';
+  for(var i=0;i<COLORS.length;i++){
+    (function(c){
+      var b=document.createElement('button');
+      b.className='swatch'+(c===color?' sel':'');
+      b.style.background=c; b.setAttribute('aria-label','颜色 '+COLOR_NAME[c]);
+      b.addEventListener('click', function(){ color=c; buildSwatches(); });
+      box.appendChild(b);
+    })(COLORS[i]);
+  }
+}
+var brushBtns=document.querySelectorAll('.brushBtn');
+for(var bi=0;bi<brushBtns.length;bi++){
+  brushBtns[bi].addEventListener('click', function(){
+    brush=this.getAttribute('data-brush');
+    var all=document.querySelectorAll('.brushBtn');
+    for(var j=0;j<all.length;j++) all[j].classList.remove('sel');
+    this.classList.add('sel');
+  });
+}
+$('btnStart').addEventListener('click', function(){
+  getCtx();
+  if(!keepDraft) strokes=[];
+  keepDraft=false;
+  screen('screenStudio');
+  drawAll(null); refreshCounts();
+});
+$('btnDemo').addEventListener('click', function(){
+  getCtx();
+  strokes = demoStrokes();
+  screen('screenStudio');
+  refreshCounts();
+  toast('这是替你画好的一首，播放听听');
+});
+$('btnHome').addEventListener('click', function(){ keepDraft = strokes.length>0; screen('screenIntro'); renderHist(); });
+$('btnBackHome').addEventListener('click', function(){ keepDraft=false; screen('screenIntro'); renderHist(); });
+$('btnUndo').addEventListener('click', function(){
+  if(playing) return;
+  strokes.pop(); drawAll(null); refreshCounts();
+});
+$('btnClear').addEventListener('click', function(){
+  if(playing) return;
+  strokes=[]; drawAll(null); refreshCounts();
+});
+$('btnKick').addEventListener('click', function(){
+  kick=!kick;
+  this.innerHTML = kick ? '♩ 鼓点 开' : '♩ 鼓点 关';
+  this.style.background = kick ? 'var(--violet)' : 'var(--card)';
+  this.style.color = kick ? '#fff' : 'var(--ink)';
+});
+$('btnPlay').addEventListener('click', function(){
+  if(playing){ stopFlag=true; return; }
+  if(!strokes.length){ err('errBox','先画点什么再播放呀。'); return; }
+  var a=analyze(strokes), T=durationFor(a);
+  var notes=buildNotes(strokes, T);
+  playSong({notes:notes, T:T}, null);
+});
+$('btnFinish').addEventListener('click', function(){
+  if(!strokes.length){ err('errBox','至少画一笔才能做成单曲。'); return; }
+  buildResult();
+});
+function buildResult(){
+  var a=analyze(strokes), T=durationFor(a);
+  var notes=buildNotes(strokes, T);
+  var d=new Date();
+  var salt=d.getTime();
+  var title=makeTitle(a, salt);
+  var quote=makeQuote(a, salt);
+  var sid='SCR-'+ISSUE_DATE.replace(/-/g,'')+'-'+pad(bumpToday());
+  var brushNames=[];
+  for(var i=0;i<strokes.length;i++){ if(brushNames.indexOf(BRUSHES[strokes[i].brush].name)<0) brushNames.push(BRUSHES[strokes[i].brush].name); }
+  var colorNames=[];
+  for(var c2=0;c2<a.colorList.length;c2++){ colorNames.push(COLOR_NAME[a.colorList[c2]]||a.colorList[c2]); }
+  var song={
+    sid:sid, date:dstr(d), title:title, quote:quote, notes:notes, T:T,
+    strokes:strokes.map(function(s){ return {pts:s.pts, brush:s.brush, color:s.color}; }),
+    badges:a.badges, noteCount:notes.length,
+    brushName: brushNames.join('/')||'—',
+    colorText: colorNames.join('、')||'—',
+    kick:kick
+  };
+  lastSong=song;
+  $('rTitle').textContent=title;
+  $('rSid').textContent=sid + '   ·   ' + song.date;
+  $('rQuote').textContent=quote;
+  $('rBrush').textContent=song.brushName;
+  $('rColor').textContent=song.colorText;
+  $('rNotes').textContent=notes.length + ' 个';
+  $('rDur').textContent=T.toFixed(1) + ' 秒';
+  $('rBadges').textContent = a.badges.length ? a.badges.map(function(k){ return BADGE_INFO[k]?BADGE_INFO[k].t:k; }).join(' · ') : '暂无';
+  var share='我画了一首《'+title.replace(/[《》]/g,'')+'》\n' + sid + ' · ' + song.date + '\n' + quote + '\n—— 用涂鸦留声机画的，你能听出我什么心情？';
+  $('rShare').textContent=share;
+  song.share=share;
+  drawPoster(song);
+  // 历史缩略
+  try{
+    var th=document.createElement('canvas'); th.width=240; th.height=300;
+    var tg=th.getContext('2d');
+    tg.fillStyle='#F4F1E8'; tg.fillRect(0,0,240,300);
+    tg.save(); tg.translate(10,10); tg.scale(220/REF_W, 190/REF_H);
+    paintStrokes(tg, song.strokes, null, true, REF_W, REF_H);
+    tg.restore();
+    tg.fillStyle='#141414'; tg.font='900 20px '+FONT;
+    tg.fillText(title.replace(/[《》]/g,'').slice(0,8), 12, 240);
+    tg.font='600 14px '+FONT; tg.globalAlpha=.6;
+    tg.fillText(sid, 12, 268);
+    addHist({title:title, sid:sid, date:song.date, thumb:th.toDataURL('image/jpeg',0.7)});
+  }catch(e){}
+  screen('screenResult');
+}
+$('btnAgain').addEventListener('click', function(){
+  strokes=[]; drawAll(null); refreshCounts(); screen('screenStudio');
+});
+$('btnPng').addEventListener('click', function(){
+  if(!lastSong) return;
+  $('poster').toBlob(function(b){
+    if(!b){ err('errBox2','海报生成失败了，换个浏览器试试。'); return; }
+    download(b, lastSong.sid+'.png');
+    toast('海报已下载');
+  }, 'image/png');
+});
+$('btnWav').addEventListener('click', function(){
+  if(!lastSong) return;
+  var btn=this; btn.disabled=true; btn.textContent='渲染中…';
+  renderSongOffline(lastSong).then(function(buf){
+    var blob=encodeWav(buf);
+    download(blob, lastSong.sid+'.wav');
+    toast('音乐已下载');
+  }).catch(function(e){
+    err('errBox2','音频渲染失败：'+(e&&e.message?e.message:e));
+  }).then(function(){
+    btn.disabled=false; btn.textContent='⬇ 下载音乐 WAV';
+  });
+});
+$('btnCopy').addEventListener('click', function(){
+  if(!lastSong) return;
+  var txt=lastSong.share;
+  function done(){ toast('分享文案已复制'); }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done).catch(function(){ fallback(); });
+  } else fallback();
+  function fallback(){
+    var ta=document.createElement('textarea');
+    ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); done(); }catch(e){ err('errBox2','复制失败，手动选中下面的文字吧。'); }
+    document.body.removeChild(ta);
+  }
+});
+// 隐藏 B 面电台：连点标题 5 次
+var titleClicks=0;
+$('bigTitle').addEventListener('click', function(){
+  titleClicks++;
+  if(titleClicks>=5){ $('btnBSide').classList.add('on'); titleClicks=0; toast('发现了一个电台…'); }
+});
+$('btnBSide').addEventListener('click', function(){
+  var c=getCtx(); if(!c) return;
+  var r=mulberry32(Date.now()&0xffff);
+  var notes=[];
+  var base=45+Math.floor(r()*6);
+  var pat=[0,0.5,1,1.5,2,2.5,3,3.5];
+  for(var bar=0; bar<3; bar++){
+    for(var i=0;i<pat.length;i++){
+      if(r()<0.25) continue;
+      var midi=base+[0,3,5,7,10,12][Math.floor(r()*6)];
+      notes.push({midi:midi, dur:.22, brush:'square', vel:.7, gain:.8, t:bar*4+pat[i]});
+    }
+  }
+  playSong({notes:notes, T:12}, function(){ toast('B 面放送完毕 · 今夜无人接听'); });
+  toast('◉ 深夜频道 · 信号很弱');
+});
+
+/* ================= 初始化 ================= */
+function fitCanvas(){
+  // 窄屏用更高的画布，手机上好画
+  var narrow = Math.min(window.innerWidth||1000, 1000) < 560;
+  var nh = narrow ? 900 : 640;
+  if(nh!==H){ H=nh; cv.height=H; }
+}
+fitCanvas();
+buildSwatches();
+drawAll(null);
+refreshCounts();
+renderHist();
+window.addEventListener('resize', function(){ fitCanvas(); drawAll(null); });
+window.addEventListener('orientationchange', function(){ setTimeout(function(){ fitCanvas(); drawAll(null); }, 200); });
+
+/* 测试钩子 */
+window.__renderForTest = renderSongOffline;
+window.__scr = {
+  buildNotes: buildNotes, analyze: analyze, makeTitle: makeTitle, makeQuote: makeQuote,
+  yToMidi: yToMidi, encodeWav: encodeWav, demoStrokes: demoStrokes, durationFor: durationFor,
+  getStrokes: function(){ return strokes; },
+  setStrokes: function(v){ strokes=v; drawAll(null); refreshCounts(); },
+  getLastSong: function(){ return lastSong; },
+  getPlaying: function(){ return playing; }
+};
+})();
+</script>
+</body>
+</html>
