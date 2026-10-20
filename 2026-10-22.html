@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>烦恼粉碎机 · 一球砸碎今天</title>
+<style>
+  :root{
+    --paper:#fff6e3; --ink:#15110c; --red:#ff2e4d; --yellow:#ffce00;
+    --cyan:#13c4cf; --blue:#2f6bff; --pink:#ff5da2; --green:#27c46b; --purple:#7b3ff2;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0; background:var(--ink); color:var(--ink);
+    font-family:"Arial Black","Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased; overflow-x:hidden}
+  .wrap{max-width:560px; margin:0 auto; min-height:100vh; background:var(--paper);
+    position:relative; padding:14px 14px 28px;
+    background-image:radial-gradient(var(--ink) 1.4px, transparent 1.6px);
+    background-size:15px 15px; background-position:0 0}
+  /* 波普装饰 */
+  .deco{position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0}
+  .deco b{position:absolute; display:block}
+  .deco .d1{width:78px;height:78px;border-radius:50%;background:var(--yellow);border:4px solid var(--ink);top:1%;right:-8%;animation:spin 14s linear infinite}
+  .deco .d2{width:0;height:0;border-left:34px solid transparent;border-right:34px solid transparent;border-bottom:60px solid var(--cyan);border-bottom-color:var(--cyan);bottom:10%;left:3%;transform:rotate(12deg);filter:drop-shadow(3px 3px 0 var(--ink));animation:float 6s ease-in-out infinite}
+  .deco .d3{width:70px;height:70px;background:var(--pink);border:4px solid var(--ink);bottom:16%;right:6%;transform:rotate(18deg);animation:float 5s ease-in-out infinite reverse}
+  .deco .d4{width:54px;height:54px;border-radius:50%;background:var(--blue);top:40%;left:2%;animation:spin 20s linear infinite reverse}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes float{0%,100%{transform:translateY(0) rotate(12deg)}50%{transform:translateY(-12px) rotate(12deg)}}
+
+  .screen{display:none}
+  .screen.on{display:block}
+
+  /* ===== Intro ===== */
+  #screenIntro{position:relative; z-index:1; text-align:center; padding-top:18px}
+  .badge{display:inline-block; background:var(--ink); color:var(--yellow); font-size:12px;
+    padding:5px 12px; border-radius:20px; letter-spacing:2px; font-weight:900}
+  h1.title{font-size:clamp(34px,11vw,56px); line-height:1.15; margin:10px 0 0; cursor:pointer;
+    color:var(--red); text-shadow:4px 4px 0 var(--ink); -webkit-text-stroke:2px var(--ink)}
+  .sub{display:block; color:var(--blue); font-weight:900; font-size:clamp(17px,5.2vw,27px); line-height:1.2;
+    text-shadow:3px 3px 0 var(--ink); -webkit-text-stroke:1px var(--ink); margin:16px 0 16px}
+  .lead{font-weight:700; font-size:15px; max-width:430px; margin:10px auto 16px; color:var(--ink);
+    background:#fff; border:3px solid var(--ink); border-radius:14px; padding:12px 14px;
+    box-shadow:5px 5px 0 var(--ink)}
+  .howto{display:grid; grid-template-columns:1fr 1fr; gap:10px; max-width:460px; margin:0 auto 18px; text-align:left}
+  .howto div{background:#fff; border:3px solid var(--ink); border-radius:12px; padding:10px 12px;
+    font-weight:700; font-size:13px; box-shadow:3px 3px 0 var(--ink)}
+  .howto .n{display:inline-block; width:24px;height:24px;line-height:24px;text-align:center;
+    background:var(--yellow); border:2px solid var(--ink); border-radius:50%; margin-right:6px; font-size:13px}
+  .bigbtn{display:inline-block; background:var(--red); color:#fff; border:4px solid var(--ink);
+    border-radius:16px; padding:16px 30px; font-size:21px; font-weight:900; cursor:pointer;
+    box-shadow:6px 6px 0 var(--ink); transition:transform .08s, box-shadow .08s; min-height:44px}
+  .bigbtn:active{transform:translate(4px,4px); box-shadow:2px 2px 0 var(--ink)}
+  .best{margin-top:16px; font-weight:900; font-size:15px; color:var(--ink)}
+  .best b{color:var(--red)}
+  .egg{margin-top:14px; min-height:22px; font-weight:900; font-size:15px; color:var(--purple)}
+  .tip{margin-top:10px; font-size:12px; font-weight:700; color:var(--ink); opacity:.78}
+
+  /* ===== Game ===== */
+  #screenGame{position:relative; z-index:1}
+  .topbar{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap}
+  .stat{background:#fff; border:3px solid var(--ink); border-radius:12px; padding:7px 10px;
+    font-weight:900; font-size:14px; box-shadow:3px 3px 0 var(--ink); min-width:64px; text-align:center}
+  .stat small{display:block; font-size:10px; opacity:.7; font-weight:700}
+  .stat .v{font-size:18px}
+  .topRight{display:flex; gap:8px}
+  .iconbtn{width:46px;height:46px; border:3px solid var(--ink); border-radius:12px; background:#fff;
+    font-size:20px; cursor:pointer; box-shadow:3px 3px 0 var(--ink); display:flex; align-items:center; justify-content:center}
+  .iconbtn:active{transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink)}
+  .canvasBox{position:relative; border:4px solid var(--ink); border-radius:14px; overflow:hidden;
+    background:#fff; box-shadow:6px 6px 0 var(--ink)}
+  #cv{display:block; width:100%; height:auto; touch-action:none; background:#fffdf5; cursor:none}
+  .combo{position:absolute; top:8px; left:50%; transform:translateX(-50%); font-size:14px; font-weight:900;
+    color:var(--purple); background:#fff; border:2px solid var(--ink); border-radius:20px; padding:3px 12px; opacity:0; transition:opacity .2s}
+  .gHint{margin-top:10px; text-align:center; font-weight:700; font-size:13px; color:var(--ink); opacity:.8}
+  .pauseOv{position:absolute; inset:0; background:rgba(255,246,227,.92); display:none; align-items:center; justify-content:center;
+    flex-direction:column; z-index:5; border-radius:10px}
+  .pauseOv.on{display:flex}
+  .pauseOv .bigbtn{margin-top:14px}
+
+  /* ===== Result ===== */
+  #screenResult{position:relative; z-index:1; text-align:center}
+  .rankCard{background:#fff; border:4px solid var(--ink); border-radius:18px; padding:16px; box-shadow:6px 6px 0 var(--ink); max-width:480px; margin:0 auto 14px}
+  .rankBig{font-size:clamp(40px,13vw,64px); color:var(--red); text-shadow:3px 3px 0 var(--ink); -webkit-text-stroke:2px var(--ink); margin:4px 0}
+  .rkLine{font-weight:900; font-size:17px; margin:2px 0}
+  .kv{display:flex; justify-content:space-around; margin:12px 0; font-weight:900; font-size:14px}
+  .kv div small{display:block; font-size:10px; opacity:.65; font-weight:700}
+  .quote{font-weight:700; font-size:14px; line-height:1.5; background:var(--paper); border:3px dashed var(--ink); border-radius:12px; padding:10px 12px; margin-top:6px}
+  #poster{width:100%; max-width:340px; height:auto; border:4px solid var(--ink); border-radius:12px;
+    box-shadow:5px 5px 0 var(--ink); margin:14px auto 0; display:block}
+  .rBtns{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:14px}
+  .rBtns .bigbtn{font-size:16px; padding:13px 18px}
+  .rBtns .ghost{background:#fff; color:var(--ink); box-shadow:5px 5px 0 var(--ink)}
+
+  /* Toast */
+  #toast{position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:#fff; font-weight:900; font-size:14px; padding:11px 18px; border-radius:24px;
+    opacity:0; pointer-events:none; transition:all .25s; z-index:50; max-width:90vw; text-align:center}
+  #toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
+  a.back{display:inline-block; margin-top:16px; font-weight:900; font-size:15px; color:var(--blue); text-decoration:underline; cursor:pointer; min-height:44px; line-height:44px; padding:0 16px; border-radius:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="deco"><b class="d1"></b><b class="d2"></b><b class="d3"></b><b class="d4"></b></div>
+
+  <!-- Intro -->
+  <section id="screenIntro" class="screen on">
+    <span class="badge">POP ART · 解压专用</span>
+    <h1 class="title" id="ttl">烦恼粉碎机</h1>
+    <div class="sub">一球砸碎今天</div>
+    <div class="lead">把「需求变更 / 甲方改需求 / 老板画饼」这类职场烦恼，通通砸成渣。三关，三条命，砸得越狠睡得越香。</div>
+    <div class="howto">
+      <div><span class="n">1</span>点屏幕 / 空格 发射小球</div>
+      <div><span class="n">2</span>拖动 或 ←→ 移动锤子</div>
+      <div><span class="n">3</span>砖块一碰就碎，连击加分</div>
+      <div><span class="n">4</span>砸穿三关，晒战绩</div>
+    </div>
+    <button class="bigbtn" id="btnStart">开始粉碎</button>
+    <div class="best">历史最高 <b id="bestScore">0</b> 分</div>
+    <div class="egg" id="egg"></div>
+    <div class="tip">提示：连点标题 5 次有彩蛋 · 数据仅存本机</div>
+  </section>
+
+  <!-- Game -->
+  <section id="screenGame" class="screen">
+    <div class="topbar">
+      <div class="stat"><small>分数</small><span class="v" id="uiScore">0</span></div>
+      <div class="stat"><small>关卡</small><span class="v" id="uiLevel">1</span></div>
+      <div class="stat"><small>生命</small><span class="v" id="uiLives">♥♥♥</span></div>
+      <div class="topRight">
+        <button class="iconbtn" id="btnMute" title="静音">♪</button>
+        <button class="iconbtn" id="btnPause" title="暂停">⏸</button>
+      </div>
+    </div>
+    <div class="canvasBox">
+      <canvas id="cv" width="480" height="720"></canvas>
+      <div class="combo" id="comboTag">连击 x2!</div>
+      <div class="pauseOv" id="pauseOv">
+        <div style="font-size:30px;font-weight:900;color:var(--red);text-shadow:3px 3px 0 var(--ink)">暂停中</div>
+        <button class="bigbtn" id="btnResume">继续</button>
+      </div>
+    </div>
+    <div class="gHint" id="gHint">点一下屏幕发射小球 →</div>
+  </section>
+
+  <!-- Result -->
+  <section id="screenResult" class="screen">
+    <div class="rankCard">
+      <div style="font-weight:900;font-size:13px;opacity:.6">本次战绩</div>
+      <div class="rankBig" id="rRank">A</div>
+      <div class="rkLine" id="rRankName">今日无烦恼</div>
+      <div class="kv">
+        <div><small>得分</small><span id="rScore">0</span></div>
+        <div><small>砸碎</small><span id="rBroken">0</span> 块</div>
+        <div><small>剩余压力</small><span id="rStress">0</span>%</div>
+      </div>
+      <div class="quote" id="rQuote">——</div>
+    </div>
+    <canvas id="poster" width="1080" height="1350"></canvas>
+    <div class="rBtns">
+      <button class="bigbtn" id="btnAgain">再来一局</button>
+      <button class="bigbtn ghost" id="btnCopy">复制战绩</button>
+      <button class="bigbtn ghost" id="btnDown">下载海报</button>
+    </div>
+    <a class="back" id="btnHome">回到首页</a>
+  </section>
+</div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+/* ============ 常量 ============ */
+var ISSUE_DATE = '2026-10-22';          // 与文件名一致
+var W = 480, H = 720;                   // 画布逻辑坐标
+var BEST_KEY = 'ffz-best-v1';
+var COLS = 6, SIDE = 16, GAP = 8, TOP = 78, BH = 30;
+var PADDLE_W = 100, PADDLE_H = 16, PADDLE_Y = H - 46;
+var BALL_R = 9;
+var MAX_ANG = 60 * Math.PI/180;         // 球拍反弹最大角
+
+var LEVELS = [
+  {rows:3, hp2:0, speed:300},
+  {rows:4, hp2:3, speed:335},
+  {rows:5, hp2:6, speed:372}
+];
+
+var LABELS = ['需求变更','临时会议','周末加班','甲方改需求','画饼','背锅','甩锅','周报',
+  '日报','复盘会','团建','KPI','OKR','摸鱼被抓','需求评审','上线事故','补考勤','拉群@全员'];
+var TOUGH = ['老板的画饼','甲方的执念','无限改稿','祖传代码','深夜钉钉'];
+
+var QUOTE_HEAD = [
+  '你今天砸碎了 {n} 块烦恼，',
+  '{n} 块烦恼当场灰飞烟灭，',
+  '一锤子下去，{n} 块烦恼没了，',
+  '老板的画饼被你砸出 {n} 个窟窿，'
+];
+var QUOTE_TAIL = [
+  '剩下那点压力，建议下班就忘。',
+  '据说砸得越狠，今晚睡得越香。',
+  '同事问你为啥这么爽，你说在锻炼。',
+  '甲方表示受到了惊吓。',
+  'HR 默默把你列进了「情绪稳定」名单。',
+  '你妈打电话问是不是又想离职了。',
+  '猫在旁边看了一会儿，表示认可。',
+  '明天的事，留到明天再砸。'
+];
+
+/* ============ 工具 ============ */
+function $(id){ return document.getElementById(id); }
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function hashStr(s){ var h=2166136261; for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
+function pick(arr,r){ return arr[Math.floor(r()*arr.length)]; }
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+function pad(n){ return n<10?'0'+n : ''+n; }
+
+function toast(msg){ var t=$('toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(function(){ t.classList.remove('on'); }, 1600); }
+
+/* ============ 音频（极简、安全） ============ */
+var actx=null, muted=false;
+function ensureAudio(){ if(!actx){ try{ var AC=window.AudioContext||window.webkitAudioContext; if(AC) actx=new AC(); }catch(e){} } if(actx && actx.state==='suspended'){ try{ actx.resume(); }catch(e){} } }
+function beep(freq,dur,type){ if(muted) return; ensureAudio(); if(!actx) return; try{ var o=actx.createOscillator(), g=actx.createGain(); o.type=type||'square'; o.frequency.value=freq; o.connect(g); g.connect(actx.destination); var t=actx.currentTime; g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.2,t+0.006); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); o.start(t); o.stop(t+dur+0.02); }catch(e){} }
+
+/* ============ 状态 ============ */
+var cv=$('cv'), ctx=cv.getContext('2d');
+var dpr = Math.max(1, Math.min(3, window.devicePixelRatio||1));
+var state = null;
+var raf = null, lastT = 0, paused = false, combo = 0, comboTimer = 0;
+var popTexts = [];   // {x,y,text,life,max,rot,color}
+var shake = 0;
+
+function newState(){
+  return {
+    score:0, level:0, lives:3, bricks:[], broken:0,
+    paddle:{x:W/2}, ball:{x:W/2, y:PADDLE_Y-BALL_R-1, vx:0, vy:0, stuck:true},
+    over:false, won:false, started:false
+  };
+}
+
+function buildBricks(levelIdx){
+  var L = LEVELS[levelIdx];
+  var bw = (W - 2*SIDE - (COLS-1)*GAP)/COLS;
+  var bricks = [];
+  var r = mulberry32(hashStr('lv'+levelIdx+ISSUE_DATE));
+  var toughSlots = {};
+  // 随机选 hp2 砖的位置
+  var positions = [];
+  for(var rr=0; rr<L.rows; rr++) for(var c=0; c<COLS; c++) positions.push(rr*COLS+c);
+  for(var i=0;i<L.hp2 && positions.length;i++){ var k=Math.floor(r()*positions.length); toughSlots[positions[k]]=1; positions.splice(k,1); }
+  var li=0;
+  for(var row=0; row<L.rows; row++){
+    for(var col=0; col<COLS; col++){
+      var idx=row*COLS+col;
+      var hp2 = toughSlots[idx]?2:1;
+      var label = hp2===2 ? pick(TOUGH,r) : LABELS[(li++)%LABELS.length];
+      bricks.push({
+        x: SIDE + col*(bw+GAP), y: TOP + row*(BH+GAP), w:bw, h:BH,
+        hp:hp2, maxhp:hp2, label:label,
+        color: ['var','red','yellow','cyan','blue','pink','green','purple'][(row+col)%8],
+        alive:true
+      });
+    }
+  }
+  return bricks;
+}
+
+var COLOR_MAP = {red:'#ff2e4d',yellow:'#ffce00',cyan:'#13c4cf',blue:'#2f6bff',pink:'#ff5da2',green:'#27c46b',purple:'#7b3ff2',var:'#ff2e4d'};
+
+/* ============ 渲染 ============ */
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  if(!state) return;
+  // 背景细网格
+  ctx.save();
+  ctx.strokeStyle='rgba(21,17,12,.06)'; ctx.lineWidth=1;
+  for(var gx=0; gx<=W; gx+=40){ ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,H); ctx.stroke(); }
+  for(var gy=0; gy<=H; gy+=40){ ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(W,gy); ctx.stroke(); }
+  ctx.restore();
+
+  var st = state;
+  // 砖块
+  for(var i=0;i<st.bricks.length;i++){
+    var b=st.bricks[i]; if(!b.alive) continue;
+    var col = COLOR_MAP[b.color]||'#ff2e4d';
+    ctx.save();
+    ctx.fillStyle = col; ctx.strokeStyle='#15110c'; ctx.lineWidth=3;
+    roundRect(ctx, b.x, b.y, b.w, b.h, 7); ctx.fill(); ctx.stroke();
+    // 高光
+    ctx.fillStyle='rgba(255,255,255,.35)'; roundRect(ctx, b.x+4, b.y+4, b.w-8, 7, 4); ctx.fill();
+    // 文字
+    ctx.fillStyle='#15110c'; ctx.font='900 13px "Microsoft YaHei",sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(b.label, b.x+b.w/2, b.y+b.h/2);
+    if(b.hp>=2){ ctx.fillStyle='#fff'; ctx.font='900 11px sans-serif'; ctx.fillText('×2', b.x+b.w-12, b.y+10); }
+    ctx.restore();
+  }
+  // 锤子（球拍）
+  var px = st.paddle.x, py = PADDLE_Y;
+  ctx.save();
+  ctx.fillStyle='#ff2e4d'; ctx.strokeStyle='#15110c'; ctx.lineWidth=4;
+  roundRect(ctx, px-PADDLE_W/2, py, PADDLE_W, PADDLE_H, 9); ctx.fill(); ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,.4)'; roundRect(ctx, px-PADDLE_W/2+5, py+3, PADDLE_W-10, 4, 2); ctx.fill();
+  ctx.restore();
+  // 球
+  var ball=st.ball;
+  ctx.save();
+  ctx.fillStyle='#15110c'; ctx.beginPath(); ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(ball.x-3, ball.y-3, BALL_R*0.4, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+  // POW 文字
+  for(var p=0;p<popTexts.length;p++){
+    var t=popTexts[p]; var a=clamp(t.life/t.max,0,1);
+    ctx.save(); ctx.globalAlpha=a; ctx.translate(t.x,t.y); ctx.rotate(t.rot);
+    ctx.fillStyle=t.color; ctx.strokeStyle='#15110c'; ctx.lineWidth=4;
+    ctx.font='900 26px "Arial Black",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.strokeText(t.text,0,0); ctx.fillText(t.text,0,0); ctx.restore();
+  }
+}
+
+function roundRect(g,x,y,w,h,r){ r=Math.min(r,w/2,h/2); g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); }
+
+/* ============ 物理 ============ */
+function launch(){
+  var st=state; if(!st.ball.stuck) return;
+  st.ball.stuck=false; st.started=true;
+  var ang = (Math.random()*2-1)*0.35;
+  var sp = LEVELS[st.level].speed;
+  st.ball.vx = sp*Math.sin(ang); st.ball.vy = -Math.abs(sp*Math.cos(ang));
+  $('gHint').style.opacity='0';
+  beep(520,0.08,'square');
+}
+function resetBall(){
+  state.ball.stuck=true; state.ball.x=state.paddle.x; state.ball.y=PADDLE_Y-BALL_R-1; state.ball.vx=0; state.ball.vy=0;
+}
+function step(dt){
+  var st=state; if(st.over) return;
+  var ball=st.ball, L=LEVELS[st.level];
+  if(ball.stuck){ ball.x=clamp(st.paddle.x, PADDLE_W/2, W-PADDLE_W/2); ball.y=PADDLE_Y-BALL_R-1; return; }
+  ball.x += ball.vx*dt; ball.y += ball.vy*dt;
+  // 墙
+  if(ball.x-BALL_R<0){ ball.x=BALL_R; ball.vx=Math.abs(ball.vx); beep(300,0.04); }
+  if(ball.x+BALL_R>W){ ball.x=W-BALL_R; ball.vx=-Math.abs(ball.vx); beep(300,0.04); }
+  if(ball.y-BALL_R<0){ ball.y=BALL_R; ball.vy=Math.abs(ball.vy); beep(300,0.04); }
+  // 球拍
+  if(ball.vy>0 && ball.y+BALL_R>=PADDLE_Y && ball.y-BALL_R<=PADDLE_Y+PADDLE_H && ball.x>=st.paddle.x-PADDLE_W/2 && ball.x<=st.paddle.x+PADDLE_W/2){
+    ball.y=PADDLE_Y-BALL_R;
+    var off=(ball.x-st.paddle.x)/(PADDLE_W/2); off=clamp(off,-1,1);
+    var ang=off*MAX_ANG; var sp=Math.hypot(ball.vx,ball.vy); if(sp<1) sp=L.speed;
+    ball.vx=sp*Math.sin(ang); ball.vy=-Math.abs(sp*Math.cos(ang));
+    combo=0; // 碰到拍子连击清零（每次砸砖才累计）
+  }
+  // 砖块
+  for(var i=0;i<st.bricks.length;i++){
+    var b=st.bricks[i]; if(!b.alive) continue;
+    var cx=b.x+b.w/2, cy=b.y+b.h/2;
+    var dx=ball.x-cx, dy=ball.y-cy;
+    var aw=b.w/2+BALL_R, ah=b.h/2+BALL_R;
+    if(Math.abs(dx)<=aw && Math.abs(dy)<=ah){
+      var ox=aw-Math.abs(dx), oy=ah-Math.abs(dy);
+      if(ox<oy){ ball.vx = dx<0? -Math.abs(ball.vx): Math.abs(ball.vx); ball.x += dx<0? -ox: ox; }
+      else { ball.vy = dy<0? -Math.abs(ball.vy): Math.abs(ball.vy); ball.y += dy<0? -oy: oy; }
+      hitBrick(b, cx, cy);
+    }
+  }
+  // 速度归一（防漂移 + 防水平卡死）
+  var spd=Math.hypot(ball.vx,ball.vy); if(spd<1) spd=L.speed;
+  var k=L.speed/spd; ball.vx*=k; ball.vy*=k;
+  if(Math.abs(ball.vy) < 0.30*L.speed){ ball.vy = (ball.vy<0?-1:1)*0.30*L.speed; var s2=Math.hypot(ball.vx,ball.vy); var k2=L.speed/s2; ball.vx*=k2; ball.vy*=k2; }
+  // 掉底
+  if(ball.y-BALL_R>H){ loseLife(); }
+}
+function hitBrick(b, cx, cy){
+  b.hp--; combo++; comboTimer=1.2;
+  var gain = (b.maxhp>=2?20:10) * (1+Math.floor(combo/3));
+  state.score += gain;
+  state.broken++;
+  var colr = COLOR_MAP[b.color]||'#ff2e4d';
+  popTexts.push({x:cx, y:cy, text: combo>=2?('x'+combo):'POW!', life:0.5, max:0.5, rot:(Math.random()*0.5-0.25), color:colr});
+  beep(b.maxhp>=2?660:440+Math.random()*120, 0.07, 'square');
+  if(combo>=2) showCombo(combo);
+  if(b.hp<=0){ b.alive=false; shake=Math.min(8, 3+combo*0.4); }
+  syncUI();
+  // 过关
+  var left=0; for(var i=0;i<state.bricks.length;i++) if(state.bricks[i].alive) left++;
+  if(left===0) levelClear();
+}
+function showCombo(n){ var c=$('comboTag'); c.textContent='连击 x'+n+'!'; c.style.opacity='1'; clearTimeout(showCombo._t); showCombo._t=setTimeout(function(){ c.style.opacity='0'; }, 700); }
+function loseLife(){
+  state.lives--; combo=0; shake=0;
+  beep(160,0.18,'sawtooth');
+  syncUI();
+  if(state.lives<=0){ gameOver(false); }
+  else { resetBall(); toast('掉球了！剩 '+state.lives+' 条命'); }
+}
+function levelClear(){
+  beep(880,0.12,'square'); setTimeout(function(){ beep(1180,0.14,'square'); }, 110);
+  if(state.level >= LEVELS.length-1){ gameOver(true); return; }
+  state.level++; state.lives=Math.min(5, state.lives+1);
+  state.bricks=buildBricks(state.level); resetBall();
+  toast('第 '+(state.level+1)+' 关！回血 +1');
+  syncUI();
+}
+function gameOver(won){
+  state.over=true; state.won=won; paused=true;
+  var best=parseInt(localStorage.getItem(BEST_KEY)||'0',10); if(state.score>best){ localStorage.setItem(BEST_KEY, state.score); }
+  showResult();
+}
+
+/* ============ UI ============ */
+function syncUI(){
+  $('uiScore').textContent=state.score;
+  $('uiLevel').textContent=(state.level+1);
+  $('uiLives').textContent = state.lives>0 ? new Array(state.lives+1).join('♥') : '—';
+}
+function setScreen(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++) s[i].classList.remove('on'); $(id).classList.add('on'); }
+
+/* ============ 结算 ============ */
+function rankOf(score){
+  if(score>=650) return {r:'S', name:'压力粉碎大师'};
+  if(score>=430) return {r:'A', name:'今日无烦恼'};
+  if(score>=260) return {r:'B', name:'轻松拿捏'};
+  if(score>=130) return {r:'C', name:'还在硬扛'};
+  return {r:'D', name:'明天继续'};
+}
+function quoteOf(broken, rankR){
+  var r=mulberry32(hashStr('q'+ISSUE_DATE+broken+rankR));
+  var head=pick(QUOTE_HEAD,r).replace('{n}',broken);
+  var tail=pick(QUOTE_TAIL,r);
+  return head+tail;
+}
+function showResult(){
+  var rk=rankOf(state.score);
+  $('rRank').textContent=rk.r;
+  $('rRankName').textContent=rk.name;
+  $('rScore').textContent=state.score;
+  $('rBroken').textContent=state.broken;
+  var stress=clamp(Math.round(100 - state.score/7), 0, 100);
+  $('rStress').textContent=stress;
+  $('rQuote').textContent=quoteOf(state.broken, rk.r);
+  drawPoster(rk, stress);
+  $('bestScore').textContent=localStorage.getItem(BEST_KEY)||'0';
+  setScreen('screenResult');
+  if(state.won) beep(1320,0.16,'square');
+}
+
+/* ============ 海报（波普风） ============ */
+function drawPoster(rk, stress){
+  var pc=$('poster'), g=pc.getContext('2d');
+  var PW=1080, PH=1350;
+  g.fillStyle='#fff6e3'; g.fillRect(0,0,PW,PH);
+  // 波普网点
+  g.save(); g.globalAlpha=0.10;
+  for(var hy=0; hy<PH; hy+=26){ for(var hx=0; hx<PW; hx+=26){ g.fillStyle='#15110c'; g.beginPath(); g.arc(hx,hy,3,0,Math.PI*2); g.fill(); } }
+  g.restore();
+  // 角标几何
+  g.save();
+  g.fillStyle='#ffce00'; g.strokeStyle='#15110c'; g.lineWidth=8;
+  g.beginPath(); g.arc(120,120,70,0,Math.PI*2); g.fill(); g.stroke();
+  g.fillStyle='#13c4cf'; g.beginPath(); g.moveTo(PW-90,90); g.lineTo(PW-30,90); g.lineTo(PW-60,30); g.closePath(); g.fill(); g.stroke();
+  g.restore();
+  // 标题带
+  g.fillStyle='#ff2e4d'; g.strokeStyle='#15110c'; g.lineWidth=8;
+  roundRect(g, 60, 150, PW-120, 150, 18); g.fill(); g.stroke();
+  g.fillStyle='#fff'; g.textAlign='center'; g.textBaseline='middle';
+  g.font='900 84px "Microsoft YaHei",sans-serif';
+  g.fillText('烦 恼 粉 碎 机', PW/2, 226);
+  // 大评级
+  g.fillStyle='#15110c'; g.font='900 60px "Microsoft YaHei",sans-serif';
+  g.fillText('本次评级', PW/2, 380);
+  g.fillStyle='#2f6bff'; g.font='900 200px "Arial Black",sans-serif';
+  g.strokeStyle='#15110c'; g.lineWidth=10;
+  g.strokeText(rk.r, PW/2, 560); g.fillText(rk.r, PW/2, 560);
+  g.fillStyle='#ff2e4d'; g.font='900 54px "Microsoft YaHei",sans-serif';
+  g.fillText(rk.name, PW/2, 660);
+  // 数据条
+  g.fillStyle='#fff'; g.strokeStyle='#15110c'; g.lineWidth=6;
+  roundRect(g, 80, 730, PW-160, 200, 18); g.fill(); g.stroke();
+  g.fillStyle='#15110c'; g.textAlign='center';
+  g.font='900 46px "Microsoft YaHei",sans-serif';
+  g.fillText('得分 '+state.score+'   砸碎 '+state.broken+' 块   剩余压力 '+stress+'%', PW/2, 830);
+  // 点评
+  var q=$('rQuote').textContent;
+  g.font='700 34px "Microsoft YaHei",sans-serif'; g.fillStyle='#15110c';
+  wrapText(g, q, 100, 1000, PW-200, 46).forEach(function(ln,i){ g.fillText(ln, PW/2, 1000+i*52); });
+  // 日期 + 印章
+  g.fillStyle='#15110c'; g.font='900 30px "Microsoft YaHei",sans-serif';
+  g.fillText(ISSUE_DATE+'  ·  数据仅存本机', PW/2, 1230);
+  g.save(); g.translate(PW-150, 1190); g.rotate(-0.18);
+  g.strokeStyle='#ff2e4d'; g.lineWidth=6; roundRect(g,-110,-54,220,108,12); g.stroke();
+  g.fillStyle='#ff2e4d'; g.font='900 34px "Microsoft YaHei",sans-serif';
+  g.fillText('已粉碎', 0, -8); g.fillText('认证', 0, 34);
+  g.restore();
+}
+function wrapText(g, text, x, y, maxW, lh){
+  var lines=[], cur=''; var chars=text.split('');
+  for(var i=0;i<chars.length;i++){
+    var test=cur+chars[i];
+    if(g.measureText(test).width>maxW && cur){ lines.push(cur); cur=chars[i]; }
+    else cur=test;
+  }
+  if(cur) lines.push(cur);
+  return lines;
+}
+
+/* ============ 主循环 ============ */
+function loop(t){
+  raf=requestAnimationFrame(loop);
+  if(!lastT) lastT=t;
+  var dt=(t-lastT)/1000; lastT=t; if(dt>0.05) dt=0.05;
+  if(!paused && state && !state.over){
+    if(comboTimer>0){ comboTimer-=dt; if(comboTimer<=0) combo=0; }
+    step(dt);
+    // popTexts
+    for(var i=popTexts.length-1;i>=0;i--){ popTexts[i].life-=dt; if(popTexts[i].life<=0) popTexts.splice(i,1); }
+    if(shake>0){ shake-=dt*30; if(shake<0) shake=0; }
+  }
+  ctx.save();
+  if(shake>0){ ctx.translate((Math.random()*2-1)*shake, (Math.random()*2-1)*shake); }
+  draw();
+  ctx.restore();
+}
+
+/* ============ 输入 ============ */
+function canvasX(clientX){
+  var rect=cv.getBoundingClientRect();
+  return (clientX-rect.left)/rect.width*W;
+}
+cv.addEventListener('pointerdown', function(e){ ensureAudio(); var x=canvasX(e.clientX); state.paddle.x=clamp(x,PADDLE_W/2,W-PADDLE_W/2); if(state.ball.stuck) launch(); });
+cv.addEventListener('pointermove', function(e){ if(e.buttons||e.pointerType==='touch'){ var x=canvasX(e.clientX); state.paddle.x=clamp(x,PADDLE_W/2,W-PADDLE_W/2); } });
+window.addEventListener('keydown', function(e){
+  if(!state) return;
+  if(e.key==='ArrowLeft'){ state.paddle.x=clamp(state.paddle.x-26, PADDLE_W/2, W-PADDLE_W/2); }
+  else if(e.key==='ArrowRight'){ state.paddle.x=clamp(state.paddle.x+26, PADDLE_W/2, W-PADDLE_W/2); }
+  else if(e.key===' '||e.key==='Enter'){ ensureAudio(); if(state.ball.stuck) launch(); else if(state.over) {} }
+});
+
+/* ============ 按钮 ============ */
+$('btnStart').addEventListener('click', function(){ startGame(); });
+$('btnAgain').addEventListener('click', function(){ startGame(); });
+$('btnHome').addEventListener('click', function(){ setScreen('screenIntro'); $('bestScore').textContent=localStorage.getItem(BEST_KEY)||'0'; });
+$('btnPause').addEventListener('click', function(){ if(!state||state.over) return; paused=!paused; $('pauseOv').classList.toggle('on', paused); });
+$('btnResume').addEventListener('click', function(){ paused=false; $('pauseOv').classList.remove('on'); });
+$('btnMute').addEventListener('click', function(){ muted=!muted; $('btnMute').textContent=muted?'🔇':'♪'; if(!muted) ensureAudio(); });
+$('btnCopy').addEventListener('click', function(){
+  var rk=rankOf(state.score);
+  var txt='【烦恼粉碎机】'+ISSUE_DATE+'\n评级 '+rk.r+' · '+rk.name+'\n得分 '+state.score+'，砸碎 '+state.broken+' 块烦恼，剩余压力 '+$('rStress').textContent+'%\n'+$('rQuote').textContent+'\n#一球砸碎今天';
+  if(navigator.clipboard){ navigator.clipboard.writeText(txt).then(function(){ toast('战绩已复制'); }, function(){ toast('复制失败，请手动选'); }); }
+  else toast('复制失败，请手动选');
+});
+$('btnDown').addEventListener('click', function(){
+  try{ var a=document.createElement('a'); a.download='烦恼粉碎机-'+ISSUE_DATE+'.png'; a.href=$('poster').toDataURL('image/png'); a.click(); toast('海报已下载'); }catch(e){ toast('下载失败'); }
+});
+
+/* 彩蛋：连点标题 5 次 */
+var ttlClicks=0, ttlTimer=null;
+$('ttl').addEventListener('click', function(){
+  ttlClicks++; clearTimeout(ttlTimer); ttlTimer=setTimeout(function(){ ttlClicks=0; }, 1200);
+  if(ttlClicks>=5){ ttlClicks=0; $('egg').textContent='其实你砸的是空气，但爽到了就行 😏'; beep(740,0.1); setTimeout(function(){ beep(980,0.12); },120); }
+});
+
+/* ============ 启动 ============ */
+function startGame(){
+  state=newState();
+  state.bricks=buildBricks(0);
+  popTexts=[]; combo=0; comboTimer=0; shake=0; paused=false;
+  $('pauseOv').classList.remove('on');
+  $('gHint').style.opacity='1';
+  syncUI();
+  setScreen('screenGame');
+  ensureAudio();
+}
+$('bestScore').textContent=localStorage.getItem(BEST_KEY)||'0';
+raf=requestAnimationFrame(loop);
+
+/* ============ 测试钩子 ============ */
+window.__ffz = {
+  get state(){ return state; },
+  start: startGame,
+  launch: launch,
+  setPaddle: function(x){ if(state) state.paddle.x=clamp(x,PADDLE_W/2,W-PADDLE_W/2); },
+  step: function(dt){ step(dt); },
+  ball: function(){ return state? state.ball : null; },
+  bricks: function(){ return state? state.bricks : []; },
+  forceOver: function(won){ gameOver(!!won); },
+  setScore: function(n){ if(state){ state.score=n; } },
+  rankOf: rankOf,
+  quoteOf: quoteOf,
+  buildBricks: buildBricks,
+  levelSpeed: function(i){ return LEVELS[i].speed; },
+  COLS: COLS
+};
+</script>
+</body>
+</html>
