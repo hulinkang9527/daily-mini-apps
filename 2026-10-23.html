@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="老板黑话解密终端：把职场黑话翻译成人类语言，输出一份盖红章的解密档案。">
+<meta name="theme-color" content="#23262e">
+<title>老板黑话解密终端 · 打工人内部资料</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23f3e9d2'/%3E%3Crect x='14' y='10' width='36' height='44' rx='3' fill='%23fffaf0' stroke='%23d8c9a3' stroke-width='2'/%3E%3Ccircle cx='32' cy='31' r='13' fill='none' stroke='%23c0392b' stroke-width='3'/%3E%3Cpath d='M27 31l4 4 7-8' stroke='%23c0392b' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --desk:#23262e;
+    --paper:#f3e9d2;
+    --ink:#221c12;
+    --ink-dim:#6b5f49;
+    --red:#c0392b;
+    --red-deep:#a33327;
+    --term:#16181d;
+    --green:#7ee787;
+    --mono:"SF Mono","Cascadia Mono",Consolas,"Courier New",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--desk);
+    background-image:radial-gradient(rgba(255,255,255,.055) 1px,transparent 1px);
+    background-size:22px 22px;
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;flex-direction:column;align-items:center;
+    padding:20px 12px 48px;
+  }
+  .wrap{width:100%;max-width:620px}
+  button{font-family:inherit;border:none;cursor:pointer;color:inherit}
+  .hidden{display:none!important}
+
+  /* ---------- 页面标题 ---------- */
+  .head{text-align:center;margin-bottom:16px}
+  .head h1{font-family:var(--mono);font-size:clamp(22px,6.4vw,30px);color:var(--paper);letter-spacing:3px;font-weight:900}
+  .head h1 em{color:var(--red);font-style:normal}
+  .head p{color:#8fa0bf;font-size:13px;margin-top:7px;letter-spacing:1px}
+
+  /* ---------- 终端窗口 ---------- */
+  .term-bar{
+    display:flex;align-items:center;gap:7px;
+    background:var(--term);color:#aeb6c6;
+    border:1px solid #000;border-bottom:none;border-radius:10px 10px 0 0;
+    padding:11px 14px;font-family:var(--mono);font-size:12px;letter-spacing:.5px;
+  }
+  .dot{width:10px;height:10px;border-radius:50%;background:#3a3f4d;flex:0 0 auto}
+  .dot.live{background:var(--green);animation:blink 1.2s infinite;cursor:pointer}
+  .dot.live.hot{background:var(--red);animation:shake .4s}
+  @keyframes blink{50%{opacity:.25}}
+  @keyframes shake{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+  .term-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .secret{
+    margin-left:auto;flex:0 0 auto;background:var(--red);color:#fff;
+    font-size:11px;font-weight:700;letter-spacing:2px;
+    padding:3px 8px;border-radius:3px;transform:rotate(2deg);
+  }
+  .console{background:var(--term);border:1px solid #000;border-top:none;padding:14px}
+  .hint{color:#7d879c;font-size:12.5px;margin-bottom:10px;letter-spacing:.5px}
+  .hint b{color:var(--green);font-weight:700}
+  #input{
+    width:100%;min-height:66px;resize:vertical;
+    background:#0c0e12;color:var(--green);
+    border:1px solid #2c313c;border-radius:8px;
+    padding:12px;font-size:15px;line-height:1.6;
+    font-family:var(--mono);
+  }
+  #input::placeholder{color:#4c5563}
+  #input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(126,231,135,.12)}
+  .btn-row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+  .btn{
+    min-height:48px;padding:12px 20px;border-radius:8px;
+    font-size:16px;font-weight:700;letter-spacing:2px;
+    transition:transform .08s,filter .15s;
+  }
+  .btn:active{transform:translateY(2px)}
+  .btn-main{background:var(--red);color:#fff;flex:1;min-width:150px}
+  .btn-main:hover{filter:brightness(1.12)}
+  .btn-ghost{background:#2a2f3a;color:#cfd6e4}
+  .btn-ghost:hover{filter:brightness(1.2)}
+
+  /* ---------- 题库 tabs ---------- */
+  .tabs{display:flex;gap:6px;overflow-x:auto;padding:14px 0 4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{
+    flex:0 0 auto;min-height:44px;padding:10px 14px;border-radius:6px;
+    background:#e9dfc4;border:1px solid #d3c39b;color:#5a4f38;
+    font-size:14px;font-weight:700;position:relative;
+  }
+  .tab.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .tab .newdot{
+    position:absolute;top:-7px;right:-8px;background:var(--red);color:#fff;
+    font-size:10px;font-weight:700;padding:2px 5px;border-radius:8px;
+    animation:pulse 1s infinite;
+  }
+  @keyframes pulse{50%{transform:scale(1.18)}}
+  .lists{margin-top:6px}
+  .list{display:none}
+  .list.on{display:block}
+  .li{
+    display:block;width:100%;text-align:left;
+    background:var(--paper);border:1px dashed #c9b78d;border-radius:6px;
+    padding:12px;margin-bottom:8px;font-size:15px;color:var(--ink);
+    min-height:44px;line-height:1.5;
+  }
+  .li:hover{background:#efe5cb}
+  .li .no{color:var(--ink-dim);margin-right:8px;font-size:13px}
+  .li .arr{float:right;color:var(--red);font-weight:900}
+
+  /* ---------- 空状态 ---------- */
+  .empty{
+    margin-top:16px;border:2px dashed #3a4152;border-radius:6px;
+    padding:36px 18px;text-align:center;color:#8fa0bf;
+    font-family:var(--mono);font-size:15px;
+  }
+  .cursor{animation:blink 1s steps(1) infinite}
+
+  /* ---------- 解密档案 ---------- */
+  .doc{
+    position:relative;
+    background:var(--paper);
+    background-image:repeating-linear-gradient(transparent 0 27px,rgba(180,160,110,.16) 27px 28px);
+    border:1px solid #d8c9a3;
+    border-radius:4px;
+    box-shadow:0 16px 34px rgba(0,0,0,.45),inset 0 0 60px rgba(190,165,105,.16);
+    margin-top:16px;padding:26px 22px 22px;color:var(--ink);
+    overflow:hidden;
+  }
+  .doc::before,.doc::after{
+    content:"";position:absolute;left:10px;width:12px;height:12px;border-radius:50%;
+    background:var(--desk);box-shadow:inset 0 1px 2px rgba(0,0,0,.65);
+  }
+  .doc::before{top:16px}
+  .doc::after{bottom:16px}
+  .doc-head{
+    display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;
+    border-bottom:1px solid #d8c9a3;padding-bottom:9px;
+    font-family:var(--mono);font-size:12px;color:var(--ink-dim);letter-spacing:.5px;
+  }
+  .doc-head .lvl{color:var(--red);font-weight:700}
+  .row-orig{margin-top:16px;font-size:15.5px;line-height:1.7}
+  .row-orig .tip{font-size:12px;color:var(--ink-dim);font-style:normal;margin-left:6px}
+  .redact{
+    background-image:linear-gradient(to bottom,var(--ink) 50%,transparent 50%);
+    background-size:100% 200%;background-position:0 0;
+    color:var(--ink);cursor:pointer;padding:0 3px;border-radius:2px;
+    font-family:var(--mono);
+    transition:background-position .45s ease,color .25s ease .12s;
+  }
+  .redact.open{background-position:0 -100%;color:var(--red-deep)}
+  .cut{border:none;border-top:2px dashed #c9b78d;margin:18px 0 14px}
+  .label{font-size:12px;color:var(--ink-dim);letter-spacing:3px;font-weight:700}
+  .answer{
+    font-family:var(--mono);font-size:17px;line-height:1.75;font-weight:700;
+    margin-top:6px;min-height:3.6em;
+  }
+  .row-star{margin-top:16px;font-size:14px}
+  .row-star .stars{color:var(--red);letter-spacing:4px;font-size:18px;font-family:var(--mono)}
+  .row-roast{margin-top:8px;font-size:14.5px;color:#4d4231;line-height:1.7}
+  .row-roast b{color:var(--red-deep)}
+  .doc-actions{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap;position:relative;z-index:1}
+  .stamp{
+    position:absolute;right:16px;bottom:86px;
+    width:62px;height:62px;border:3px double var(--red);border-radius:50%;
+    color:var(--red);display:flex;align-items:center;justify-content:center;
+    font-weight:900;font-size:13px;line-height:1.15;text-align:center;
+    letter-spacing:1px;
+    transform:rotate(-12deg) scale(1.9);opacity:0;
+    transition:transform .38s cubic-bezier(.2,1.7,.4,1),opacity .22s;
+    mix-blend-mode:multiply;pointer-events:none;
+  }
+  .stamp.in{transform:rotate(-12deg) scale(1);opacity:.85}
+
+  .foot{margin-top:16px;text-align:center;color:#5c6577;font-size:12px;font-family:var(--mono);letter-spacing:.5px}
+
+  /* ---------- toast ---------- */
+  .toast{
+    position:fixed;left:50%;top:14px;transform:translateX(-50%) translateY(-10px);
+    background:#16181d;color:#e8edf7;border:1px solid #333a46;
+    padding:10px 16px;border-radius:8px;font-size:14px;line-height:1.5;
+    opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;
+    z-index:99;max-width:88vw;text-align:center;
+    box-shadow:0 8px 24px rgba(0,0,0,.4);
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  @media (max-width:480px){
+    body{padding:14px 10px 40px}
+    .btn{width:100%;flex:none}
+    .stamp{width:54px;height:54px;font-size:11.5px;bottom:92px;right:12px}
+    .doc{padding:22px 16px 18px}
+  }
+  @media print{
+    body{background:#fff;padding:0;display:block}
+    .head,.term-bar,.console,.tabs,.lists,.empty,.doc-actions,.foot,.toast{display:none!important}
+    .doc{box-shadow:none;border:1px solid #999;margin:0;background:#fff}
+    .doc::before,.doc::after{display:none}
+    .redact{background:none;color:var(--ink)}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="head">
+    <h1>老板黑话<em>解密</em>终端</h1>
+    <p>打工人内部资料 · 传阅前请确认对方不是老板</p>
+  </header>
+
+  <div class="term-bar">
+    <span class="dot live" id="liveDot" title="别戳"></span><span class="dot"></span><span class="dot"></span>
+    <span class="term-title">worker-slang-decryptor — v1.0</span>
+    <span class="secret">机密 SECRET</span>
+  </div>
+
+  <div class="console">
+    <p class="hint">把职场黑话粘贴进来，终端会打印一份<b>解密档案</b>。回车直接解密，Shift+回车换行。</p>
+    <textarea id="input" placeholder="在此粘贴老板原话，例如：这个需求很简单……"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-main" id="go">开始解密</button>
+      <button class="btn btn-ghost" id="lucky">手气不错</button>
+    </div>
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <div class="lists" id="lists"></div>
+  </div>
+
+  <section class="empty" id="empty">&gt; 终端就绪，等待黑话输入<span class="cursor">_</span></section>
+
+  <section class="doc" id="doc" hidden>
+    <div class="doc-head">
+      <span id="docNo">档案编号 NO.20261023-000</span>
+      <span class="lvl" id="docLevel">密级：机密</span>
+    </div>
+    <p class="row-orig">原文：「<span class="redact" id="docQ"></span>」<em class="tip">（点击涂黑处查看原文）</em></p>
+    <hr class="cut"/>
+    <p class="label">译 文 （ 人 话 ）</p>
+    <p class="answer" id="docA"></p>
+    <p class="row-star">扎心指数 <span class="stars" id="docStar"></span></p>
+    <p class="row-roast"><b>终端点评：</b><span id="docRoast"></span></p>
+    <div class="doc-actions">
+      <button class="btn btn-main" id="copy">复制转发语</button>
+      <button class="btn btn-ghost" id="again">再来一句</button>
+    </div>
+    <div class="stamp" id="stamp">已<br>解<br>密</div>
+  </section>
+
+  <p class="foot" id="foot">2026-10-23 · 已解密 0 次 · 档案不上传，但会转发</p>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+'use strict';
+var ISSUE_DATE='2026-10-23';
+var SITE='https://hulinkang9527.github.io/daily-mini-apps/'+ISSUE_DATE+'.html';
+
+/* ================= 题库（唯一数据源） ================= */
+var DB={
+  hua:{label:'画饼类',items:[
+    {q:'等项目成了，大家都是元老',a:'项目成不了，但「元老」的帽子先戴着',star:4,roast:'元老的意思：老了以后也当不上股东。'},
+    {q:'把公司当成自己家',a:'那加班就不算加班了，算干家务',star:5,roast:'家里的钱你怎么不给我管？'},
+    {q:'年轻人要的是成长空间',a:'工资的事免谈，加班的事管够',star:5,roast:'空间确实大，大到能看见凌晨四点的城市。'},
+    {q:'先干着，后面亏待不了你',a:'「后面」是多久，没人知道',star:3,roast:'这句话的征信记录为零。'},
+    {q:'创业公司讲究的是情怀',a:'情怀不能交房租',star:4,roast:'老板的情怀，你的房租。'}
+  ]},
+  pua:{label:'PUA类',items:[
+    {q:'我说话比较直，你别往心里去',a:'接下来是人身攻击环节',star:4,roast:'直的不是话，是刀。'},
+    {q:'你要有主人翁意识',a:'公司的事你全扛，公司的钱你别想',star:5,roast:'主人翁不领工资是吧？'},
+    {q:'这个事情你要主动一点',a:'我没说，但你要猜到',star:4,roast:'主动是假，猜心是真。'},
+    {q:'能力要有，态度也要有',a:'翻译：你加班还不够狠',star:4,roast:'态度是万能的，工资是万一的。'},
+    {q:'你看看人家小李',a:'无解。小李是永恒的对照组。',star:3,roast:'建议你看看人家老板。'}
+  ]},
+  jb:{label:'加班类',items:[
+    {q:'我们这里是弹性工作制',a:'上班不弹下班弹，弹到半夜',star:5,roast:'弹的不是工时，是你的阳寿。'},
+    {q:'这个需求很简单',a:'我不会做，但你明天要',star:5,roast:'「简单」是老板的舒适区。'},
+    {q:'周末辛苦一下，尽量远程',a:'最好是来公司，显得敬业',star:4,roast:'远程是备选，在场是刚需。'},
+    {q:'最近大家辛苦一下',a:'最近谁都别想睡觉',star:4,roast:'「一下」的计量单位是月。'},
+    {q:'996 是福报',a:'感恩吧，还有人 007',star:5,roast:'福报会迟到，但加班不会。'}
+  ]},
+  opt:{label:'优化类',items:[
+    {q:'公司组织结构优化',a:'裁员',star:5,roast:'优的是报表，化的是你。'},
+    {q:'给你调岗是看重你',a:'逼你自己走',star:5,roast:'看重的是你的承受力。'},
+    {q:'你这个岗位是先行者',a:'前面没路，后面有坑',star:4,roast:'先行者，牺牲者的近义词。'},
+    {q:'公司感谢你的付出',a:'补偿方案下来了',star:3,roast:'感谢是免费的，赔偿是算过的。'},
+    {q:'我们是扁平化管理',a:'没有层级，也没有坑给你升',star:4,roast:'扁平到老板直接踩着你。'}
+  ]},
+  tj:{label:'团建类',items:[
+    {q:'周末团建，自愿参加',a:'不来就是不团结',star:5,roast:'自愿是形容词，参加是动词。'},
+    {q:'我们是一家人',a:'一家人不谈钱',star:4,roast:'谈钱伤感情，不谈钱伤你。'},
+    {q:'团建是让大家放松一下',a:'在老板面前表演放松',star:4,roast:'放松的是场地，紧绷的是你。'},
+    {q:'这次活动费用 AA',a:'公司出场地，你出路费',star:4,roast:'AA 制，老板和实习生平摊。'},
+    {q:'团建能增进团队感情',a:'增进的是老板的感情',star:3,roast:'你的感情是 KPI。'}
+  ]},
+  hr:{label:'HR黑话',items:[
+    {q:'薪资 6-12K，上不封顶',a:'6K',star:5,roast:'封顶的是 HR 的嘴。'},
+    {q:'我们看能力，不看学历',a:'你的学历得够低',star:4,roast:'看得见的能力，看不见的坑。'},
+    {q:'能接受适当加班吗',a:'996',star:5,roast:'「适当」是薛定谔的猫。'},
+    {q:'扁平化管理，晋升空间大',a:'没有层级，也没有编制',star:4,roast:'空间很大，你在楼下。'},
+    {q:'抗压能力强的优先',a:'挨骂不许哭',star:4,roast:'强的是血压。'}
+  ]}
+};
+var CATS=['hua','pua','jb','opt','tj'];
+
+/* 彩蛋词：命中即出特殊档案 */
+var EGGS=[
+  {k:'下班',item:{q:'我想下班',a:'禁语。该词已列入《公司禁语名录（2026 修订版）》第三条，解密程序拒绝执行。',star:5,roast:'终端什么都没记下来，真的。'}},
+  {k:'辞职',item:{q:'辞职',a:'解密结果：勇气 +100，社保 -10086，简历状态待更新。',star:4,roast:'世界很大，先活到下班再说。'}},
+  {k:'涨薪',item:{q:'涨薪',a:'解密失败：该词条已被财务部加密，密钥在老板本人手里。',star:4,roast:'建议当面解密，成功率翻倍。'}},
+  {k:'摸鱼',item:{q:'摸鱼',a:'识别成功：当前行为已自动同步至部门大群（并没有）。',star:3,roast:'鱼摸到了，人可能没了。'}},
+  {k:'奶茶',item:{q:'我想喝奶茶',a:'已识别：摸鱼倾向 87%，建议先把手头的活干完（并不）。',star:2,roast:'奶茶无罪，上班有罪。'}},
+  {k:'工资',item:{q:'工资',a:'涉及金钱的词汇触发财务部警报，本次解密记录 3 秒后自毁。',star:3,roast:'逗你的，本终端什么都没记。'}}
+];
+
+/* 关键词分类：自定义输入命中不了整句时，按关键词归类随机取一句 */
+var KW=[
+  {k:['元老','自己家','成长空间','亏待不了','情怀','创业'],c:'hua'},
+  {k:['说话直','主人翁','主动','态度','人家小李','比较直'],c:'pua'},
+  {k:['弹性','需求很简单','辛苦一下','996','加班','周末','007'],c:'jb'},
+  {k:['优化','调岗','先行者','感谢你的付出','扁平','裁员'],c:'opt'},
+  {k:['团建','一家人','AA','增进','放松一下'],c:'tj'},
+  {k:['薪资','上不封顶','抗压','晋升空间','不看学历','面试'],c:'hr'}
+];
+
+/* ================= 状态 ================= */
+var decryptCount=0;
+var luckyCount=0;
+var hrUnlocked=false;
+var seq=Math.floor(Math.random()*400)+100;
+var typeTimer=null;
+var typeDone=null;
+var typeDoneFired=false;
+var toastTimer=null;
+
+/* ================= 工具函数 ================= */
+function $(s){return document.querySelector(s);}
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function stars(n){
+  var s='';
+  for(var i=0;i<5;i++){s+=i<n?'★':'☆';}
+  return s;
+}
+function levelName(n){return n>=5?'绝密':n===4?'机密':n===3?'秘密':'内部';}
+function pad3(n){return String(n).padStart(3,'0');}
+
+function toast(msg){
+  var el=$('#toast');
+  el.textContent=msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){el.classList.remove('show');},1900);
+}
+
+/* ================= 渲染题库 tabs / 列表 ================= */
+var tabsEl=$('#tabs'),listsEl=$('#lists');
+function buildLists(){
+  CATS.concat(hrUnlocked?['hr']:[]).forEach(function(cat){
+    var d=DB[cat];
+    var list=document.createElement('div');
+    list.className='list';list.id='list-'+cat;
+    d.items.forEach(function(it,i){
+      var b=document.createElement('button');
+      b.type='button';b.className='li';
+      var no=document.createElement('span');no.className='no mono';no.textContent=pad3(i+1);
+      var q=document.createElement('span');q.textContent=it.q;
+      var arr=document.createElement('span');arr.className='arr';arr.textContent='›';
+      b.appendChild(no);b.appendChild(q);b.appendChild(arr);
+      b.addEventListener('click',function(){
+        $('#input').value=it.q;
+        decrypt(it,d.label);
+      });
+      list.appendChild(b);
+    });
+    listsEl.appendChild(list);
+  });
+}
+function buildTabs(){
+  CATS.concat(hrUnlocked?['hr']:[]).forEach(function(cat){
+    var d=DB[cat];
+    var b=document.createElement('button');
+    b.type='button';b.className='tab';b.dataset.cat=cat;b.textContent=d.label;
+    if(cat==='hua'){b.classList.add('on');}
+    b.addEventListener('click',function(){
+      tabsEl.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});
+      b.classList.add('on');
+      listsEl.querySelectorAll('.list').forEach(function(l){l.classList.remove('on');});
+      var l=$('#list-'+cat);if(l){l.classList.add('on');}
+    });
+    tabsEl.appendChild(b);
+  });
+}
+
+/* ================= 打字机 ================= */
+function typeText(el,text,done){
+  clearInterval(typeTimer);
+  typeDone=done||null;
+  typeDoneFired=false;
+  var i=0;
+  el.textContent='';
+  typeTimer=setInterval(function(){
+    i++;
+    el.textContent=text.slice(0,i);
+    if(i>=text.length){
+      clearInterval(typeTimer);
+      el.onclick=null;
+      if(typeDone&&!typeDoneFired){typeDoneFired=true;typeDone();}
+    }
+  },26);
+  el.onclick=function(){
+    clearInterval(typeTimer);
+    el.textContent=text;
+    if(typeDone&&!typeDoneFired){typeDoneFired=true;typeDone();}
+    el.onclick=null;
+  };
+}
+
+/* ================= 解密主流程 ================= */
+function decrypt(item,catLabel){
+  decryptCount++;
+  seq++;
+  $('#foot').textContent=ISSUE_DATE+' · 已解密 '+decryptCount+' 次 · 档案不上传，但会转发';
+
+  var no=$('#docNo');
+  no.textContent='档案编号 NO.'+ISSUE_DATE.replace(/-/g,'')+'-'+pad3(seq%1000);
+  $('#docLevel').textContent='密级：'+levelName(item.star);
+
+  var qEl=$('#docQ');
+  qEl.textContent=item.q;
+  qEl.classList.remove('open');
+
+  $('#docStar').textContent=stars(item.star);
+  $('#docRoast').textContent=item.roast;
+
+  var stamp=$('#stamp');
+  stamp.classList.remove('in');
+
+  $('#empty').classList.add('hidden');
+  var doc=$('#doc');
+  doc.hidden=false;
+
+  typeText($('#docA'),item.a,function(){
+    void stamp.offsetWidth;
+    stamp.classList.add('in');
+  });
+
+  if(decryptCount===5&&!hrUnlocked){
+    hrUnlocked=true;
+    var tab=document.createElement('button');
+    tab.type='button';tab.className='tab hidden';tab.id='tabHr';tab.dataset.cat='hr';
+    tab.textContent=DB.hr.label;
+    var nd=document.createElement('span');nd.className='newdot';nd.textContent='NEW';
+    tab.appendChild(nd);
+    tab.addEventListener('click',function(){
+      tabsEl.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});
+      tab.classList.add('on');
+      listsEl.querySelectorAll('.list').forEach(function(l){l.classList.remove('on');});
+      var l=$('#list-hr');if(l){l.classList.add('on');}
+    });
+    tabsEl.appendChild(tab);
+    var list=document.createElement('div');
+    list.className='list';list.id='list-hr';
+    DB.hr.items.forEach(function(it,i){
+      var b=document.createElement('button');
+      b.type='button';b.className='li';
+      var no2=document.createElement('span');no2.className='no mono';no2.textContent=pad3(i+1);
+      var q2=document.createElement('span');q2.textContent=it.q;
+      var arr2=document.createElement('span');arr2.className='arr';arr2.textContent='›';
+      b.appendChild(no2);b.appendChild(q2);b.appendChild(arr2);
+      b.addEventListener('click',function(){$('#input').value=it.q;decrypt(it,DB.hr.label);});
+      list.appendChild(b);
+    });
+    listsEl.appendChild(list);
+    setTimeout(function(){tab.classList.remove('hidden');},80);
+    toast('已解密 5 次：机密附件解锁 —— HR 黑话');
+  }
+
+  if(typeof doc.scrollIntoView==='function'){
+    setTimeout(function(){doc.scrollIntoView({behavior:'smooth',block:'nearest'});},60);
+  }
+}
+
+/* ================= 输入解密 ================= */
+function findEgg(t){
+  for(var i=0;i<EGGS.length;i++){
+    if(t.indexOf(EGGS[i].k)>=0){return EGGS[i];}
+  }
+  return null;
+}
+function findExact(t){
+  var all=CATS.concat('hr');
+  for(var c=0;c<all.length;c++){
+    var items=DB[all[c]].items;
+    for(var i=0;i<items.length;i++){
+      if(t.indexOf(items[i].q)>=0||(t.length>=2&&items[i].q.indexOf(t)>=0)){
+        return {item:items[i],label:DB[all[c]].label};
+      }
+    }
+  }
+  return null;
+}
+function classify(t){
+  for(var i=0;i<KW.length;i++){
+    var ks=KW[i].k;
+    for(var j=0;j<ks.length;j++){
+      if(t.indexOf(ks[j])>=0){return KW[i].c;}
+    }
+  }
+  return null;
+}
+function decodeInput(){
+  var t=$('#input').value.trim();
+  if(!t){toast('先输入一句老板原话，或者点上方题库');$('#input').focus();return;}
+  var egg=findEgg(t);
+  if(egg){decrypt(egg.item,'彩蛋档案');toast('彩蛋档案到手：'+egg.item.q);return;}
+  var exact=findExact(t);
+  if(exact){decrypt(exact.item,exact.label);return;}
+  var cat=classify(t);
+  if(cat&&(cat!=='hr'||hrUnlocked)){
+    var it=pick(DB[cat].items);
+    decrypt(it,DB[cat].label+' · 关键词命中');
+    return;
+  }
+  if(cat==='hr'&&!hrUnlocked){
+    var it2=pick(DB.hr.items);
+    decrypt(it2,'HR黑话 · 提前泄露');
+    return;
+  }
+  decrypt({
+    q:t,
+    a:'该言论未录入档案库，但中心思想已暴露：不想加钱，还想让你多干。',
+    star:3,
+    roast:'已自动归档至《待观察名单》。'
+  },'未收录');
+}
+
+/* ================= 手气不错 ================= */
+function lucky(){
+  luckyCount++;
+  if(luckyCount>=8&&luckyCount%8===0){
+    toast('题库快被你摸穿了，留点给同事');
+  }
+  var pool=[];
+  CATS.forEach(function(c){pool=pool.concat(DB[c].items);});
+  if(hrUnlocked){pool=pool.concat(DB.hr.items);}
+  if(Math.random()<0.22){
+    var e=pick(EGGS);
+    decrypt(e.item,'彩蛋档案');
+    toast('手气爆棚，摸到彩蛋档案：'+e.item.q);
+    return;
+  }
+  var it=pick(pool);
+  decrypt(it,'随机档案');
+}
+
+/* ================= 复制转发语 ================= */
+function shareText(){
+  var q=$('#docQ').textContent;
+  var a=$('#docA').textContent;
+  var star=$('#docStar').textContent;
+  var roast=$('#docRoast').textContent;
+  var no=$('#docNo').textContent.replace('档案编号 ','');
+  return '【老板黑话解密终端 · '+no+'】\n'+
+    '原文：「'+q+'」\n'+
+    '译文：'+a+'\n'+
+    '扎心指数：'+star+'\n'+
+    '终端点评：'+roast+'\n'+
+    '来解密你老板的原话 → '+SITE;
+}
+function copyText(t,cb){
+  function fallback(){
+    var ta=document.createElement('textarea');
+    ta.value=t;
+    ta.style.position='fixed';
+    ta.style.opacity='0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok=false;
+    try{ok=document.execCommand('copy');}catch(e){}
+    document.body.removeChild(ta);
+    cb(ok);
+  }
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(function(){cb(true);},function(){fallback();});
+  }else{
+    fallback();
+  }
+}
+
+/* ================= 事件绑定 ================= */
+function bind(){
+  $('#go').addEventListener('click',decodeInput);
+  $('#lucky').addEventListener('click',lucky);
+  $('#again').addEventListener('click',lucky);
+  $('#copy').addEventListener('click',function(){
+    copyText(shareText(),function(ok){
+      toast(ok?'转发语已复制，快发到打工人群':'复制失败了，手动截个图也行');
+    });
+  });
+  $('#docQ').addEventListener('click',function(){
+    this.classList.toggle('open');
+  });
+  $('#input').addEventListener('keydown',function(e){
+    if(e.key==='Enter'&&!e.shiftKey){
+      e.preventDefault();
+      decodeInput();
+    }
+  });
+  /* 终端小绿灯火柴：连戳 7 下，终端抖一抖 */
+  var dotHits=0,dotTimer=null;
+  $('#liveDot').addEventListener('click',function(){
+    var dot=this;
+    dotHits++;
+    dot.classList.remove('hot');
+    void dot.offsetWidth;
+    dot.classList.add('hot');
+    clearTimeout(dotTimer);
+    dotTimer=setTimeout(function(){dotHits=0;dot.classList.remove('hot');},2500);
+    if(dotHits>=7){
+      dotHits=0;
+      dot.classList.remove('hot');
+      var bar=document.querySelector('.term-bar');
+      bar.style.transition='transform .3s';
+      bar.style.transform='translateX(4px)';
+      setTimeout(function(){bar.style.transform='translateX(-4px)';},150);
+      setTimeout(function(){bar.style.transform='';},320);
+      toast('别戳了，HR 正在后台看日志');
+    }
+  });
+}
+
+/* ================= 启动 ================= */
+buildTabs();
+buildLists();
+$('#list-hua').classList.add('on');
+bind();
+})();
+</script>
+</body>
+</html>
