@@ -1,0 +1,1831 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="霓虹招牌定制机：给你的小店做一块会发光的灯牌，选形状选颜色选背景，导出可以发出去的夜市海报。">
+<meta name="theme-color" content="#0b0d18">
+<title>霓虹招牌定制机 · 给你的小店做个灯牌</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230b0d18'/%3E%3Cpath d='M12 40c0-9 8-16 20-16s20 7 20 16' fill='none' stroke='%23ff4fd8' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M14 44h36' stroke='%2335f0ff' stroke-width='4' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='22' r='3' fill='%23ffe14f'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0b0d18;
+    --bg2:#111527;
+    --panel:rgba(255,255,255,.045);
+    --panel2:rgba(255,255,255,.075);
+    --line:rgba(255,255,255,.12);
+    --ink:#eef1ff;
+    --dim:#9aa3c4;
+    --pink:#ff4fd8;
+    --cyan:#35f0ff;
+    --yellow:#ffe14f;
+    --neon:#ff4fd8;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(900px 520px at 12% -8%,rgba(255,79,216,.16),transparent 62%),
+      radial-gradient(820px 480px at 92% 4%,rgba(53,240,255,.13),transparent 62%),
+      linear-gradient(180deg,#0b0d18 0%,#0d1020 45%,#080a14 100%);
+    color:var(--ink);
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",system-ui,-apple-system,sans-serif;
+    min-height:100vh;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:700px;margin:0 auto;padding:14px 14px 46px}
+
+  /* ============ 屏幕切换 ============ */
+  .screen{display:none}
+  .screen.on{display:block}
+
+  /* ============ 顶部条 ============ */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:12px 14px;margin:0 0 12px;
+    background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.02));
+    border:1px solid var(--line);border-radius:var(--radius);
+    position:sticky;top:0;z-index:20;
+    backdrop-filter:blur(10px);
+  }
+  /* 工作台顶栏不吸顶：避免滚动时压住下方控件 */
+  #screenStudio .topbar{position:static;backdrop-filter:none}
+  .brand{display:flex;align-items:center;gap:9px;min-width:0}
+  .bulb{
+    width:13px;height:13px;border-radius:50%;flex:0 0 auto;
+    background:var(--neon);
+    box-shadow:0 0 6px var(--neon),0 0 16px var(--neon),0 0 30px rgba(255,79,216,.6);
+    animation:flick 3.4s infinite;
+  }
+  @keyframes flick{0%,96%,100%{opacity:1}97%{opacity:.45}98%{opacity:.9}99%{opacity:.55}}
+  .brand b{font-size:16px;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .brand span{font-size:11px;color:var(--dim);letter-spacing:2px;display:block;line-height:1}
+  .tbtns{display:flex;gap:7px;flex:0 0 auto}
+  .iconbtn{
+    min-width:44px;min-height:44px;border-radius:11px;cursor:pointer;
+    border:1px solid var(--line);background:var(--panel);color:var(--ink);
+    font-size:12px;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;
+    padding:0 10px;transition:.16s;
+  }
+  .iconbtn:hover{background:var(--panel2)}
+  .iconbtn.on{border-color:var(--neon);color:var(--neon);box-shadow:0 0 12px rgba(255,79,216,.25) inset}
+
+  /* ============ 开机屏 ============ */
+  .intro{
+    text-align:center;padding:34px 6px 20px;
+  }
+  .intro .neonTitle{
+    font-size:clamp(30px,9vw,50px);font-weight:800;letter-spacing:3px;margin:0 0 6px;
+    color:#fff;
+    text-shadow:
+      0 0 4px #fff,
+      0 0 12px var(--pink),
+      0 0 26px var(--pink),
+      0 0 52px rgba(255,79,216,.75);
+    animation:neonpulse 4.6s ease-in-out infinite;
+  }
+  @keyframes neonpulse{
+    0%,100%{text-shadow:0 0 4px #fff,0 0 12px var(--pink),0 0 26px var(--pink),0 0 52px rgba(255,79,216,.7)}
+    47%{text-shadow:0 0 4px #fff,0 0 10px var(--pink),0 0 20px var(--pink),0 0 40px rgba(255,79,216,.55)}
+    50%{text-shadow:0 0 2px #fff,0 0 4px var(--pink),0 0 8px rgba(255,79,216,.4)}
+    53%{text-shadow:0 0 4px #fff,0 0 12px var(--pink),0 0 26px var(--pink),0 0 52px rgba(255,79,216,.75)}
+  }
+  .intro .sub{color:var(--dim);font-size:15px;margin:0 0 26px}
+  .intro .sub b{color:var(--cyan);font-weight:600}
+  .feat{
+    text-align:left;max-width:440px;margin:0 auto 26px;
+    border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);padding:6px 16px;
+  }
+  .feat div{
+    padding:11px 0;border-bottom:1px dashed rgba(255,255,255,.09);
+    font-size:14px;color:#cfd5ee;display:flex;gap:10px;align-items:flex-start;
+  }
+  .feat div:last-child{border-bottom:0}
+  .feat i{
+    font-style:normal;flex:0 0 auto;width:22px;height:22px;border-radius:7px;
+    display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;
+    background:rgba(255,79,216,.16);color:var(--pink);border:1px solid rgba(255,79,216,.3);
+  }
+  .feat div:nth-child(2) i{background:rgba(53,240,255,.14);color:var(--cyan);border-color:rgba(53,240,255,.3)}
+  .feat div:nth-child(3) i{background:rgba(255,225,79,.14);color:var(--yellow);border-color:rgba(255,225,79,.3)}
+  .intro .date{color:#5f6788;font-size:12px;letter-spacing:1px;margin-top:18px}
+
+  .bigbtn{
+    display:inline-flex;align-items:center;justify-content:center;
+    min-height:54px;padding:0 34px;border-radius:14px;cursor:pointer;
+    font-family:inherit;font-size:17px;font-weight:700;letter-spacing:2px;
+    color:#160a1c;border:0;
+    background:linear-gradient(120deg,#ff4fd8,#ff8ad8 45%,#35f0ff 140%);
+    box-shadow:0 0 22px rgba(255,79,216,.4),0 8px 26px rgba(0,0,0,.4);
+    transition:transform .14s;
+  }
+  .bigbtn:active{transform:scale(.97)}
+
+  /* ============ 工作台 ============ */
+  .stage{
+    position:relative;border-radius:16px;overflow:hidden;
+    border:1px solid var(--line);
+    background:#070912;
+    box-shadow:0 16px 44px rgba(0,0,0,.55);
+    margin-bottom:12px;
+  }
+  #preview{display:block;width:100%;aspect-ratio:4/3;touch-action:manipulation;cursor:pointer}
+  .stageHint{
+    position:absolute;left:0;right:0;bottom:0;padding:9px 12px;
+    font-size:12px;color:#c8cef0;text-align:center;
+    background:linear-gradient(180deg,rgba(5,6,14,0),rgba(5,6,14,.86));
+    pointer-events:none;
+  }
+  .stage.off #preview{filter:saturate(.25) brightness(.55)}
+
+  .panel{
+    border:1px solid var(--line);border-radius:var(--radius);
+    background:var(--panel);padding:14px;margin-bottom:12px;
+  }
+  .field{margin-bottom:15px}
+  .field:last-child{margin-bottom:0}
+  .flabel{
+    font-size:12px;color:var(--dim);letter-spacing:1.5px;margin-bottom:8px;
+    display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+  }
+  .flabel b{color:var(--cyan);font-weight:600;font-size:12px;letter-spacing:0}
+  .namebox{display:flex;gap:9px}
+  #inpName{
+    flex:1;min-width:0;min-height:48px;border-radius:11px;
+    border:1px solid var(--line);background:rgba(0,0,0,.32);color:var(--ink);
+    padding:0 14px;font-size:17px;font-family:inherit;letter-spacing:1px;
+  }
+  #inpName:focus{outline:none;border-color:var(--neon);box-shadow:0 0 0 3px rgba(255,79,216,.13)}
+  .chiprow{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{
+    min-height:44px;padding:0 14px;border-radius:11px;cursor:pointer;
+    border:1px solid var(--line);background:rgba(255,255,255,.03);color:#c3cae6;
+    font-size:14px;font-family:inherit;display:inline-flex;align-items:center;gap:7px;
+    transition:.15s;
+  }
+  .chip:hover{background:var(--panel2);color:#fff}
+  .chip.on{
+    color:#0d0f1c;font-weight:600;border-color:transparent;
+    background:rgba(255,255,255,.92);
+  }
+  .swatch{width:15px;height:15px;border-radius:50%;flex:0 0 auto;box-shadow:0 0 8px currentColor}
+  .chip.on .swatch{box-shadow:0 0 9px currentColor,inset 0 0 0 2px rgba(255,255,255,.5)}
+  .rndbtn{
+    min-height:44px;min-width:44px;padding:0 12px;border-radius:11px;cursor:pointer;
+    border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--dim);
+    font-size:14px;font-family:inherit;
+  }
+  .rndbtn:hover{color:#fff;background:var(--panel2)}
+
+  .readout{
+    border:1px solid rgba(53,240,255,.22);border-radius:12px;
+    background:linear-gradient(180deg,rgba(53,240,255,.07),rgba(53,240,255,.02));
+    padding:12px 14px;
+  }
+  .readout .rk{font-size:11px;color:var(--dim);letter-spacing:2px;margin-bottom:3px}
+  .readout .rv{font-size:16px;color:#fff;line-height:1.5}
+  .readout .rv b{font-weight:600}
+  .readout .rv .tag{
+    display:inline-block;font-size:10.5px;letter-spacing:1px;font-weight:400;
+    color:var(--cyan);border:1px solid rgba(53,240,255,.35);
+    border-radius:5px;padding:1px 6px;margin-right:7px;vertical-align:2px;
+  }
+  .readout .rv .tag.egg{color:var(--yellow);border-color:rgba(255,225,79,.4)}
+  .egg{
+    margin-top:10px;padding:9px 12px;border-radius:10px;
+    background:rgba(255,225,79,.1);border:1px dashed rgba(255,225,79,.4);
+    color:var(--yellow);font-size:13px;
+  }
+  .egg b{color:#fff}
+
+  .actions{display:flex;flex-wrap:wrap;gap:9px}
+  .abtn{
+    flex:1 1 132px;min-height:50px;border-radius:12px;cursor:pointer;
+    font-family:inherit;font-size:15px;font-weight:600;letter-spacing:1px;
+    border:1px solid var(--line);background:var(--panel);color:var(--ink);
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    transition:.15s;
+  }
+  .abtn:hover{background:var(--panel2)}
+  .abtn.primary{
+    border-color:transparent;color:#160a1c;
+    background:linear-gradient(120deg,#ff4fd8,#ffa0e2 50%,#35f0ff 150%);
+    box-shadow:0 0 20px rgba(255,79,216,.34);
+  }
+  .abtn.ghost{color:var(--dim)}
+  .tip{color:#616a8b;font-size:12px;text-align:center;margin-top:12px;line-height:1.7}
+
+  /* ============ 海报屏 ============ */
+  .posterWrap{
+    border-radius:16px;overflow:hidden;border:1px solid var(--line);
+    box-shadow:0 18px 46px rgba(0,0,0,.6);background:#070912;margin-bottom:12px;
+  }
+  #posterImg{display:block;width:100%;height:auto}
+  .copybox{
+    border:1px solid var(--line);border-radius:12px;background:var(--panel);
+    padding:12px 14px;font-size:13.5px;color:#c8cfeb;line-height:1.75;
+    white-space:pre-wrap;word-break:break-word;margin-bottom:12px;
+  }
+
+  .toast{
+    position:fixed;left:50%;top:78px;transform:translate(-50%,-14px);
+    background:rgba(14,17,32,.97);border:1px solid var(--neon);color:#fff;
+    padding:12px 20px;border-radius:12px;font-size:14px;z-index:60;
+    opacity:0;pointer-events:none;transition:.24s;max-width:88vw;text-align:center;
+    box-shadow:0 0 24px rgba(255,79,216,.3);
+  }
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+
+  @media (max-width:420px){
+    .wrap{padding:10px 10px 40px}
+    .panel{padding:12px}
+    .abtn{flex:1 1 100%}
+    .brand span{display:none}
+  }
+  @media (min-width:700px){
+    .stage{max-width:100%}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ================= 开机屏 ================= -->
+  <section class="screen on" id="screenIntro">
+    <div class="topbar">
+      <div class="brand">
+        <span class="bulb"></span>
+        <div>
+          <b>霓虹招牌定制机</b>
+          <span>NEON SIGN STUDIO</span>
+        </div>
+      </div>
+      <div class="tbtns">
+        <button class="iconbtn" id="btnSoundTop" type="button" aria-label="音效开关">音效</button>
+      </div>
+    </div>
+
+    <div class="intro">
+      <h1 class="neonTitle">霓虹招牌定制机</h1>
+      <p class="sub">给你的小店做一块<b>会发光的灯牌</b>，导出去就能发。</p>
+      <div class="feat">
+        <div><i>1</i><span>写上店名，横排 / 竖排 / 弧形 / 环形随你挑</span></div>
+        <div><i>2</i><span>挑管子颜色，湿夜街 / 红砖墙 / 城市天台三处背景</span></div>
+        <div><i>3</i><span>按下开关，灯管会一段一段亮起来，机器还会给你配一句招牌话</span></div>
+      </div>
+      <button class="bigbtn" id="btnStart" type="button">开始营业</button>
+      <p class="date">每日一个有趣小应用 · 2026-10-24</p>
+    </div>
+  </section>
+
+  <!-- ================= 工作台 ================= -->
+  <section class="screen" id="screenStudio">
+    <div class="topbar">
+      <div class="brand">
+        <span class="bulb"></span>
+        <div>
+          <b>霓虹招牌定制机</b>
+          <span id="brandDate">2026-10-24</span>
+        </div>
+      </div>
+      <div class="tbtns">
+        <button class="iconbtn" id="btnSound" type="button" aria-label="音效开关">音效</button>
+        <button class="iconbtn" id="btnBack" type="button" aria-label="返回首页">首页</button>
+      </div>
+    </div>
+
+    <div class="stage" id="stage">
+      <canvas id="preview"></canvas>
+      <div class="stageHint" id="stageHint">点一下画面，接通电源</div>
+    </div>
+
+    <div class="panel">
+      <div class="field">
+        <div class="flabel"><span>店 名</span><b id="nameCount">0 / 12</b></div>
+        <div class="namebox">
+          <input id="inpName" type="text" maxlength="12" placeholder="输入你的店名" autocomplete="off" spellcheck="false">
+          <button class="rndbtn" id="btnRandom" type="button">随机</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="flabel"><span>排 版</span></div>
+        <div class="chiprow" id="rowLayout"></div>
+      </div>
+
+      <div class="field">
+        <div class="flabel"><span>管 子 颜 色</span></div>
+        <div class="chiprow" id="rowColor"></div>
+      </div>
+
+      <div class="field">
+        <div class="flabel"><span>底 板</span></div>
+        <div class="chiprow" id="rowBoard"></div>
+      </div>
+
+      <div class="field">
+        <div class="flabel"><span>背 景</span></div>
+        <div class="chiprow" id="rowBg"></div>
+      </div>
+
+      <div class="field">
+        <div class="flabel"><span>机 器 配 的 招 牌 话</span></div>
+        <div class="readout">
+          <div class="rk">副 标</div>
+          <div class="rv"><span class="tag" id="outSubTag">机器配置</span><b id="outSub">—</b></div>
+          <div class="rk" style="margin-top:10px">标 语</div>
+          <div class="rv"><span class="tag" id="outSloganTag">机器配置</span><b id="outSlogan">—</b></div>
+        </div>
+        <div class="egg" id="outEgg" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="abtn primary" id="btnPower" type="button">接通电源</button>
+      <button class="abtn" id="btnPoster" type="button">出海报</button>
+      <button class="abtn" id="btnCopy" type="button">复制转发语</button>
+    </div>
+    <p class="tip">连点画面 5 下，灯管会闹脾气（彩蛋）<br>海报会带上你的店名、机器配的招牌话和今天的日期</p>
+  </section>
+
+  <!-- ================= 海报屏 ================= -->
+  <section class="screen" id="screenPoster">
+    <div class="topbar">
+      <div class="brand">
+        <span class="bulb"></span>
+        <div>
+          <b>出 灯 了</b>
+          <span id="posterDate">2026-10-24</span>
+        </div>
+      </div>
+      <div class="tbtns">
+        <button class="iconbtn" id="btnBack2" type="button" aria-label="返回工作台">返回</button>
+      </div>
+    </div>
+
+    <div class="posterWrap">
+      <canvas id="posterImg"></canvas>
+    </div>
+
+    <div class="copybox" id="posterCopy"></div>
+
+    <div class="actions">
+      <button class="abtn primary" id="btnDownload" type="button">下载海报</button>
+      <button class="abtn" id="btnCopy2" type="button">复制转发语</button>
+      <button class="abtn ghost" id="btnAgain" type="button">再做一块</button>
+    </div>
+    <p class="tip">长按海报图片也能保存到相册</p>
+  </section>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ==========================================================
+   工具
+   ========================================================== */
+  var $ = function(s){ return document.querySelector(s); };
+  var $$ = function(s, root){ return Array.prototype.slice.call((root || document).querySelectorAll(s)); };
+var ISSUE_DATE = '2026-10-24';
+var FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif';
+
+function hashStr(s){
+  var h = 2166136261 >>> 0, i;
+  s = String(s);
+  for(i=0;i<s.length;i++){
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return h >>> 0;
+}
+function mulberry32(a){
+  return function(){
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function rngFor(seed){ return mulberry32(hashStr(seed)); }
+function pick(arr, r){ return arr[Math.floor(r() * arr.length) % arr.length]; }
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+
+/* ==========================================================
+   数据
+   ========================================================== */
+var LAYOUTS = [
+  {id:'row',   name:'横排'},
+  {id:'col',   name:'竖排'},
+  {id:'two',   name:'双行'},
+  {id:'arc',   name:'弧形'},
+  {id:'ring',  name:'环形'},
+  {id:'stack', name:'分层'}
+];
+
+var COLORS = [
+  {id:'pink',  name:'桃粉', hex:'#ff4fd8'},
+  {id:'cyan',  name:'湖蓝', hex:'#35f0ff'},
+  {id:'lemon', name:'柠黄', hex:'#ffe14f'},
+  {id:'mint',  name:'薄荷', hex:'#5cff9d'},
+  {id:'tang',  name:'橘红', hex:'#ff8a3d'},
+  {id:'violet',name:'幽紫', hex:'#a06bff'},
+  {id:'rose',  name:'玫红', hex:'#ff5a5a'},
+  {id:'ice',   name:'冰蓝', hex:'#9ad8ff'}
+];
+
+var BOARDS = [
+  {id:'none',  name:'裸灯管'},
+  {id:'round', name:'圆角板'},
+  {id:'plate', name:'铁皮牌'},
+  {id:'ring',  name:'圆招牌'}
+];
+
+var BGS = [
+  {id:'street',  name:'湿夜街'},
+  {id:'brick',   name:'红砖墙'},
+  {id:'rooftop', name:'城市天台'}
+];
+
+var RANDOM_NAMES = [
+  '深夜食堂','半糖主义','宇宙洗衣房','早八急救站','摸鱼研究所','空蝉书店',
+  '失眠研究所','一杯就好','老张修表铺','猫猫便利店','赛博打印店','二手宇宙',
+  '不加班俱乐部','深夜汽水铺','失物招领处','答案贩卖机','第九号唱片行','纸飞机维修'
+];
+
+/* 类别语料 */
+var CATS = [
+  {id:'drink', keys:['奶茶','咖啡','拿铁','茶','果饮','汽水','酒','可可','奶昔'],
+   subs:['今日限定','手作现制','第二杯半价','不兑水','冰柜常备'],
+   slogans:['三分糖七分命','续命方案，从这里开始','一杯敬明天，一杯敬现在','先喝一口，再谈人生','喝完这杯，思路就通了']},
+  {id:'food', keys:['饭','面','粉','饺','包','串','烤','食堂','厨房','烘焙','甜','糖','肠','饼','粥','煲','锅'],
+   subs:['现做现卖','管饱','烟火气','出餐慢但好吃','不加科技狠活'],
+   slogans:['人间烟火气，最抚凡人心','今天也要好好吃饭','一碗热汤，救赎全天','深夜食堂，24 小时不打烊','炒勺一响，口水一响']},
+  {id:'repair', keys:['修','补','改','装','配','锁','鞋','伞','家电','管道','换'],
+   subs:['当天取件','手工活','老手艺','可预约','先看后报价'],
+   slogans:['修不好的心情，我们修得好','万物可修，包括心情','小毛病，大解决','你只管坏，剩下的交给我','修东西，也修体面']},
+  {id:'study', keys:['学','考','自习','课','培训','读','辅导','留学','刷题','书'],
+   subs:['安静学习区','不催不赶','包教到会','24 小时自习','按进度收费'],
+   slogans:['把书读薄，把路走宽','来这里，只为一件事','进度条会走完的','安静是一种能力','熬得住的人，答案都在']},
+  {id:'beauty', keys:['理发','美发','美甲','美容','造型','剪','染','烫','按摩','洗头'],
+   subs:['先问再剪','不洗头也能做','手艺在人一档','约满为止','手艺一般但很耐心'],
+   slogans:['换个头，顺便换个心情','剪掉三千烦恼丝','好看是手艺，舒服是态度','今天也值得被好好打理','手艺不贵，耐心管够']},
+  {id:'print', keys:['打印','复印','照相','冲印','图文','快印','相片'],
+   subs:['当天取件','高清输出','可传文件','批量有优惠'],
+   slogans:['把想留住的，印下来','一张纸的分量刚刚好','你的照片值得更好的纸','急件也接，但得加钱']},
+  {id:'art', keys:['画','字','印','陶','木','手作','杂货','花','植','摄影','胶片','编织'],
+   subs:['手作限定','不卖批量','可定制','小批量','接受返工'],
+   slogans:['把喜欢的事做成日常','小店不大，志气不小','慢慢做，才像样','手比脑子诚实','丑一点，也算作品']},
+  {id:'health', keys:['药','诊','理疗','推','按','眼','牙','健身','瑜伽','中医','养生','减脂'],
+   subs:['需预约','温和派','老中医','一人一档','先体验'],
+   slogans:['身体是革命的本钱','早睡是最贵的护肤品','把健康排到第一位','慢一点，也是前进','今天也要动一动']},
+  {id:'pet', keys:['猫','喵','狗','汪','宠','兔','鸟','龟'],
+   subs:['宠物友好','营业中','可撸','需预约','寄养也接'],
+   slogans:['它比人更懂你的心','毛茸茸营业中','今天也想被摸','进来先别走','它在这儿，就不孤单']},
+  {id:'digital', keys:['数码','手机','电脑','屏','配件','充电','回收','数据','网'],
+   subs:['现场检测','数据不丢','快修','以旧换新','先备份后动手'],
+   slogans:['让旧东西再战三年','修不好的，交给专业的','技术活，不玄学','开机只要三秒','数据比机器金贵']},
+  {id:'cloth', keys:['衣','裳','布','服','裁','缝','帽','鞋','搭'],
+   subs:['可改尺寸','只做小批量','自带料也行','慢慢改','改到合身为止'],
+   slogans:['穿出你的态度','一件顶三件','衣服要伺候人','穿对了话就变多','合身比好看更难得']},
+  {id:'night', keys:['深夜','凌晨','夜宵','通宵','打烊','24小时'],
+   subs:['24 小时','通宵营业','不打烊','夜里见','到天亮'],
+   slogans:['夜里的人不孤单','灯亮着，就都算数','深夜有光，凌晨有我','睡不着的都欢迎','打烊之后，才是生活']}
+];
+
+var DEFAULT_SUB = ['欢迎光临','今日营业','手作小铺','营业中','不设最低消费','慢慢来','新店开张','街角见','有客人在','随缘开门'];
+var DEFAULT_SLOGAN = [
+  '小店新开，请多指教','我们正在发光，请进','今日营业，明日随缘',
+  '门没锁，灯没关','今天也营业，请勿见怪','进来坐会儿也行',
+  '这盏灯为你亮着','不贵，但认真','先开门，再谈别的',
+  '街角那家，就是我们','你可以慢一点','来都来了，喝口热的',
+  '不营业的时候在想营业','招牌亮着，就还醒着','推门请轻一点，我们怕吵',
+  '今天也在做一件小事','老板在，灯在','收摊时间，看心情'
+];
+
+/* 彩蛋：店名命中关键词 → 专属标语 + 小图案 */
+var EGGS = [
+  {keys:['摸鱼','划水','躺平','摆烂'], art:'fish',  sub:'带薪发呆',
+   slogan:'这条鱼，值一个下午班', tip:'检测到你在摸鱼，机器很欣慰。'},
+  {keys:['深夜','凌晨','夜宵','通宵','24小时','打烊'], art:'moon', sub:'通宵营业',
+   slogan:'夜里的人不孤单', tip:'机器把夜班的灯给你留着了。'},
+  {keys:['脱单','恋爱','爱情','单身','桃花','暗恋'], art:'heart', sub:'红线自取',
+   slogan:'月老在此，红线自取', tip:'机器偷偷从月老那儿顺了一根红线。'},
+  {keys:['猫','喵','猫猫','橘猫'], art:'cat', sub:'今日份猫粮已备好',
+   slogan:'猫猫营业中，请勿踩尾巴', tip:'有猫的店，客人永远不会翻台。'},
+  {keys:['emo','致郁','难过','治愈','忧郁','焦虑','崩溃','哭'], art:'cloud', sub:'免费寄存情绪',
+   slogan:'这里收留一切不开心', tip:'机器给你腾了个靠窗的位置，什么都别说。'},
+  {keys:['奶茶','咖啡','拿铁','续命','早八','打工','上班','通勤','加班'], art:'cup', sub:'续命专用',
+   slogan:'命续上了，人还得走', tip:'机器默默把糖度调高了两档。'},
+  {keys:['干饭','饿死','饭团','大厨','做饭'], art:'star', sub:'管饱不加价',
+   slogan:'干饭人的快乐老家', tip:'机器已经在搓手了。'},
+  {keys:['离职','辞职','裸辞','失业','跳槽'], art:'star', sub:'招人中',
+   slogan:'此处已无人，白瞎已入坑', tip:'机器给你挂了一面「欢迎入坑」的旗。'},
+  {keys:['分手','前任','失恋','告别'], art:'cloud', sub:'售后服务中',
+   slogan:'旧的不去，新的不来', tip:'机器帮你把上一个名字擦掉了。'}
+];
+
+/* ==========================================================
+   文本分析：店名 → 副标 / 标语 / 彩蛋
+   ========================================================== */
+function analyze(name){
+  name = String(name || '').trim();
+  var res = {name:name, sub:'', slogan:'', egg:null, cat:'default'};
+  if(!name){ res.sub='等待店名'; res.slogan='先写个名字，机器才好动笔'; return res; }
+
+  var i, k, low = name;
+  for(i=0;i<EGGS.length;i++){
+    var e = EGGS[i];
+    for(k=0;k<e.keys.length;k++){
+      if(low.indexOf(e.keys[k]) >= 0){ res.egg = e; break; }
+    }
+    if(res.egg) break;
+  }
+
+  var cat = null;
+  for(i=0;i<CATS.length && !cat;i++){
+    for(k=0;k<CATS[i].keys.length;k++){
+      if(low.indexOf(CATS[i].keys[k]) >= 0){ cat = CATS[i]; break; }
+    }
+  }
+  res.cat = cat ? cat.id : 'default';
+
+  var r = rngFor(name + '|' + res.cat);
+  if(res.egg){
+    res.sub = res.egg.sub;
+    res.slogan = res.egg.slogan;
+  }else if(cat){
+    res.sub = pick(cat.subs, r);
+    res.slogan = pick(cat.slogans, r);
+  }else{
+    res.sub = pick(DEFAULT_SUB, r);
+    res.slogan = pick(DEFAULT_SLOGAN, r);
+  }
+  return res;
+}
+
+/* ==========================================================
+   排版：店名 → 每个字的位置/角度
+   ========================================================== */
+function layoutSign(name, layout, box, ctx, subText){
+  var chars = Array.from(name || ' ');
+  var n = chars.length;
+  var out = {items:[], size:24, sub:null};
+  if(!n) return out;
+  var bw = box.w, bh = box.h, cx = box.x, cy = box.y;
+  var i, size;
+
+  function measure(str, px){
+    ctx.font = '700 ' + px + 'px ' + FONT;
+    return ctx.measureText(str).width;
+  }
+
+  if(layout === 'col'){
+    size = Math.min(bw * 0.60, (bh * 0.92) / Math.max(n * 1.18, 1));
+    for(i=0;i<n;i++){
+      out.items.push({ch:chars[i], x:cx, y:cy + (i - (n-1)/2) * size * 1.18, rot:0, size:size});
+    }
+    out.size = size;
+    return out;
+  }
+
+  if(layout === 'two'){
+    var mid = Math.ceil(n/2);
+    var l1 = chars.slice(0,mid).join(''), l2 = chars.slice(mid).join('');
+    var maxLen = Math.max(l1.length, l2.length) || 1;
+    size = Math.min(bh * 0.30, (bw * 0.92) / (maxLen * 1.10));
+    out.size = size;
+    [l1,l2].forEach(function(line, li){
+      if(!line) return;
+      var w = measure(line, size);
+      var x = cx - w/2, y = cy + (li - 0.5) * size * 1.28;
+      Array.from(line).forEach(function(ch){
+        var cw = measure(ch, size);
+        out.items.push({ch:ch, x:x + cw/2, y:y, rot:0, size:size});
+        x += cw;
+      });
+    });
+    return out;
+  }
+
+  if(layout === 'arc'){
+    var R = Math.min(bw * 0.42, bh * 0.98);
+    size = Math.min(bh * 0.26, R * 0.52);
+    var total = (n * size * 1.08) / R;
+    var ccx = cx, ccy = cy + R * 0.62;
+    out.size = size;
+    for(i=0;i<n;i++){
+      var a = -total/2 + (n===1?0:(i/(n-1) - 0.5)) * total;
+      out.items.push({
+        ch:chars[i],
+        x: ccx + R * Math.sin(a),
+        y: ccy - R * Math.cos(a),
+        rot: a, size:size
+      });
+    }
+    return out;
+  }
+
+  if(layout === 'ring'){
+    /* 环形：字立着绕成一圈（不跟着转），并自动画出那圈霓虹环 */
+    var sizeMax = Math.min(bh * 0.30, bw * 0.20);
+    var room = Math.min(cx, bw * 0.5, cy, bh * 0.5);
+    /* 先按"均分整圈"倒推半径，再倒推能塞下的大小 */
+    var RR = Math.max(12, Math.min(room - sizeMax * 0.62, bw * 0.42));
+    size = Math.min(sizeMax, 2 * Math.PI * RR / (n * 1.18));
+    if(size < 8) size = 8;
+    var half = size * 0.62;
+    RR = Math.max(12, Math.min(room - half, bw * 0.42));
+    out.size = size;
+    out.ringR = RR;
+    out.ringX = cx; out.ringY = cy;
+    /* 均匀分布在整圈上；实在太多字就密排（step 变小） */
+    var step = 2 * Math.PI / n;
+    var minStep = size * 1.18 / RR;
+    if(minStep > step) step = minStep;
+    var startAng = -Math.PI/2 - step * (n-1) / 2;
+    for(i=0;i<n;i++){
+      var ang = startAng + i * step;
+      out.items.push({
+        ch:chars[i],
+        x: cx + RR * Math.cos(ang),
+        y: cy + RR * Math.sin(ang),
+        rot: 0, size:size
+      });
+    }
+    return out;
+  }
+
+  if(layout === 'stack'){
+    size = Math.min(bh * 0.34, (bw * 0.94) / (n * 1.06));
+    out.size = size;
+    var w = measure(name, size);
+    var x0 = cx - w/2;
+    Array.from(name).forEach(function(ch){
+      var cw = measure(ch, size);
+      out.items.push({ch:ch, x:x0 + cw/2, y:cy - size * 0.18, rot:0, size:size});
+      x0 += cw;
+    });
+    if(subText){
+      var ss = Math.max(13, size * 0.30);
+      out.sub = {text:subText, x:cx, y:cy + size * 0.72, size:ss};
+    }
+    return out;
+  }
+
+  /* row */
+  size = Math.min(bh * 0.44, (bw * 0.92) / (n * 1.08), bh * 0.66);
+  out.size = size;
+  var tw = measure(name, size);
+  var sx = cx - tw/2;
+  Array.from(name).forEach(function(ch){
+    var cw = measure(ch, size);
+    out.items.push({ch:ch, x:sx + cw/2, y:cy, rot:0, size:size});
+    sx += cw;
+  });
+  return out;
+}
+
+/* ==========================================================
+   霓虹绘制
+   ========================================================== */
+function hexToRgb(h){
+  h = h.replace('#','');
+  if(h.length===3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  var v = parseInt(h,16);
+  return {r:(v>>16)&255, g:(v>>8)&255, b:v&255};
+}
+function mixWhite(hex, t){
+  var c = hexToRgb(hex);
+  var r = Math.round(c.r + (255-c.r)*t);
+  var g = Math.round(c.g + (255-c.g)*t);
+  var b = Math.round(c.b + (255-c.b)*t);
+  return 'rgb(' + r + ',' + g + ',' + b + ')';
+}
+function neonChar(ctx, item, hex, alpha, powered){
+  if(alpha <= 0.004) return;
+  var size = item.size;
+  ctx.save();
+  ctx.translate(item.x, item.y);
+  if(item.rot) ctx.rotate(item.rot);
+  ctx.font = '700 ' + size + 'px ' + FONT;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  var tube = Math.max(2, size * 0.13);
+  if(powered){
+    ctx.globalAlpha = alpha * 0.20; ctx.shadowColor = hex; ctx.shadowBlur = size * 0.75;
+    ctx.strokeStyle = hex; ctx.lineWidth = tube * 1.5;
+    ctx.strokeText(item.ch, 0, 0);
+    ctx.globalAlpha = alpha * 0.30; ctx.shadowBlur = size * 0.42;
+    ctx.lineWidth = tube * 1.12;
+    ctx.strokeText(item.ch, 0, 0);
+    ctx.globalAlpha = alpha; ctx.shadowBlur = size * 0.10;
+    ctx.lineWidth = tube;
+    ctx.strokeText(item.ch, 0, 0);
+    ctx.shadowBlur = 0; ctx.strokeStyle = mixWhite(hex, 0.78);
+    ctx.lineWidth = Math.max(1, tube * 0.30);
+    ctx.strokeText(item.ch, 0, 0);
+  }else{
+    ctx.globalAlpha = 0.16; ctx.shadowBlur = 0;
+    ctx.strokeStyle = '#7a829f'; ctx.lineWidth = tube;
+    ctx.strokeText(item.ch, 0, 0);
+  }
+  ctx.restore();
+}
+
+function drawBoard(ctx, plan, box, hex, powered, board, layout){
+  if(board === 'none') return;
+  if(!plan.items.length) return;
+  var xs = [], ys = [];
+  plan.items.forEach(function(it){ xs.push(it.x); ys.push(it.y); });
+  var minX = Math.min.apply(null, xs), maxX = Math.max.apply(null, xs);
+  var minY = Math.min.apply(null, ys), maxY = Math.max.apply(null, ys);
+
+  ctx.save();
+  if(board === 'ring'){
+    /* 圆招牌：一圈霓虹环 + 内部暗盘 */
+    var ccx = (minX + maxX) / 2;
+    var ccy = (minY + maxY) / 2;
+    var rad = Math.max(maxX - ccx, ccy - minY) + plan.size * 0.85;
+    var disc = ctx.createRadialGradient(ccx, ccy, rad*0.1, ccx, ccy, rad);
+    disc.addColorStop(0, 'rgba(8,10,20,.72)');
+    disc.addColorStop(1, 'rgba(8,10,20,.40)');
+    ctx.beginPath(); ctx.arc(ccx, ccy, rad, 0, Math.PI*2);
+    ctx.fillStyle = disc; ctx.fill();
+    ctx.beginPath(); ctx.arc(ccx, ccy, rad, 0, Math.PI*2);
+    ctx.strokeStyle = powered ? hex : 'rgba(140,150,180,.4)';
+    ctx.lineWidth = Math.max(2, plan.size*0.075);
+    ctx.shadowColor = hex; ctx.shadowBlur = powered ? plan.size*0.5 : 0;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = powered ? mixWhite(hex, 0.75) : 'rgba(180,190,215,.35)';
+    ctx.lineWidth = Math.max(1, plan.size*0.022);
+    ctx.stroke();
+    ctx.restore();
+    return;
+  }
+
+  var pad = plan.size * 0.55;
+  var bx0 = minX - pad, bx1 = maxX + pad;
+  var by0 = minY - pad*0.8, by1 = maxY + pad*0.8;
+  var bw = bx1 - bx0, bh = by1 - by0;
+  var bx = bx0, by = by0;
+
+  if(board === 'round'){
+    var rad2 = Math.min(bh * 0.5, 40);
+    ctx.beginPath();
+    if(ctx.roundRect){ ctx.roundRect(bx, by, bw, bh, rad2); }
+    else{
+      ctx.moveTo(bx+rad2, by);
+      ctx.arcTo(bx+bw, by, bx+bw, by+bh, rad2);
+      ctx.arcTo(bx+bw, by+bh, bx, by+bh, rad2);
+      ctx.arcTo(bx, by+bh, bx, by, rad2);
+      ctx.arcTo(bx, by, bx+bw, by, rad2);
+      ctx.closePath();
+    }
+    var gd = ctx.createLinearGradient(bx, by, bx, by+bh);
+    gd.addColorStop(0, 'rgba(10,12,24,.90)');
+    gd.addColorStop(1, 'rgba(4,5,12,.94)');
+    ctx.fillStyle = gd; ctx.fill();
+    ctx.strokeStyle = powered ? 'rgba(' + hexToRgb(hex).r + ',' + hexToRgb(hex).g + ',' + hexToRgb(hex).b + ',.45)' : 'rgba(140,150,180,.28)';
+    ctx.lineWidth = 2; ctx.stroke();
+  }else{
+    ctx.beginPath();
+    ctx.rect(bx, by, bw, bh);
+    var gd2 = ctx.createLinearGradient(bx, by, bx+bw, by+bh);
+    gd2.addColorStop(0, 'rgba(52,58,74,.92)');
+    gd2.addColorStop(.5, 'rgba(30,34,48,.94)');
+    gd2.addColorStop(1, 'rgba(58,64,80,.92)');
+    ctx.fillStyle = gd2; ctx.fill();
+    ctx.strokeStyle = 'rgba(190,200,225,.25)'; ctx.lineWidth = 1.5; ctx.stroke();
+    /* 铆钉 */
+    ctx.fillStyle = 'rgba(215,225,250,.45)';
+    [[bx+9,by+9],[bx+bw-9,by+9],[bx+9,by+bh-9],[bx+bw-9,by+bh-9]].forEach(function(p){
+      ctx.beginPath(); ctx.arc(p[0], p[1], 2.4, 0, Math.PI*2); ctx.fill();
+    });
+  }
+  ctx.restore();
+}
+
+function drawEggArt(ctx, art, x, y, s, hex, alpha){
+  if(!art) return;
+  ctx.save();
+  ctx.globalAlpha = alpha * 0.92;
+  ctx.translate(x, y);
+  ctx.strokeStyle = hex; ctx.fillStyle = hex;
+  ctx.lineWidth = Math.max(1.6, s*0.10);
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.shadowColor = hex; ctx.shadowBlur = s*0.5;
+  if(art === 'fish'){
+    ctx.beginPath();
+    ctx.ellipse(0, 0, s*0.55, s*0.32, 0, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(s*0.5, 0); ctx.lineTo(s*0.85, -s*0.26); ctx.lineTo(s*0.85, s*0.26);
+    ctx.closePath(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(-s*0.22, -s*0.06, s*0.05, 0, Math.PI*2); ctx.fill();
+  }else if(art === 'heart'){
+    ctx.beginPath();
+    ctx.moveTo(0, s*0.36);
+    ctx.bezierCurveTo(-s*0.8, -s*0.05, -s*0.42, -s*0.5, 0, -s*0.16);
+    ctx.bezierCurveTo(s*0.42, -s*0.5, s*0.8, -s*0.05, 0, s*0.36);
+    ctx.closePath(); ctx.stroke();
+  }else if(art === 'cat'){
+    ctx.beginPath();
+    ctx.arc(0, s*0.10, s*0.38, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-s*0.30, -s*0.18); ctx.lineTo(-s*0.36, -s*0.48); ctx.lineTo(-s*0.08, -s*0.30);
+    ctx.moveTo(s*0.30, -s*0.18); ctx.lineTo(s*0.36, -s*0.48); ctx.lineTo(s*0.08, -s*0.30);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(-s*0.14, s*0.06, s*0.045, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath();
+    ctx.arc(s*0.14, s*0.06, s*0.045, 0, Math.PI*2); ctx.fill();
+  }else if(art === 'cloud'){
+    ctx.beginPath();
+    ctx.arc(-s*0.26, s*0.02, s*0.22, 0, Math.PI*2);
+    ctx.arc(0, -s*0.08, s*0.28, 0, Math.PI*2);
+    ctx.arc(s*0.28, s*0.02, s*0.20, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-s*0.34, s*0.30); ctx.lineTo(-s*0.34, s*0.52);
+    ctx.moveTo(-s*0.04, s*0.30); ctx.lineTo(-s*0.04, s*0.58);
+    ctx.moveTo(s*0.26, s*0.30); ctx.lineTo(s*0.26, s*0.50);
+    ctx.stroke();
+  }else if(art === 'moon'){
+    ctx.beginPath();
+    ctx.arc(0, 0, s*0.40, 0.55*Math.PI, 1.45*Math.PI, false);
+    ctx.arc(s*0.20, 0, s*0.34, 1.45*Math.PI, 0.55*Math.PI, true);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(-s*0.32, s*0.34, s*0.05, 0, Math.PI*2); ctx.fill();
+  }else if(art === 'cup'){
+    ctx.beginPath();
+    ctx.moveTo(-s*0.30, -s*0.28); ctx.lineTo(s*0.30, -s*0.28);
+    ctx.lineTo(s*0.20, s*0.34); ctx.lineTo(-s*0.20, s*0.34);
+    ctx.closePath(); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(s*0.30, -s*0.12);
+    ctx.quadraticCurveTo(s*0.56, -s*0.10, s*0.30, s*0.10);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-s*0.34, -s*0.40); ctx.quadraticCurveTo(-s*0.20, -s*0.56, -s*0.06, -s*0.40);
+    ctx.moveTo(s*0.04, -s*0.40); ctx.quadraticCurveTo(s*0.18, -s*0.56, s*0.32, -s*0.40);
+    ctx.stroke();
+  }else{
+    ctx.beginPath();
+    for(var k=0;k<10;k++){
+      var r1 = k%2===0 ? s*0.42 : s*0.17;
+      var r2 = k%2===0 ? s*0.17 : s*0.42;
+      var a1 = -Math.PI/2 + k*Math.PI/5;
+      var a2 = a1 + Math.PI/5;
+      ctx.lineTo(Math.cos(a1)*r1, Math.sin(a1)*r1);
+      ctx.lineTo(Math.cos(a2)*r2, Math.sin(a2)*r2);
+    }
+    ctx.closePath(); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/* 带字间距绘制 */
+function drawSpaced(ctx, text, x, y, size, gap, color, align){
+  ctx.save();
+  ctx.font = '600 ' + size + 'px ' + FONT;
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = color;
+  var chars = Array.from(text), i, w = 0, widths = [];
+  for(i=0;i<chars.length;i++){
+    var cw = ctx.measureText(chars[i]).width;
+    widths.push(cw); w += cw;
+  }
+  w += gap * Math.max(0, chars.length-1);
+  var sx = align === 'center' ? x - w/2 : (align === 'right' ? x - w : x);
+  ctx.textAlign = 'left';
+  for(i=0;i<chars.length;i++){
+    ctx.fillText(chars[i], sx, y);
+    sx += widths[i] + gap;
+  }
+  ctx.restore();
+  return w;
+}
+
+/* ==========================================================
+   背景
+   ========================================================== */
+function drawStreet(ctx, W, H, t, poster){
+  var sky = ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0, '#0a0f22');
+  sky.addColorStop(.45, '#141a33');
+  sky.addColorStop(.72, '#1b1730');
+  sky.addColorStop(1, '#07080f');
+  ctx.fillStyle = sky; ctx.fillRect(0,0,W,H);
+
+  var ground = poster ? H*0.55 : H*0.68;
+
+  /* 远处楼体：贴着地面线往上长 */
+  var r = rngFor('street-bg');
+  var x = -20, i;
+  while(x < W + 20){
+    var bw = 40 + r()*70;
+    var bh = ground * (0.30 + r()*0.40);
+    var top = ground - bh;
+    ctx.fillStyle = 'rgba(6,8,18,' + (0.72 + r()*0.2) + ')';
+    ctx.fillRect(x, top, bw, bh);
+    /* 亮着的窗 */
+    var wr = rngFor('win' + Math.round(x));
+    for(i=0;i<14;i++){
+      if(wr() > 0.42) continue;
+      var wx = x + 4 + wr()*(bw-12);
+      var wy = top + 6 + wr()*(bh-14);
+      var ww = 3 + wr()*4, wh = 3 + wr()*4;
+      ctx.fillStyle = wr() > 0.7 ? 'rgba(255,214,140,.55)' : 'rgba(150,200,255,.35)';
+      ctx.fillRect(wx, wy, ww, wh);
+    }
+    x += bw + 6 + r()*16;
+  }
+
+  /* 路面 */
+  var road = ctx.createLinearGradient(0, ground, 0, H);
+  road.addColorStop(0, '#0d1020');
+  road.addColorStop(1, '#05060d');
+  ctx.fillStyle = road; ctx.fillRect(0, ground, W, H-ground);
+  ctx.strokeStyle = 'rgba(255,255,255,.07)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, ground); ctx.lineTo(W, ground); ctx.stroke();
+
+  /* 路面反光条纹：湿沥青上的霓虹拉丝 */
+  var rr2 = rngFor('road-streak');
+  for(i=0;i<26;i++){
+    var ry = ground + rr2() * (H - ground) * 0.92;
+    var rw = W * (0.04 + rr2() * 0.22);
+    var rx = rr2() * W;
+    var rh = Math.max(1, (ry - ground) * 0.012);
+    ctx.fillStyle = rr2() > 0.55 ? 'rgba(255,120,190,.10)' : 'rgba(90,200,255,.09)';
+    ctx.fillRect(rx, ry, rw, rh);
+  }
+  /* 车道虚线 */
+  ctx.strokeStyle = 'rgba(255,235,190,.10)';
+  ctx.lineWidth = Math.max(1, H*0.003);
+  ctx.setLineDash([H*0.018, H*0.026]);
+  ctx.beginPath();
+  ctx.moveTo(W*0.5, ground + H*0.012);
+  ctx.lineTo(W*0.5, H);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  /* 远处霓虹光斑 */
+  var br = rngFor('bokeh');
+  for(i=0;i<26;i++){
+    var bx = br()*W, by = br()*ground*0.85, rad = 3 + br()*11;
+    var hue = br();
+    ctx.beginPath(); ctx.arc(bx, by, rad, 0, Math.PI*2);
+    ctx.fillStyle = hue > .66 ? 'rgba(255,120,190,.16)' : (hue > .33 ? 'rgba(90,220,255,.14)' : 'rgba(255,215,130,.13)');
+    ctx.fill();
+  }
+  return ground;
+}
+
+function drawBrick(ctx, W, H, t, poster){
+  ctx.fillStyle = '#2a1b19'; ctx.fillRect(0,0,W,H);
+  var bw = 46, bh = 20, row = 0, y = 0;
+  while(y < H){
+    var off = (row % 2) ? -bw/2 : 0;
+    var x = off - bw;
+    while(x < W + bw){
+      var rr = rngFor('brk' + row + '_' + Math.round(x));
+      ctx.fillStyle = 'rgb(' + (58 + Math.round(rr()*22)) + ',' + (33 + Math.round(rr()*14)) + ',' + (30 + Math.round(rr()*14)) + ')';
+      ctx.fillRect(x+1.2, y+1.2, bw-2.4, bh-2.4);
+      x += bw;
+    }
+    y += bh; row++;
+  }
+  /* 顶部压暗 */
+  var vg = ctx.createLinearGradient(0,0,0,H);
+  vg.addColorStop(0, 'rgba(0,0,0,.42)');
+  vg.addColorStop(.5, 'rgba(0,0,0,.10)');
+  vg.addColorStop(1, 'rgba(0,0,0,.30)');
+  ctx.fillStyle = vg; ctx.fillRect(0,0,W,H);
+  /* 地面：只留一条窄人行道，不要大片死黑 */
+  var ground = poster ? H*0.82 : H*0.88;
+  var road = ctx.createLinearGradient(0, ground, 0, H);
+  road.addColorStop(0, 'rgba(24,20,20,.92)');
+  road.addColorStop(1, 'rgba(10,8,10,1)');
+  ctx.fillStyle = road; ctx.fillRect(0, ground, W, H-ground);
+  ctx.strokeStyle = 'rgba(255,225,190,.10)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, ground); ctx.lineTo(W, ground); ctx.stroke();
+  return ground;
+}
+
+function drawRooftop(ctx, W, H, t, poster){
+  var sky = ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0, '#05060f');
+  sky.addColorStop(.55, '#0e1330');
+  sky.addColorStop(1, '#1a1436');
+  ctx.fillStyle = sky; ctx.fillRect(0,0,W,H);
+
+  /* 星 */
+  var sr = rngFor('stars');
+  for(var i=0;i<90;i++){
+    var sx = sr()*W, sy = sr()*H*0.6, ss = sr();
+    ctx.beginPath(); ctx.arc(sx, sy, ss*1.5+0.4, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,' + (0.15 + ss*0.6) + ')';
+    ctx.fill();
+  }
+  /* 月 */
+  ctx.beginPath(); ctx.arc(W*0.80, H*0.16, H*0.055, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(255,246,220,.88)'; ctx.fill();
+  ctx.beginPath(); ctx.arc(W*0.80 - H*0.022, H*0.16 - H*0.012, H*0.05, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(14,19,48,1)'; ctx.fill();
+
+  /* 远景楼群 */
+  var r = rngFor('sky-build');
+  var x = -20;
+  while(x < W + 20){
+    var bw = 34 + r()*58;
+    var bh = H*(0.14 + r()*0.22);
+    var top = H*0.74 - bh;
+    ctx.fillStyle = 'rgba(4,6,16,' + (0.7 + r()*0.25) + ')';
+    ctx.fillRect(x, top, bw, bh);
+    var wr = rngFor('sw' + Math.round(x));
+    for(i=0;i<10;i++){
+      if(wr() > 0.45) continue;
+      ctx.fillStyle = wr() > 0.6 ? 'rgba(255,210,140,.45)' : 'rgba(140,200,255,.28)';
+      ctx.fillRect(x + 4 + wr()*(bw-10), top + 5 + wr()*(bh-12), 3+wr()*3, 3+wr()*3);
+    }
+    x += bw + 5 + r()*12;
+  }
+
+  /* 天台地面 */
+  var ground = poster ? H*0.58 : H*0.74;
+  var road = ctx.createLinearGradient(0, ground, 0, H);
+  road.addColorStop(0, 'rgba(20,20,34,.95)');
+  road.addColorStop(1, 'rgba(6,7,14,1)');
+  ctx.fillStyle = road; ctx.fillRect(0, ground, W, H-ground);
+  /* 栏杆 */
+  ctx.strokeStyle = 'rgba(180,190,215,.28)'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, ground - H*0.075); ctx.lineTo(W, ground - H*0.075);
+  ctx.stroke();
+  ctx.lineWidth = 1.4;
+  for(i=0;i<=10;i++){
+    var rx = W * (i/10);
+    ctx.beginPath(); ctx.moveTo(rx, ground - H*0.075); ctx.lineTo(rx, ground); ctx.stroke();
+  }
+  return ground;
+}
+
+function drawBg(ctx, W, H, bg, t, poster){
+  if(bg === 'brick') return drawBrick(ctx, W, H, t, poster);
+  if(bg === 'rooftop') return drawRooftop(ctx, W, H, t, poster);
+  return drawStreet(ctx, W, H, t, poster);
+}
+
+/* ==========================================================
+   场景合成
+   ========================================================== */
+function signBoxFor(bg, W, H, layout, poster){
+  var base;
+  /* 招牌要浮在地面线之上，才有倒影 */
+  if(bg === 'street')  base = poster ? {x:W*0.5, y:H*0.24, w:W*0.84, h:H*0.28} : {x:W*0.5, y:H*0.32, w:W*0.84, h:H*0.34};
+  else if(bg === 'brick')   base = poster ? {x:W*0.5, y:H*0.27, w:W*0.84, h:H*0.30} : {x:W*0.5, y:H*0.33, w:W*0.84, h:H*0.36};
+  else base = poster ? {x:W*0.5, y:H*0.22, w:W*0.84, h:H*0.27} : {x:W*0.5, y:H*0.30, w:W*0.84, h:H*0.32};
+  /* 竖排需要更高的画布空间，环形需要更方的空间 */
+  if(layout === 'col'){ base.y = poster ? H*0.27 : H*0.36; base.h = poster ? H*0.48 : H*0.62; base.w = W*0.86; }
+  else if(layout === 'ring'){ base.y = poster ? H*0.25 : H*0.34; base.h = poster ? H*0.42 : H*0.54; }
+  else if(layout === 'arc'){ base.h = base.h * 1.12; }
+  return base;
+}
+
+/* 把彩蛋图案放到离文字最远的角落，避免压住店名 */
+function placeEggArt(box, plan){
+  if(!plan.items.length) return null;
+  var xs = [], ys = [];
+  plan.items.forEach(function(it){ xs.push(it.x); ys.push(it.y); });
+  var bx0 = Math.min.apply(null, xs), bx1 = Math.max.apply(null, xs);
+  var by0 = Math.min.apply(null, ys), by1 = Math.max.apply(null, ys);
+  var pad = plan.size * 0.6;
+  bx0 -= pad; bx1 += pad; by0 -= pad; by1 += pad;
+  var cands = [
+    {x:box.x - box.w*0.40, y:box.y - box.h*0.40},
+    {x:box.x + box.w*0.40, y:box.y - box.h*0.40},
+    {x:box.x - box.w*0.40, y:box.y + box.h*0.40},
+    {x:box.x + box.w*0.40, y:box.y + box.h*0.40}
+  ];
+  var best = null, bestD = -1;
+  cands.forEach(function(c){
+    var dx = Math.max(bx0 - c.x, 0, c.x - bx1);
+    var dy = Math.max(by0 - c.y, 0, c.y - by1);
+    var d = Math.sqrt(dx*dx + dy*dy);
+    if(d > bestD){ bestD = d; best = c; }
+  });
+  return best;
+}
+
+function drawEggDecor(ctx, egg, box, hex, alpha, plan){
+  if(!egg) return;
+  var pos = placeEggArt(box, plan);
+  if(!pos) return;
+  var s = Math.max(16, plan.size * 0.42);
+  drawEggArt(ctx, egg.art, pos.x, pos.y, s, hex, alpha);
+}
+
+function renderSignLayer(ctx, W, H, st, t, powered, powerRatio, poster){
+  ctx.clearRect(0,0,W,H);
+  var box = signBoxFor(st.bg, W, H, st.layout, poster);
+  var plan = layoutSign(st.name, st.layout, box, ctx, st.sub);
+  var hex = st.color;
+  var n = plan.items.length || 1;
+  var i;
+
+  drawBoard(ctx, plan, box, hex, powered, st.board, st.layout);
+  if(st.layout === 'ring' && plan.ringR){
+    var rcx = plan.ringX, rcy = plan.ringY, rr = plan.ringR + plan.size * 0.72;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(rcx, rcy, rr, 0, Math.PI*2);
+    ctx.strokeStyle = powered ? hex : 'rgba(140,150,180,.4)';
+    ctx.lineWidth = Math.max(2, plan.size*0.075);
+    ctx.shadowColor = hex; ctx.shadowBlur = powered ? plan.size*0.55 : 0;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = powered ? mixWhite(hex, 0.78) : 'rgba(180,190,215,.32)';
+    ctx.lineWidth = Math.max(1, plan.size*0.024);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  for(i=0;i<plan.items.length;i++){
+    var it = plan.items[i];
+    var lit = 1;
+    if(powerRatio < 1){
+      var thresh = i / n;
+      lit = powerRatio > thresh + 0.08 ? 1 : (powerRatio > thresh ? (powerRatio - thresh) / 0.08 : 0.06);
+    }
+    var fl = 1;
+    if(powered){
+      /* 轻微闪烁：每个字独立 */
+      var seed = Math.sin((i+1)*12.9898 + Math.floor(t*7)) * 43758.5453;
+      var n1 = seed - Math.floor(seed);
+      fl = n1 > 0.965 ? 0.42 : 1;
+    }
+    neonChar(ctx, it, hex, lit * fl, powered);
+  }
+
+  if(plan.sub){
+    ctx.save();
+    ctx.font = '600 ' + plan.sub.size + 'px ' + FONT;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.shadowColor = hex; ctx.shadowBlur = powered ? plan.sub.size*0.8 : 0;
+    ctx.fillStyle = powered ? mixWhite(hex, 0.55) : 'rgba(150,158,185,.5)';
+    ctx.fillText(plan.sub.text, plan.sub.x, plan.sub.y);
+    ctx.restore();
+  }
+
+  drawEggDecor(ctx, st.egg, box, hex, powered ? 0.85 : 0.35, plan);
+  return plan;
+}
+/* 湿地面反光：招牌下方的霓虹光池 + 压扁的镜像拖影 */
+function drawLightPool(ctx, W, H, ground, amount, hex){
+  if(!ground) return;
+  var rgb = hexToRgb(hex);
+  var cx = W/2;
+  var poolH = (H - ground) * 1.6;
+  var pool = ctx.createRadialGradient(cx, ground, 2, cx, ground, Math.max(W*0.55, 40));
+  pool.addColorStop(0, 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + (0.30 * amount) + ')');
+  pool.addColorStop(0.35, 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + (0.13 * amount) + ')');
+  pool.addColorStop(1, 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',0)');
+  ctx.save();
+  ctx.fillStyle = pool;
+  ctx.fillRect(0, ground - poolH*0.30, W, poolH*1.30);
+  ctx.restore();
+}
+
+/* 湿地面反光：霓虹落在湿沥青上是一道向下的色痕，不是清晰的镜像文字 */
+function drawReflection(ctx, reflCanvas, W, H, ground, amount, plan, hex, scale){
+  if(!ground || !plan || !plan.items.length) return;
+  var minX = Infinity, maxX = -Infinity, maxY = -Infinity;
+  plan.items.forEach(function(it){
+    var half = it.size * 0.62;
+    if(it.x - half < minX) minX = it.x - half;
+    if(it.x + half > maxX) maxX = it.x + half;
+    if(it.y + half > maxY) maxY = it.y + half;
+  });
+  if(!isFinite(minX) || maxY > ground - 2) return;
+
+  var rgb = hexToRgb(hex);
+  var h = Math.min((ground - maxY) * 0.55 + H * 0.10, (H - ground) * 0.42);
+  if(h < 8) return;
+  var cx = (minX + maxX) / 2;
+  var halfW = Math.max((maxX - minX) / 2, 12);
+
+  /* 在独立图层上画：竖向渐隐 × 横向柔化，避免任何硬边 */
+  var rctx = reflCanvas.getContext('2d');
+  rctx.setTransform(scale, 0, 0, scale, 0, 0);
+  rctx.clearRect(0, 0, W, H);
+
+  var vg = rctx.createLinearGradient(0, ground, 0, ground + h);
+  vg.addColorStop(0, 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + (0.62 * amount) + ')');
+  vg.addColorStop(0.30, 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + (0.28 * amount) + ')');
+  vg.addColorStop(0.70, 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + (0.10 * amount) + ')');
+  vg.addColorStop(1, 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',0)');
+  rctx.fillStyle = vg;
+  rctx.fillRect(cx - halfW, ground, halfW * 2, h);
+
+  /* 横向柔化遮罩 */
+  rctx.globalCompositeOperation = 'destination-in';
+  var hg = rctx.createLinearGradient(cx - halfW, 0, cx + halfW, 0);
+  hg.addColorStop(0, 'rgba(0,0,0,0)');
+  hg.addColorStop(0.22, 'rgba(0,0,0,.55)');
+  hg.addColorStop(0.5, 'rgba(0,0,0,1)');
+  hg.addColorStop(0.78, 'rgba(0,0,0,.55)');
+  hg.addColorStop(1, 'rgba(0,0,0,0)');
+  rctx.fillStyle = hg;
+  rctx.fillRect(cx - halfW, ground, halfW * 2, h);
+  rctx.globalCompositeOperation = 'source-over';
+
+  ctx.drawImage(reflCanvas, 0, 0, reflCanvas.width, reflCanvas.height, 0, 0, W, H);
+
+  /* 湿面上的横向高光条 + 零星碎点 */
+  var rr = rngFor('ripple');
+  var i, bands = 6;
+  for(i=0;i<bands;i++){
+    var by = ground + (i / bands) * h * 0.75 + rr() * (h / bands) * 0.4;
+    var bw = halfW * (0.9 + rr() * 1.3);
+    var bx = cx + (rr() - 0.5) * halfW * 0.7;
+    var bh = Math.max(1, h * 0.010);
+    ctx.fillStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + (0.34 * amount * (1 - i/bands)) + ')';
+    ctx.fillRect(bx - bw/2, by, bw, bh);
+  }
+  for(i=0;i<12;i++){
+    var px = cx + (rr() - 0.5) * halfW * 1.5;
+    var py = ground + rr() * h * 0.7;
+    var pr = 0.8 + rr() * 2.2;
+    ctx.beginPath(); ctx.arc(px, py, pr, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + (0.30 * amount * (1 - py/H)) + ')';
+    ctx.fill();
+  }
+}
+
+function renderScene(ctx, W, H, st, t, powered, powerRatio, signCanvas, reflCanvas, scale, poster){
+  scale = scale || 1;
+  var ground = drawBg(ctx, W, H, st.bg, t, poster);
+  if(st.bg !== 'brick') drawLightPool(ctx, W, H, ground, st.bg === 'street' ? 1 : 0.55, st.color);
+  var sctx = signCanvas.getContext('2d');
+  sctx.setTransform(scale, 0, 0, scale, 0, 0);
+  var plan = renderSignLayer(sctx, W, H, st, t, powered, powerRatio, poster);
+  /* 先画反光（在下层），再叠招牌本体 */
+  if(st.bg === 'street' || st.bg === 'rooftop'){
+    drawReflection(ctx, reflCanvas, W, H, ground, st.bg === 'street' ? 1 : 0.5, plan, st.color, scale);
+  }
+  ctx.drawImage(signCanvas, 0, 0, signCanvas.width, signCanvas.height, 0, 0, W, H);
+  if(st.bg === 'brick'){
+    /* 砖墙：底部光晕 */
+    var g = ctx.createRadialGradient(W/2, ground, 4, W/2, ground, W*0.55);
+    g.addColorStop(0, 'rgba(255,255,255,.05)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, ground-10, W, H);
+  }
+}
+
+/* ==========================================================
+   海报
+   ========================================================== */
+function buildPoster(st, t){
+  var W = 1080, H = 1350;
+  var pad = 74;
+  var cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  var ctx = cv.getContext('2d');
+  var sign = document.createElement('canvas');
+  sign.width = W; sign.height = H;
+  var refl = document.createElement('canvas');
+  refl.width = W; refl.height = H;
+  renderScene(ctx, W, H, st, t, true, 1, sign, refl, 1, true);
+
+  /* 文字层：底部渐变压暗（无硬边），从 0.62H 往下渐入 */
+  var scrim = ctx.createLinearGradient(0, H*0.70, 0, H*0.84);
+  scrim.addColorStop(0, 'rgba(6,7,14,0)');
+  scrim.addColorStop(1, 'rgba(6,7,14,.9)');
+  ctx.fillStyle = scrim; ctx.fillRect(0, H*0.70, W, H*0.30);
+  var scrim2 = ctx.createLinearGradient(0, H*0.82, 0, H);
+  scrim2.addColorStop(0, 'rgba(6,7,14,0)');
+  scrim2.addColorStop(.4, 'rgba(6,7,14,.75)');
+  scrim2.addColorStop(1, 'rgba(6,7,14,.95)');
+  ctx.fillStyle = scrim2; ctx.fillRect(0, H*0.82, W, H*0.18);
+
+  /* 标语 + 副标 */
+  drawSpaced(ctx, st.slogan, W/2, H*0.795, 46, 3, 'rgba(255,255,255,.96)', 'center');
+  drawSpaced(ctx, st.sub, W/2, H*0.848, 28, 9, 'rgba(255,255,255,.66)', 'center');
+
+  /* 分隔线 */
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,.24)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(W/2-130, H*0.882); ctx.lineTo(W/2+130, H*0.882); ctx.stroke();
+  ctx.restore();
+
+  /* 底部信息 */
+  drawSpaced(ctx, ISSUE_DATE, pad+8, H-56, 22, 4, 'rgba(255,255,255,.52)', 'left');
+  drawSpaced(ctx, '霓虹招牌定制机 · 每日一个小应用', W-pad-8, H-56, 22, 2, 'rgba(255,255,255,.52)', 'right');
+
+  /* 画框 */
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,.16)'; ctx.lineWidth = 2;
+  ctx.strokeRect(30, 30, W-60, H-60);
+  ctx.restore();
+
+  return cv;
+}
+
+function buildShareText(st){
+  var lines = [];
+  lines.push('「' + st.name + '」正式营业。');
+  lines.push(st.slogan);
+  lines.push('—— ' + st.sub + ' ——');
+  lines.push('');
+  lines.push('#' + st.name + ' #' + st.sub);
+  lines.push(ISSUE_DATE + ' · 霓虹招牌定制机');
+  return lines.join('\n');
+}
+
+/* ==========================================================
+   音效（WebAudio 合成，无外部资源）
+   ========================================================== */
+var audio = {on:false, ctx:null};
+function ac(){
+  if(!audio.ctx){
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return null;
+    audio.ctx = new AC();
+  }
+  if(audio.ctx.state === 'suspended'){ try{ audio.ctx.resume(); }catch(e){} }
+  return audio.ctx;
+}
+function playSizzle(dur){
+  if(!audio.on) return;
+  var c = ac(); if(!c) return;
+  var sr = c.sampleRate, len = Math.floor(sr * dur);
+  var buf = c.createBuffer(1, len, sr);
+  var d = buf.getChannelData(0), i;
+  for(i=0;i<len;i++){
+    var e = Math.pow(1 - i/len, 1.7);
+    d[i] = (Math.random()*2-1) * e * 0.32;
+  }
+  var src = c.createBufferSource(); src.buffer = buf;
+  var bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 3600; bp.Q.value = 0.9;
+  var g = c.createGain();
+  g.gain.setValueAtTime(0.0001, c.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.20, c.currentTime + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + dur);
+  src.connect(bp); bp.connect(g); g.connect(c.destination);
+  src.start(); src.stop(c.currentTime + dur);
+}
+function playHum(on){
+  if(!audio.on) return;
+  var c = ac(); if(!c) return;
+  if(on){
+    if(audio.hum) return;
+    var o = c.createOscillator(), g = c.createGain();
+    o.type = 'sawtooth'; o.frequency.value = 60;
+    var lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 320;
+    g.gain.setValueAtTime(0.0001, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.035, c.currentTime + 0.6);
+    o.connect(lp); lp.connect(g); g.connect(c.destination);
+    o.start();
+    audio.hum = {o:o, g:g};
+  }else if(audio.hum){
+    try{
+      audio.hum.g.gain.cancelScheduledValues(c.currentTime);
+      audio.hum.g.gain.setValueAtTime(audio.hum.g.gain.value, c.currentTime);
+      audio.hum.g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.25);
+      audio.hum.o.stop(c.currentTime + 0.3);
+    }catch(e){}
+    audio.hum = null;
+  }
+}
+function playClick(){
+  if(!audio.on) return;
+  var c = ac(); if(!c) return;
+  var o = c.createOscillator(), g = c.createGain();
+  o.type = 'square'; o.frequency.setValueAtTime(880, c.currentTime);
+  o.frequency.exponentialRampToValueAtTime(220, c.currentTime + 0.07);
+  g.gain.setValueAtTime(0.12, c.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.09);
+  o.connect(g); g.connect(c.destination);
+  o.start(); o.stop(c.currentTime + 0.1);
+}
+
+/* ==========================================================
+   状态
+   ========================================================== */
+var state = {
+  name: '深夜食堂',
+  layout: 'row',
+  color: 'pink',
+  board: 'none',
+  bg: 'street',
+  sub: '',
+  slogan: '',
+  egg: null
+};
+var powered = false;
+var powerRatio = 0;      /* 0→1 充能 */
+var targetPower = 0;
+var tapCount = 0;
+var tapResetAt = 0;
+var glitchUntil = 0;
+var glitchSeen = false;
+
+var preview = $('#preview');
+var pctx = preview.getContext('2d');
+var signCanvas = document.createElement('canvas');
+var reflCanvas = document.createElement('canvas');
+var lastFrame = 0;
+var animRAF = 0;
+var posterURL = null;
+
+function colorHex(id){
+  for(var i=0;i<COLORS.length;i++){ if(COLORS[i].id === id) return COLORS[i].hex; }
+  return COLORS[0].hex;
+}
+function syncState(){
+  var a = analyze(state.name);
+  state.sub = a.sub;
+  state.slogan = a.slogan;
+  state.egg = a.egg;
+  var hex = colorHex(state.color);
+  document.documentElement.style.setProperty('--neon', hex);
+  var isEgg = !!a.egg;
+  var tagCls = isEgg ? 'tag egg' : 'tag';
+  $('#outSubTag').className = tagCls;
+  $('#outSloganTag').className = tagCls;
+  $('#outSubTag').textContent = isEgg ? '彩蛋副标' : '机器副标';
+  $('#outSloganTag').textContent = isEgg ? '彩蛋标语' : '机器标语';
+  $('#outSub').textContent = a.sub;
+  $('#outSlogan').textContent = a.slogan;
+  var eggBox = $('#outEgg');
+  if(isEgg){
+    eggBox.style.display = 'block';
+    eggBox.innerHTML = '<b>彩蛋：' + (a.egg.tip || '') + '</b>专属标语「' + a.slogan + '」已挂上。';
+  }else{
+    eggBox.style.display = 'none';
+  }
+  $('#nameCount').textContent = Array.from(state.name).length + ' / 12';
+  $('#stageHint').textContent = powered ? '灯管已通电 · 再点一下断电' : '点一下画面，接通电源';
+  $('#btnPower').textContent = powered ? '断电' : '接通电源';
+  $('#stage').classList.toggle('off', !powered);
+}
+
+function resizePreview(){
+  var cssW = preview.clientWidth || 360;
+  var maxPx = 900;
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var scale = Math.min(dpr, maxPx / Math.max(cssW,1));
+  var w = Math.round(cssW * scale);
+  var h = Math.round((cssW * 0.75) * scale);
+  if(preview.width !== w || preview.height !== h){
+    preview.width = w; preview.height = h;
+    signCanvas.width = w; signCanvas.height = h;
+    reflCanvas.width = w; reflCanvas.height = h;
+  }
+  pctx.setTransform(scale, 0, 0, scale, 0, 0);
+  pctx.__cssW = cssW; pctx.__cssH = cssW * 0.75; pctx.__scale = scale;
+}
+
+function drawFrame(ts){
+  if(!lastFrame) lastFrame = ts;
+  var dt = Math.min(0.06, (ts - lastFrame)/1000);
+  lastFrame = ts;
+  var t = ts/1000;
+
+  /* 充能动画 */
+  if(powered){
+    if(powerRatio < 1){
+      powerRatio = Math.min(1, powerRatio + dt * 1.5);
+    }
+  }else{
+    if(powerRatio > 0){
+      powerRatio = Math.max(0, powerRatio - dt * 4.5);
+    }
+  }
+
+  var glitch = ts < glitchUntil;
+  if(glitch){
+    powerRatio = (Math.random() > 0.42) ? 1 : 0.12;
+  }
+
+  var W = pctx.__cssW || 360, H = pctx.__cssH || 270;
+  var scale = pctx.__scale || 1;
+  pctx.clearRect(0,0,W,H);
+  renderScene(pctx, W, H, state, t, powered || powerRatio > 0.15, powerRatio, signCanvas, reflCanvas, scale, false);
+
+  animRAF = requestAnimationFrame(drawFrame);
+}
+
+function startLoop(){
+  if(!animRAF) animRAF = requestAnimationFrame(drawFrame);
+}
+
+/* ==========================================================
+   UI 构建
+   ========================================================== */
+function buildChips(container, list, getCur, onPick, isColor){
+  container.innerHTML = '';
+  list.forEach(function(item){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip';
+    b.dataset.id = item.id;
+    b.dataset.group = container.id;    if(isColor){
+      var sw = document.createElement('span');
+      sw.className = 'swatch';
+      sw.style.background = item.hex;
+      sw.style.color = item.hex;
+      b.appendChild(sw);
+    }
+    b.appendChild(document.createTextNode(item.name));
+    b.addEventListener('click', function(){
+      onPick(item.id);
+      playClick();
+      refreshChips();
+    });
+    container.appendChild(b);
+  });
+  function refreshChips(){
+    var cur = getCur();
+    $$('.chip', container).forEach(function(c){
+      var on = c.dataset.id === cur;
+      c.classList.toggle('on', on);
+      if(on && isColor){
+        c.style.background = colorHex(c.dataset.id);
+        c.style.color = '#0d0f1c';
+      }else{
+        c.style.background = '';
+        c.style.color = '';
+      }
+    });
+  }
+  refreshChips();
+  return refreshChips;
+}
+
+var refreshers = [];
+
+function buildUI(){
+  refreshers.push(buildChips($('#rowLayout'), LAYOUTS, function(){ return state.layout; }, function(id){ state.layout = id; syncState(); refreshAll(); }));
+  refreshers.push(buildChips($('#rowColor'), COLORS, function(){ return state.color; }, function(id){ state.color = id; syncState(); }, true));
+  refreshers.push(buildChips($('#rowBoard'), BOARDS, function(){ return state.board; }, function(id){ state.board = id; }));
+  refreshers.push(buildChips($('#rowBg'), BGS, function(){ return state.bg; }, function(id){ state.bg = id; syncState(); }));
+}
+
+function refreshAll(){ refreshers.forEach(function(f){ f(); }); }
+
+/* ==========================================================
+   屏幕切换
+   ========================================================== */
+function show(which){
+  ['screenIntro','screenStudio','screenPoster'].forEach(function(id){
+    $('#'+id).classList.toggle('on', id === which);
+  });
+  window.scrollTo(0,0);
+  if(which === 'screenStudio'){ resizePreview(); startLoop(); }
+  if(which === 'screenPoster'){ buildPosterCanvas(); }
+}
+
+function toast(msg){
+  var el = $('#toast');
+  el.textContent = msg;
+  el.classList.add('on');
+  clearTimeout(el.__t);
+  el.__t = setTimeout(function(){ el.classList.remove('on'); }, 2100);
+}
+
+/* ==========================================================
+   海报画布
+   ========================================================== */
+function buildPosterCanvas(){
+  var cv = $('#posterImg');
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var cssW = cv.parentElement.clientWidth || 360;
+  var w = Math.round(cssW * dpr);
+  var h = Math.round(w * 1350/1080);
+  cv.style.width = '100%';
+  cv.width = w; cv.height = h;
+  var p = buildPoster(state, performance.now()/1000);
+  var ctx = cv.getContext('2d');
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,w,h);
+  ctx.drawImage(p, 0, 0, w, h);
+  cv.__full = p;
+  $('#posterCopy').textContent = buildShareText(state);
+  $('#posterDate').textContent = ISSUE_DATE;
+}
+
+/* ==========================================================
+   事件
+   ========================================================== */
+function setPowered(on){
+  if(on === powered) return;
+  powered = on;
+  if(on){
+    powerRatio = 0;
+    playSizzle(0.55);
+    playHum(true);
+  }else{
+    playHum(false);
+  }
+  syncState();
+}
+
+function handleCanvasTap(){
+  var now = Date.now();
+  if(now - tapResetAt > 12000){ tapCount = 0; }
+  tapResetAt = now;
+  tapCount++;
+  if(tapCount >= 5 && !glitchSeen){
+    glitchSeen = true;
+    glitchUntil = Date.now() + 1400;
+    toast('灯管闹脾气了 —— 电路接触不良');
+    playSizzle(0.9);
+  }else if(tapCount >= 5){
+    glitchUntil = Date.now() + 700;
+  }
+  setPowered(!powered);
+}
+
+function copyText(txt){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(function(){
+      toast('转发语已复制');
+    }, function(){
+      fallbackCopy(txt);
+    });
+  }else{
+    fallbackCopy(txt);
+  }
+}
+function fallbackCopy(txt){
+  try{
+    var ta = document.createElement('textarea');
+    ta.value = txt;
+    ta.setAttribute('readonly','');
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast('转发语已复制');
+  }catch(e){
+    toast('复制失败，请手动选择');
+  }
+}
+
+function bindEvents(){
+  $('#btnStart').addEventListener('click', function(){
+    playClick();
+    show('screenStudio');
+  });
+  $('#btnBack').addEventListener('click', function(){ show('screenIntro'); });
+  $('#btnBack2').addEventListener('click', function(){ show('screenStudio'); });
+  $('#btnAgain').addEventListener('click', function(){
+    $('#inpName').value = pick(RANDOM_NAMES, Math.random());
+    state.name = $('#inpName').value;
+    syncState();
+    show('screenStudio');
+  });
+
+  var inp = $('#inpName');
+  inp.addEventListener('input', function(){
+    state.name = inp.value;
+    syncState();
+  });
+  /* 空格名也要被识别成"没填" */
+  inp.addEventListener('blur', function(){
+    var v = inp.value.replace(/\s+/g, ' ').replace(/^ | $/g, '');
+    if(v !== inp.value){ inp.value = v; state.name = v; syncState(); }
+  });
+
+  $('#btnRandom').addEventListener('click', function(){
+    var n = pick(RANDOM_NAMES, Math.random());
+    var guard = 0;
+    while(n === state.name && guard < 8){ n = pick(RANDOM_NAMES, Math.random()); guard++; }
+    inp.value = n;
+    state.name = n;
+    syncState();
+    playClick();
+  });
+
+  preview.addEventListener('click', handleCanvasTap);
+  $('#btnPower').addEventListener('click', function(){
+    if(glitchSeen && tapCount >= 5){ tapCount = 0; }
+    setPowered(!powered);
+    playClick();
+  });
+
+  $('#btnPoster').addEventListener('click', function(){
+    if(!state.name.replace(/\s+/g, '').length){
+      toast('先给店起个名字');
+      inp.focus();
+      return;
+    }
+    show('screenPoster');
+  });
+
+  $('#btnCopy').addEventListener('click', function(){
+    if(!state.name.replace(/\s+/g, '').length){ toast('先给店起个名字'); return; }
+    copyText(buildShareText(state));
+  });
+  $('#btnCopy2').addEventListener('click', function(){
+    copyText(buildShareText(state));
+  });
+
+  $('#btnDownload').addEventListener('click', function(){
+    var cv = $('#posterImg');
+    var full = cv.__full;
+    if(!full){ toast('海报还没生成'); return; }
+    var name = 'neon-sign-' + (state.name || 'shop').replace(/[\\/:*?"<>|\s]/g, '_') + '-' + ISSUE_DATE + '.png';
+    try{
+      full.toBlob(function(blob){
+        if(!blob){ toast('生成失败，请长按图片保存'); return; }
+        if(posterURL){ URL.revokeObjectURL(posterURL); }
+        posterURL = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = posterURL;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        toast('海报已下载');
+      }, 'image/png');
+    }catch(e){
+      toast('浏览器不支持下载，请长按图片保存');
+    }
+  });
+
+  var soundBtns = [$('#btnSound'), $('#btnSoundTop')];
+  function paintSound(){
+    soundBtns.forEach(function(b){
+      b.classList.toggle('on', audio.on);
+      b.textContent = audio.on ? '音效 开' : '音效 关';
+    });
+  }
+  soundBtns.forEach(function(b){
+    b.addEventListener('click', function(){
+      audio.on = !audio.on;
+      paintSound();
+      if(audio.on){ playClick(); if(powered) playHum(true); }
+      else playHum(false);
+    });
+  });
+  paintSound();
+
+  window.addEventListener('resize', function(){
+    if($('#screenStudio').classList.contains('on')) resizePreview();
+  });
+  document.addEventListener('visibilitychange', function(){
+    if(document.hidden){ if(animRAF){ cancelAnimationFrame(animRAF); animRAF = 0; } }
+    else if($('#screenStudio').classList.contains('on')){ startLoop(); }
+  });
+}
+
+/* ==========================================================
+   启动
+   ========================================================== */
+function init(){
+  $('#brandDate').textContent = ISSUE_DATE;
+  buildUI();
+  syncState();
+  bindEvents();
+  resizePreview();
+  startLoop();
+  window.__neon = {
+    state:state, analyze:analyze, layoutSign:layoutSign, buildPoster:function(){ return buildPoster(state, performance.now()/1000); },
+    buildShareText:function(){ return buildShareText(state); },
+    setName:function(n){ state.name = n; $('#inpName').value = n; syncState(); },
+    setLayout:function(l){ state.layout = l; refreshAll(); },
+    setColor:function(c){ state.color = c; refreshAll(); syncState(); },
+    setBoard:function(b){ state.board = b; refreshAll(); },
+    setBg:function(b){ state.bg = b; refreshAll(); syncState(); },
+    power:function(on){ setPowered(on); },
+    posterData:function(){
+      var p = buildPoster(state, performance.now()/1000);
+      return p.toDataURL('image/png');
+    },
+    screens:function(){ return {intro:$('#screenIntro').classList.contains('on'), studio:$('#screenStudio').classList.contains('on'), poster:$('#screenPoster').classList.contains('on')}; }
+  };
+}
+if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+else init();
+
+})();
+</script>
+</body>
+</html>
