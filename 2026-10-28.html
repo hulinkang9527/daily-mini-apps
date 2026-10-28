@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>深夜电台 FM · 今晚你想听点什么</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23231a12'/%3E%3Crect x='8' y='16' width='48' height='24' rx='4' fill='%23f0c070'/%3E%3Ccircle cx='24' cy='28' r='7' fill='%23d94f3d'/%3E%3Ccircle cx='44' cy='28' r='7' fill='%23d94f3d'/%3E%3Cpath d='M8 46h48v4H8z' fill='%23c89b52'/%3E%3C/svg%3E" />
+<style>
+  :root{
+    --wood:#3a2a1c; --wood2:#241a12; --wood-lite:#6b4a2b;
+    --amber:#f0c070; --amber-dim:#a97f3f; --red:#d94f3d;
+    --cream:#f6e9d2; --dim:#a68f75; --ink:#140e09;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{background:#150e08;color:var(--cream);
+    font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
+    -webkit-text-size-adjust:100%}
+  body{min-height:100vh;
+    background-image:
+      radial-gradient(120% 70% at 50% -10%, #3a2817 0%, #1b1209 55%, #0e0906 100%);
+    background-attachment:fixed;}
+  .wrap{max-width:560px;margin:0 auto;padding:12px 14px 40px}
+
+  .topbar{display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+    padding:4px 2px 10px}
+  .brand{font-size:19px;font-weight:800;letter-spacing:1px}
+  .brand .fm{font-size:11px;font-weight:700;color:var(--amber);
+    border:1px solid var(--amber);border-radius:4px;padding:1px 4px;margin-left:6px;
+    vertical-align:2px;letter-spacing:1px}
+  .clock{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;color:var(--amber-dim)}
+
+  .screen{display:none}
+  .screen.on{display:block}
+
+  /* 收音机面板 */
+  .panel{background:linear-gradient(180deg,var(--wood) 0%,var(--wood2) 100%);
+    border:1px solid var(--wood-lite);border-radius:18px;
+    box-shadow:0 18px 40px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,215,160,.12);
+    padding:14px 13px 12px;position:relative;overflow:hidden}
+  .panel::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(90deg,rgba(0,0,0,.07) 0 2px,rgba(255,255,255,.02) 2px 5px);
+    mix-blend-mode:overlay}
+  .lcd{background:linear-gradient(180deg,#12100c,#1d1a12);border:1px solid #4b3a24;
+    border-radius:10px;padding:8px 10px;margin-bottom:11px;position:relative;overflow:hidden}
+  .lcd::after{content:"";position:absolute;inset:0;
+    background:repeating-linear-gradient(0deg,rgba(240,192,112,.05) 0 1px,transparent 1px 3px)}
+  .lcd-freq{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:34px;font-weight:700;
+    color:var(--amber);letter-spacing:2px;line-height:1.05;text-shadow:0 0 14px rgba(240,192,112,.45)}
+  .lcd-name{font-size:12.5px;color:#c9ae86;margin-top:2px;min-height:17px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lcd-name b{color:var(--red)}
+
+  .dialwrap{position:relative;border-radius:10px;overflow:hidden;
+    border:1px solid #4b3a24;background:#151109;margin-bottom:9px}
+  #dial{display:block;width:100%;height:132px;touch-action:none;cursor:pointer}
+  .glass{position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,0) 42%)}
+
+  .vu{display:flex;gap:3px;margin:0 2px 11px}
+  .vu i{flex:1;height:9px;border-radius:2px;background:#2b2117;border:1px solid #3d2f1e;
+    transition:background .12s linear}
+  .vu i.on{background:var(--amber);border-color:var(--amber);box-shadow:0 0 6px rgba(240,192,112,.55)}
+  .vu i.hot.on{background:var(--red);border-color:var(--red);box-shadow:0 0 6px rgba(217,79,61,.6)}
+
+  .controls{display:grid;grid-template-columns:1fr 1.35fr 1fr;gap:8px;margin-bottom:8px}
+  .tunerow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  button{font-family:inherit;font-size:14px;color:var(--cream);cursor:pointer;
+    border-radius:11px;border:1px solid #6a533a;background:linear-gradient(180deg,#54402b,#33261a);
+    min-height:48px;padding:0 6px;transition:transform .08s ease,filter .15s ease}
+  button:active{transform:translateY(1px)}
+  button.ghost{background:rgba(40,28,18,.6);border-color:#5a4630;font-size:13px;color:#d8c3a0}
+  button.big{font-size:15px;font-weight:700;letter-spacing:2px;
+    background:linear-gradient(180deg,#7d5a33,#4b3520);border-color:#a07c4a}
+  button.big.sweeping{background:linear-gradient(180deg,#b2452f,#6e2418);border-color:#d9705c}
+  button.primary{background:linear-gradient(180deg,#b2452f,#6e2418);border-color:#d9705c}
+  button:disabled{opacity:.5}
+
+  .grille{margin-top:11px;height:38px;border-radius:8px;
+    background-image:radial-gradient(rgba(255,225,180,.16) 1px, transparent 1.4px);
+    background-size:8px 8px;opacity:.75}
+
+  /* 节目条 */
+  .ticker{margin-top:12px;background:rgba(18,13,8,.72);border:1px solid #4a3a26;
+    border-radius:12px;padding:11px 12px;min-height:74px;
+    box-shadow:inset 0 0 26px rgba(0,0,0,.6)}
+  .ticker .tag{font-size:10.5px;letter-spacing:2px;color:var(--amber-dim);
+    border:1px solid #4a3a26;border-radius:4px;padding:1px 5px;display:inline-block;margin-bottom:6px}
+  .ticker .txt{font-size:14.5px;line-height:1.65;color:#e7d6bb;min-height:46px;
+    transition:opacity .3s ease}
+  .ticker .txt.fade{opacity:0}
+
+  .sec{margin-top:16px}
+  .sec h2{font-size:12px;letter-spacing:2px;color:var(--amber-dim);font-weight:600;
+    margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+  .list{display:flex;flex-direction:column;gap:8px}
+  .item{background:rgba(30,21,13,.72);border:1px solid #43341f;border-radius:11px;
+    padding:9px 11px;display:flex;align-items:center;gap:10px;cursor:pointer;min-height:56px}
+  .item:active{background:rgba(56,40,26,.8)}
+  .item .f{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:15px;color:var(--amber);
+    font-weight:700;min-width:52px}
+  .item .n{font-size:14px;color:#e7d6bb;flex:1}
+  .item .n small{display:block;color:#8d7a61;font-size:11.5px;margin-top:2px}
+  .item .badge{font-size:11px;border:1px solid var(--amber);color:var(--amber);
+    border-radius:20px;padding:2px 7px;white-space:nowrap}
+  .item .badge.p{background:var(--red);border-color:var(--red);color:#fff}
+  .empty{text-align:center;color:#7d6b55;font-size:13px;padding:16px 8px;
+    border:1px dashed #43341f;border-radius:11px}
+
+  .card{background:rgba(30,21,13,.72);border:1px solid #43341f;border-radius:13px;padding:14px}
+  textarea{width:100%;min-height:104px;background:#140e08;color:var(--cream);
+    border:1px solid #5a4630;border-radius:10px;padding:11px;font-family:inherit;
+    font-size:15px;line-height:1.6;resize:vertical}
+  textarea:focus{outline:2px solid var(--amber-dim)}
+  .hint{font-size:12px;color:#8d7a61;margin-top:6px;line-height:1.6}
+  .reply{margin-top:11px;background:rgba(240,192,112,.09);border:1px dashed var(--amber-dim);
+    border-radius:10px;padding:10px 12px;font-size:13.5px;color:#e2cda9;line-height:1.6}
+  .row{display:flex;gap:8px;margin-top:10px}
+  .row button{flex:1}
+  .back{margin-top:12px;width:100%}
+  .codebox{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:#c8ae8a;
+    background:#140e08;border:1px solid #43341f;border-radius:9px;padding:9px 10px;
+    word-break:break-all;margin-top:10px;line-height:1.6}
+
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+  .stat{background:rgba(30,21,13,.8);border:1px solid #43341f;border-radius:11px;
+    padding:10px 6px;text-align:center}
+  .stat b{display:block;font-size:22px;color:var(--amber);font-family:ui-monospace,Menlo,Consolas,monospace}
+  .stat span{font-size:11px;color:#8d7a61}
+
+  #poster{width:100%;border-radius:11px;border:1px solid #43341f;margin-top:11px;display:block}
+
+  .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(20px);
+    background:rgba(43,31,19,.97);border:1px solid var(--amber);color:var(--cream);
+    padding:10px 16px;border-radius:24px;font-size:13.5px;opacity:0;
+    transition:opacity .25s ease,transform .25s ease;pointer-events:none;z-index:30;
+    max-width:88vw;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.6)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* 开机遮罩 */
+  .power{position:fixed;inset:0;background:rgba(9,6,4,.93);z-index:40;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+    padding:24px;text-align:center}
+  .power.off{display:none}
+  .power h1{font-size:24px;letter-spacing:2px}
+  .power p{color:#9c8a70;font-size:13.5px;line-height:1.7;max-width:320px}
+  .power button{min-width:180px;font-size:16px;letter-spacing:3px;padding:0 20px}
+
+  .foot{margin-top:18px;text-align:center;font-size:11.5px;color:#6d5c48;line-height:1.8}
+  @media (max-width:360px){ .lcd-freq{font-size:29px} #dial{height:112px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="topbar">
+    <div class="brand">深夜电台<span class="fm">FM</span></div>
+    <div class="clock" id="clock">--:--</div>
+  </header>
+
+  <!-- ============ 主屏 ============ -->
+  <section id="screenRadio" class="screen on">
+    <div class="panel">
+      <div class="lcd">
+        <div class="lcd-freq" id="lcdFreq">88.00</div>
+        <div class="lcd-name" id="lcdName">—— 正在搜索信号 ——</div>
+      </div>
+      <div class="dialwrap">
+        <canvas id="dial"></canvas>
+        <div class="glass"></div>
+      </div>
+      <div class="vu" id="vu"></div>
+      <div class="controls">
+        <button id="btnDown" aria-label="频率减 0.1">◀ 0.1</button>
+        <button id="btnSweep" class="big">扫 台</button>
+        <button id="btnUp" aria-label="频率加 0.1">0.1 ▶</button>
+      </div>
+      <div class="tunerow">
+        <button id="btnVol" class="ghost">音量 ●●●</button>
+        <button id="btnPost" class="ghost">点播台</button>
+        <button id="btnReport" class="ghost">收听报告</button>
+      </div>
+      <div class="grille"></div>
+    </div>
+
+    <div class="ticker">
+      <span class="tag" id="tickTag">静电</span>
+      <div class="txt" id="tickTxt">▓▒░ ▓▓▒░ ▓ ▒▓░ ▓▒ ░▓▒ …</div>
+    </div>
+
+    <div class="sec">
+      <h2>我调到的台 <span id="foundCount">0 / 7</span></h2>
+      <div class="list" id="stationList"></div>
+    </div>
+
+    <div class="foot">
+      慢慢转，慢慢听。找到一个台，它就会留在你的收藏里。<br/>
+      深夜电台 FM · 2026-10-28
+    </div>
+  </section>
+
+  <!-- ============ 点播台 ============ -->
+  <section id="screenPost" class="screen">
+    <div class="card">
+      <h2 style="font-size:13px;color:var(--amber-dim);letter-spacing:1px;margin-bottom:8px">写一条点播，锁进一个频率</h2>
+      <textarea id="postText" maxlength="60" placeholder="写一句你想让 TA 听到的话…"></textarea>
+      <div class="hint">最多 60 字。生成后会得到一个专属频率和一个链接，把链接发给 TA，对方打开就能收听。</div>
+      <div class="reply" id="postReply" style="display:none"></div>
+      <div class="row">
+        <button id="btnMake" class="primary">生成点播</button>
+        <button id="btnCopyPost">复制口令</button>
+      </div>
+      <div class="codebox" id="postCode" style="display:none"></div>
+      <div class="sec" id="myPostsWrap" style="display:none">
+        <h2>我的点播 <span id="myPostsCount"></span></h2>
+        <div class="list" id="myPosts"></div>
+      </div>
+      <button id="btnPostBack" class="ghost back">← 回到电台</button>
+    </div>
+  </section>
+
+  <!-- ============ 收听报告 ============ -->
+  <section id="screenReport" class="screen">
+    <div class="card">
+      <h2 style="font-size:13px;color:var(--amber-dim);letter-spacing:1px;margin-bottom:10px">今晚的收听报告</h2>
+      <div class="stats">
+        <div class="stat"><b id="stFound">0</b><span>调到的台</span></div>
+        <div class="stat"><b id="stTime">0:00</b><span>收听时长</span></div>
+        <div class="stat"><b id="stPost">0</b><span>点播台</span></div>
+      </div>
+      <div class="ticker" style="margin-top:0;min-height:auto">
+        <span class="tag">台长评语</span>
+        <div class="txt" id="reportText" style="min-height:auto">—</div>
+      </div>
+      <div class="list" id="reportList" style="margin-top:12px"></div>
+      <div class="row">
+        <button id="btnCopyReport">复制报告</button>
+        <button id="btnPoster">生成海报</button>
+      </div>
+      <canvas id="poster" width="1080" height="1350" style="display:none"></canvas>
+      <div class="row" id="posterRow" style="display:none">
+        <button id="btnDlPoster" class="primary">下载海报 PNG</button>
+      </div>
+      <button id="btnReportBack" class="ghost back">← 回到电台</button>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="power" id="power">
+  <h1>深夜电台 FM</h1>
+  <p>这是一台还通着电的老收音机。<br/>按下电源，让静电重新有声音。</p>
+  <button id="btnPower" class="big">按 下 电 源</button>
+</div>
+
+<script>
+"use strict";
+const ISSUE_DATE='2026-10-28';
+const FM_MIN=87.0, FM_MAX=108.0;
+const K_FREQ='dmradio1_freq', K_FOUND='dmradio1_found', K_POSTS='dmradio1_posts', K_VOL='dmradio1_vol';
+
+/* ---------------- 电台数据 ---------------- */
+const STATIONS=[
+  {f:89.6,name:'城市交通台',tag:'路况 · 末班车 · 雨',genre:'news',lines:[
+    '23:47，末班 12 路延长至城南站，请还在等车的人稍等',
+    '前方两公里有积水，请减速通过',
+    '今晚的月亮很好，可惜大部分人在赶路',
+    '市政提醒：滨河路段夜间施工至 5:00',
+    '如果您正在车上收听，请把音量调小一点'
+  ]},
+  {f:92.4,name:'怀旧金曲',tag:'磁带里的老歌',genre:'classic',lines:[
+    '今晚点播：《晚风心里吹》，送给还在等车的人',
+    '这首歌 1998 年发行，比我们认识的时间都长',
+    '副歌部分请跟唱，音量请自行负责',
+    '有些歌过了很多年，还是会在凌晨被想起',
+    '正在播放：《光阴的故事》'
+  ]},
+  {f:95.1,name:'失眠研究所',tag:'白噪音 · 助眠',genre:'lofi',lines:[
+    '白噪音已开启：雨落在铁皮屋顶，第 47 分钟',
+    '据研究，凌晨三点最清醒的人不是不想睡，是不敢睡',
+    '今晚助眠曲目：雨、远处的车、翻书声',
+    '如果数羊没有效果，请改数出租车，五十辆以上基本睡着',
+    '本台不负责安慰，只负责陪着'
+  ]},
+  {f:97.9,name:'深夜代读',tag:'替你读那些没回的消息',genre:'talk',lines:[
+    '第一封：「到家了吗」',
+    '第二封：「其实我想说的是……」',
+    '第三封：语音 0 秒，对方正在输入……已超时',
+    '代读原则：不修改原意，不添加语气，只负责念出来',
+    '如果也在等一条回复，记得先开口的那个比较勇敢'
+  ]},
+  {f:100.7,name:'午夜舞池',tag:'只收 18 块入场费',genre:'pop',lines:[
+    '今晚的舞池只收 18 块，理由是灯光便宜了一半',
+    '下一首：Disco 一下下，请允许身体先于大脑',
+    '不许在舞池里回工作消息，违者罚做 20 个深蹲',
+    '午夜场规定：跳到腿软可以，跳到心软也可以',
+    '散场时间是清晨六点，请留够回家的钱'
+  ]},
+  {f:103.3,name:'戏曲小台',tag:'每晚十一点半散戏',genre:'opera',lines:[
+    '今日唱段：《锁麟囊》"春秋亭外风雨暴"',
+    '票友须知：后台有位子，锣鼓有节奏，邻居有意见',
+    '接下来是《宇宙锋》选段，请欣赏老唱腔',
+    '本台每晚十一点半准时散戏，不加演',
+    '唱完这一句，去睡吧，明早还要早起'
+  ]},
+  {f:106.2,name:'数字交易所',tag:'深夜的涨跌声',genre:'news2',lines:[
+    '收盘了：今日上涨 0.02%，你的账户比昨天更勇敢',
+    '长期主义者已入场，正在缓慢持有',
+    '提醒：波动是常态，别把心跳当成行情',
+    '本台不提供投资建议，只提供播报',
+    '深夜提示：请勿加杠杆，加点睡眠'
+  ]}
+];
+const EDGE=[
+  {f:87.0,name:'海带电台',tag:'不在任何频谱表上',genre:'alien',egg:true,lines:[
+    '……这里能收到吗？我们也在找你们',
+    '坐标已丢失，只剩下这段电流',
+    '我们知道你在听，因为你会屏住呼吸',
+    '海带电台，频率随海流漂移',
+    '如果你听到了，请不要换台'
+  ]},
+  {f:108.0,name:'频率尽头',tag:'信号以外的东西',genre:'weather',egg:true,lines:[
+    '已到达频谱边界，这里只剩下静电',
+    '再往右没有台了，只有安静',
+    '一段长长的白噪音，供你发呆用',
+    '频率尽头不打烊，也不营业',
+    '谢谢收听，明早见'
+  ]}
+];
+const DAWN={f:90.0,name:'破晓台',tag:'集齐七个台之后才出现',genre:'dawn',lines:[
+  '天快亮了，第五个小时的黑终于过去了',
+  '此刻城市里有三十二万人和你一样没睡',
+  '我们不劝你睡，只陪你把这段夜走完',
+  '破晓台，只在集齐七个台之后出现',
+  '下一个城市，正在亮起来'
+]};
+const POST_FREQS=[90.3,93.8,96.4,98.9,101.2,102.8,104.4,105.9];
+
+const KEYWORDS=[
+  ['晚安','台里安静下来了，这句话我们替你交给夜里的人'],
+  ['想你','收到这条的时候，对方大概也在听'],
+  ['加班','台里不鼓励加班，但会陪你把最后十分钟走完'],
+  ['辞职','这条要慎重：建议明天白天、吃饱饭、再说一遍'],
+  ['生日快乐','今天是你的日子，全台循环播放生日快乐——仅此一次'],
+  ['爱你','这句我们不播。得你自己说']
+];
+
+/* ---------------- 状态 ---------------- */
+const state={
+  freq:88.0, locked:null, near:null, sweeping:false, sweepDir:1,
+  vol:parseFloat(localStorage.getItem(K_VOL)||'0.85'),
+  found:JSON.parse(localStorage.getItem(K_FOUND)||'[]'),
+  posts:JSON.parse(localStorage.getItem(K_POSTS)||'[]'),
+  startedAt:Date.now(), listenMs:0, tickIdx:0, tickTimer:0
+};
+if(!isFinite(state.freq)) state.freq=88.0;
+if(!Array.isArray(state.found)) state.found=[];
+if(!Array.isArray(state.posts)) state.posts=[];
+
+/* ---------------- 工具 ---------------- */
+const $=id=>document.getElementById(id);
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1900);}
+function saveFound(){localStorage.setItem(K_FOUND,JSON.stringify(state.found));}
+function savePosts(){localStorage.setItem(K_POSTS,JSON.stringify(state.posts));}
+function saveVol(){localStorage.setItem(K_VOL,String(state.vol));}
+function allStations(){
+  const list=STATIONS.slice();
+  if(coreFoundCount()>=STATIONS.length) list.push(DAWN);
+  return list.concat(EDGE);
+}
+function coreFoundCount(){return state.found.filter(f=>!f.egg).length;}
+function postStation(freq,text,url){
+  return {f:freq,name:'点播台',tag:text.slice(0,18)+'…',genre:'post',text:text,url:url||'',lines:[text],isPost:true};
+}
+function effectiveStations(){
+  let list=allStations();
+  state.posts.forEach(p=>list.push(postStation(p.f,p.text,p.url)));
+  if(state._incoming) list.push(postStation(state._incoming.f,state._incoming.text,''));
+  return list;
+}
+function nearestStation(freq,list){
+  let best=null,bd=1e9;
+  list.forEach(s=>{const d=Math.abs(s.f-freq);if(d<bd){bd=d;best=s;}});
+  return {s:best,d:bd};
+}
+
+/* ---------------- 音频引擎 ---------------- */
+const Aud=(function(){
+  let ctx=null,master=null,noiseBuf=null,statGain=null,voice=null,genre=null;
+  let lvl=0,staticAmt=0.14,schedTimer=null,step=0,nextT=0,stepDur=0.42;
+  const scale=[220,261.63,293.66,329.63,392,440,523.25,587.33];
+
+  function init(){
+    if(ctx) return ctx;
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC) return null;
+    ctx=new AC();
+    master=ctx.createGain();master.gain.value=state.vol;master.connect(ctx.destination);
+    const len=Math.floor(ctx.sampleRate*2);
+    noiseBuf=ctx.createBuffer(1,len,ctx.sampleRate);
+    const d=noiseBuf.getChannelData(0);
+    for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
+    const src=ctx.createBufferSource();src.buffer=noiseBuf;src.loop=true;
+    const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=1700;bp.Q.value=.6;
+    statGain=ctx.createGain();statGain.gain.value=staticAmt;
+    src.connect(bp).connect(statGain).connect(master);
+    src.start();
+    return ctx;
+  }
+  function resume(){if(ctx&&ctx.state==='suspended')ctx.resume();}
+  function env(g,t,a,d,peak){g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(peak,.0002),t+a);g.gain.exponentialRampToValueAtTime(.0001,t+a+d);}
+  function tone(t,f,dur,type,peak,dest){
+    const o=ctx.createOscillator();o.type=type;o.frequency.value=f;
+    const g=ctx.createGain();env(g,t,.012,dur,peak);
+    o.connect(g).connect(dest);o.start(t);o.stop(t+dur+.06);
+  }
+  function noiseHit(t,dur,peak,dest,f,q){
+    const s=ctx.createBufferSource();s.buffer=noiseBuf;
+    const f2=ctx.createBiquadFilter();f2.type='bandpass';f2.frequency.value=f;f2.Q.value=q||1.4;
+    const g=ctx.createGain();env(g,t,.006,dur,peak);
+    s.connect(f2).connect(g).connect(dest);s.start(t,Math.random()*1.5);s.stop(t+dur+.05);
+  }
+  function stopVoice(){
+    if(!voice)return;
+    clearTimeout(schedTimer);schedTimer=null;
+    try{voice.out.disconnect();}catch(e){}
+    voice.nodes.forEach(n=>{try{n.stop&&n.stop();}catch(e){} try{n.disconnect();}catch(e){}});
+    voice=null;genre=null;
+  }
+  function makeVoice(g){
+    const out=ctx.createGain();out.gain.value=0;out.connect(master);
+    const v={g,out,nodes:[],cont:[]};
+    if(g==='classic'){
+      const flt=ctx.createBiquadFilter();flt.type='lowpass';flt.frequency.value=2600;flt.connect(out);v.nodes.push(flt);
+      const dly=ctx.createDelay(.6);dly.delayTime.value=.3;
+      const fb=ctx.createGain();fb.gain.value=.3;
+      dly.connect(fb).connect(dly);dly.connect(out);v.nodes.push(dly,fb);
+      v.dest=flt;
+    }else if(g==='lofi'){
+      const flt=ctx.createBiquadFilter();flt.type='lowpass';flt.frequency.value=1500;flt.connect(out);v.nodes.push(flt);
+      v.dest=flt;
+    }else if(g==='opera'){
+      const rev=ctx.createDelay(.5);rev.delayTime.value=.22;
+      const fb=ctx.createGain();fb.gain.value=.34;rev.connect(fb).connect(rev);rev.connect(out);v.nodes.push(rev,fb);
+      v.dest=out;
+    }else if(g==='pop'||g==='news'||g==='news2'){
+      v.dest=out;
+    }else if(g==='talk'){
+      const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=900;bp.Q.value=1.1;bp.connect(out);v.nodes.push(bp);
+      const hum=ctx.createOscillator();hum.type='sine';hum.frequency.value=108;
+      const hg=ctx.createGain();hg.gain.value=.05;hum.connect(hg).connect(out);hum.start();v.nodes.push(hum,hg);
+      v.dest=bp;
+    }else if(g==='alien'){
+      const o1=ctx.createOscillator();o1.type='sine';o1.frequency.value=617;
+      const o2=ctx.createOscillator();o2.type='sine';o2.frequency.value=619.5;
+      const lfo=ctx.createOscillator();lfo.type='sine';lfo.frequency.value=5.5;
+      const lg=ctx.createGain();lg.gain.value=22;lfo.connect(lg);lg.connect(o1.frequency);
+      const g2=ctx.createGain();g2.gain.value=.10;
+      o1.connect(g2);o2.connect(g2);g2.connect(out);
+      o1.start();o2.start();lfo.start();
+      v.nodes.push(o1,o2,lfo,lg,g2);v.dest=out;
+    }else if(g==='weather'){
+      const src=ctx.createBufferSource();src.buffer=noiseBuf;src.loop=true;
+      const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=900;lp.Q.value=.4;
+      const lfo=ctx.createOscillator();lfo.type='sine';lfo.frequency.value=.07;
+      const lg=ctx.createGain();lg.gain.value=600;lfo.connect(lg);lg.connect(lp.frequency);
+      const g3=ctx.createGain();g3.gain.value=.16;
+      src.connect(lp).connect(g3).connect(out);src.start();lfo.start();
+      v.nodes.push(src,lp,lfo,lg,g3);v.dest=out;
+    }else if(g==='dawn'){
+      const flt=ctx.createBiquadFilter();flt.type='lowpass';flt.frequency.value=1800;flt.connect(out);v.nodes.push(flt);
+      v.dest=flt;
+    }else{ // post
+      v.dest=out;
+    }
+    return v;
+  }
+  function scheduleStep(v,t){
+    const g=v.g;
+    if(g==='classic'){
+      const mel=[0,2,4,3,2,1,0,4,5,4,2,0,1,2,3,2];
+      const n=mel[step%mel.length];
+      tone(t,scale[n],.5,'triangle',.16,v.dest);
+      if(step%4===0)tone(t,scale[mel[0]]/2,.9,'sine',.13,v.dest);
+    }else if(g==='lofi'){
+      if(step%8===0){
+        const roots=[110,87.31,130.81,98];
+        const ch=[[0,3,7],[0,4,7],[0,4,7],[0,4,7,9]];
+        const r=roots[(step/8|0)%4], c=ch[(step/8|0)%4];
+        c.forEach(iv=>{
+          const f=r*Math.pow(2,iv/12);
+          const o=ctx.createOscillator();o.type='sine';o.frequency.value=f;
+          const g=ctx.createGain();env(g,t,.35,2.0,.055);
+          o.connect(g).connect(v.dest);o.start(t);o.stop(t+2.6);
+        });
+      }
+      if(step%4===0){const o=ctx.createOscillator();o.type='sine';o.frequency.setValueAtTime(110,t);o.frequency.exponentialRampToValueAtTime(45,t+.13);
+        const g=ctx.createGain();env(g,t,.005,.2,.22);o.connect(g).connect(v.dest);o.start(t);o.stop(t+.3);}
+      if(step%2===1)noiseHit(t,.045,.035,v.dest,5200,1.1);
+    }else if(g==='opera'){
+      const pat=[0,2,4,5,4,2,0,-1,1,3,4,3,1,-1,2,4];
+      const n=pat[step%pat.length];
+      if(n>=0)tone(t,scale[n]*.5,.7,'sine',.15,v.dest);
+      if(step%16===0){noiseHit(t,1.1,.13,v.dest,260,.8);tone(t,120,.9,'sine',.12,v.dest);}
+    }else if(g==='pop'){
+      const o=ctx.createOscillator();o.type='sine';o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(46,t+.11);
+      const g=ctx.createGain();env(g,t,.004,.16,.3);o.connect(g).connect(v.dest);o.start(t);o.stop(t+.25);
+      if(step%2===1)noiseHit(t,.03,.075,v.dest,9000,1.6);
+      const bass=[0,0,3,0,5,0,3,7];
+      const n=bass[step%bass.length];
+      if(n>=0)tone(t,55*Math.pow(2,n/12),.2,'square',.11,v.dest);
+    }else if(g==='news'||g==='news2'){
+      if(step%8===0)tone(t,1180,.07,'square',.05,v.dest);
+      if(g==='news2'&&step%16===0)tone(t,320,.28,'sine',.09,v.dest);
+    }else if(g==='talk'){
+      noiseHit(t,.16,.085,v.dest,500+Math.random()*900,1.6);
+    }else if(g==='alien'){
+      const on=(step%8)<4;
+      if(on)tone(t,1240,.07,'square',.05,v.dest);
+    }else if(g==='dawn'){
+      if(step%8===0){
+        const roots=[130.81,116.54,146.83,110];
+        const r=roots[(step/8|0)%4];
+        [0,4,7].forEach(iv=>{
+          const o=ctx.createOscillator();o.type='sine';o.frequency.value=r*Math.pow(2,iv/12);
+          const g=ctx.createGain();env(g,t,.5,2.2,.05);
+          o.connect(g).connect(v.dest);o.start(t);o.stop(t+3.0);
+        });
+      }
+      if(step%4===0)noiseHit(t,.4,.03,v.dest,3000,.9);
+    }
+  }
+  function pump(){
+    if(!ctx||!voice)return;
+    const ahead=.28;
+    while(nextT<ctx.currentTime+ahead){
+      scheduleStep(voice,nextT);
+      nextT+=stepDur;step++;
+    }
+  }
+  function setGenre(g){
+    if(!ctx) return;            // 未开机时不得触碰音频图
+    if(g===genre)return;
+    if(g){ stopVoice(); voice=makeVoice(g);genre=g;step=0;nextT=ctx.currentTime+.06;
+      schedTimer=setInterval(pump,60);pump();
+    }else{ stopVoice(); }
+  }
+  function setLevel(v){
+    lvl=v;
+    if(!ctx) return;
+    if(voice)voice.out.gain.setTargetAtTime(v*.85,ctx.currentTime,.08);
+    if(statGain)statGain.gain.setTargetAtTime(staticAmt*(1-.35*v),ctx.currentTime,.1);
+  }
+  function setVol(v){state.vol=v;if(ctx&&master)master.gain.setTargetAtTime(v,ctx.currentTime,.05);}
+  return {init,resume,setGenre,setLevel,setVol,get ctx(){return ctx;}};
+})();
+
+/* ---------------- 画布刻度盘 ---------------- */
+const dial=$('dial'),dctx=dial.getContext('2d');
+let DW=0,DH=132,DPR=1;
+function sizeDial(){
+  DPR=Math.min(2,window.devicePixelRatio||1);
+  DW=Math.max(280,dial.clientWidth);DH=dial.clientHeight||132;
+  dial.width=Math.floor(DW*DPR);dial.height=Math.floor(DH*DPR);
+  dctx.setTransform(DPR,0,0,DPR,0,0);
+}
+function fx(f){return 16+(f-FM_MIN)/(FM_MAX-FM_MIN)*(DW-32);}
+function drawDial(){
+  const g=dctx;g.clearRect(0,0,DW,DH);
+  const bg=g.createLinearGradient(0,0,0,DH);
+  bg.addColorStop(0,'#1c1509');bg.addColorStop(.55,'#2b2010');bg.addColorStop(1,'#120c06');
+  g.fillStyle=bg;g.fillRect(0,0,DW,DH);
+  const axisY=Math.round(DH*0.34);
+  // 频率刻度
+  g.strokeStyle='#6b4f2c';g.lineWidth=1;
+  g.beginPath();g.moveTo(14,axisY);g.lineTo(DW-14,axisY);g.stroke();
+  for(let f=FM_MIN;f<=FM_MAX+.001;f+=0.5){
+    const x=fx(f),maj=Math.abs(f-Math.round(f))<.01;
+    const len=maj?17:9;
+    g.strokeStyle=maj?'#f0c070':'#8a6a3c';
+    g.lineWidth=maj?2:1;
+    g.beginPath();g.moveTo(x,axisY-len);g.lineTo(x,axisY+4);g.stroke();
+    if(maj&&Math.round(f)%2===0){
+      g.fillStyle='#c8a878';g.font='10px ui-monospace,Menlo,Consolas,monospace';
+      g.textAlign='center';g.fillText(String(Math.round(f)),x,axisY+16);
+    }
+  }
+  // 已发现的台：圆点 + 频率标签（带防重叠跳过）
+  const found=effectiveStations().filter(s=>state.found.some(f=>f.f===s.f)||s.isPost||(s===DAWN&&coreFoundCount()>=STATIONS.length));
+  const dotY=axisY+32, labY=axisY+46;
+  let lastRight=-99;
+  found.forEach(s=>{
+    const x=fx(s.f);
+    g.fillStyle=s.isPost?'#d94f3d':'#f0c070';
+    g.beginPath();g.arc(x,dotY,s.isPost?4.2:3,0,Math.PI*2);g.fill();
+    g.font='9px ui-monospace,Menlo,Consolas,monospace';
+    const w=g.measureText(s.f.toFixed(1)).width;
+    if(x-w/2>lastRight+4){
+      g.fillStyle=s.isPost?'#e08d7f':'#a08556';
+      g.textAlign='center';
+      g.fillText(s.f.toFixed(1),x,labY);
+      lastRight=x+w/2;
+    }
+  });
+  g.fillStyle='#6d5a3e';g.font='9px sans-serif';g.textAlign='left';
+  g.fillText('● 已调谐　● 点播',14,DH-7);
+  g.textAlign='right';g.fillText('87 — 108 MHz',DW-14,DH-7);
+  // 指针
+  const nx=fx(state.freq);
+  g.save();
+  g.shadowColor='rgba(217,79,61,.9)';g.shadowBlur=10;
+  g.strokeStyle='#e2564a';g.lineWidth=2.4;
+  g.beginPath();g.moveTo(nx,6);g.lineTo(nx,DH-16);g.stroke();
+  g.restore();
+  g.fillStyle='#e2564a';
+  g.beginPath();g.moveTo(nx-7,DH-22);g.lineTo(nx+7,DH-22);g.lineTo(nx,DH-8);g.closePath();g.fill();
+  g.fillStyle='rgba(240,192,112,.9)';
+  g.beginPath();g.arc(nx,6,3.2,0,Math.PI*2);g.fill();
+  // 锁定光晕
+  if(state.locked){
+    g.strokeStyle='rgba(240,192,112,.5)';g.lineWidth=2;
+    g.beginPath();g.arc(nx,axisY,13,0,Math.PI*2);g.stroke();
+  }
+}
+
+/* ---------------- UI 渲染 ---------------- */
+const vuBox=$('vu');
+for(let i=0;i<12;i++){const s=document.createElement('i');vuBox.appendChild(s);}
+function renderVU(v){
+  const on=Math.round(v*12);
+  for(let i=0;i<12;i++){
+    const el=vuBox.children[i];
+    const lit=i<on;
+    el.className=(i>=9?'hot':'')+(lit?' on':'');
+  }
+}
+function renderStationList(){
+  const box=$('stationList');
+  state.found.forEach(f=>{
+    if(box.querySelector('[data-f="'+f.f+'"]'))return;
+    const s=effectiveStations().find(x=>x.f===f.f);
+    const el=document.createElement('div');
+    el.className='item';el.dataset.f=f.f;
+    const badge=f.egg?'<span class="badge p">彩蛋</span>':'<span class="badge">已调谐</span>';
+    el.innerHTML='<span class="f">'+(s?s.f.toFixed(1):f.f.toFixed(1))+'</span><span class="n">'+(s?s.name:(f.name||'未知台'))+
+      '<small>'+(s?s.tag:'')+'</small></span>'+badge;
+    el.addEventListener('click',()=>{setFreq(f.f);showScreen('radio');});
+    box.appendChild(el);
+  });
+  $('foundCount').textContent=coreFoundCount()+' / '+STATIONS.length+(state.found.some(f=>f.egg)?' · 彩蛋 '+state.found.filter(f=>f.egg).length:'');
+  if(!state.found.length&&!box.querySelector('.empty')){
+    const e=document.createElement('div');e.className='empty';
+    e.textContent='还没有调谐到任何电台。转一转旋钮，靠近一点试试。';
+    box.appendChild(e);
+  }else{const e=box.querySelector('.empty');if(e)e.remove();}
+}
+function renderPosts(){
+  const box=$('myPosts');
+  box.innerHTML='';
+  state.posts.forEach((p,i)=>{
+    const el=document.createElement('div');el.className='item';
+    el.innerHTML='<span class="f">'+p.f.toFixed(1)+'</span><span class="n">点播台<small>'+
+      escapeHtml(p.text.slice(0,20))+'</small></span><span class="badge p">'+clockOf(p.at)+'</span>';
+    el.addEventListener('click',()=>{setFreq(p.f);showScreen('radio');toast('已调到 '+p.f.toFixed(1)+' MHz');});
+    box.appendChild(el);
+  });
+  $('myPostsWrap').style.display=state.posts.length?'block':'none';
+  $('myPostsCount').textContent=state.posts.length+' 条';
+}
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function fmtTime(ms){const s=Math.floor(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
+function showScreen(name){
+  ['radio','post','report'].forEach(k=>{
+    const el=$(k==='radio'?'screenRadio':(k==='post'?'screenPost':'screenReport'));
+    if(k===name)el.classList.add('on');else el.classList.remove('on');
+  });
+  window.scrollTo(0,0);
+}
+
+/* ---------------- 频率逻辑 ---------------- */
+function setFreq(f,noSnap){
+  f=Math.max(FM_MIN,Math.min(FM_MAX,f));
+  state.freq=Math.round(f*100)/100;
+  if(noSnap)state.locked=null;
+}
+function lockCheck(){
+  const list=effectiveStations();
+  const {s,d}=nearestStation(state.freq,list);
+  if(d<0.06){
+    if(state.locked!==s){
+      state.locked=s;
+      if(!state.found.some(f=>f.f===s.f)){
+        if(s.egg){
+          state.found.push({f:s.f,name:s.name,at:Date.now(),egg:true});
+          saveFound();renderStationList();
+          toast('收到了一个不该存在的台：'+s.name);
+        }else if(STATIONS.indexOf(s)>=0||s===DAWN){
+          state.found.push({f:s.f,name:s.name,at:Date.now()});
+          saveFound();renderStationList();
+          toast('调到了「'+s.name+'」，已收进你的收藏');
+        }else if(s.isPost){
+          toast('这是你自己的点播台');
+        }else{
+          toast('收到一个不该存在的信号');
+        }
+      }else{toast('「'+s.name+'」信号已锁定');}
+    }
+    return true;
+  }
+  if(state.locked&&Math.abs(state.locked.f-state.freq)>0.06){state.locked=null;}
+  return false;
+}
+function currentLine(){
+  const list=effectiveStations();
+  const {s,d}=nearestStation(state.freq,list);
+  if(!s)return null;
+  if(s.isPost)return {s,text:s.text};
+  const arr=s.lines||[];
+  return {s,text:arr[state.tickIdx%arr.length]};
+}
+function scramble(txt,amt){
+  if(amt<=0)return txt;
+  const blocks='▓▒░█▚▞';
+  let out='';
+  for(const ch of txt){
+    if(ch===' '||ch==='\n'){out+=ch;continue;}
+    if(Math.random()<amt)out+=blocks[Math.floor(Math.random()*blocks.length)];
+    else out+=ch;
+  }
+  return out;
+}
+function updateTicker(){
+  const list=effectiveStations();
+  const {s,d}=nearestStation(state.freq,list);
+  const tag=$('tickTag'),tx=$('tickTxt');
+  if(d<0.06&&s){
+    if(tag.textContent!==s.name){tag.textContent=s.name;tx.classList.add('fade');setTimeout(()=>tx.classList.remove('fade'),300);}
+    const cl=currentLine();
+    tx.textContent=cl?cl.text:'';
+  }else if(d<0.55&&s){
+    if(tag.textContent!=='信号不稳'){tag.textContent='信号不稳';tx.classList.add('fade');setTimeout(()=>tx.classList.remove('fade'),300);}
+    const cl=currentLine();
+    tx.textContent=cl?scramble(cl.text,(0.55-d)/0.5*0.75):'▓▒░ ▓▓▒░ ▓ ▒▓░ ▓▒ ░▓▒ …';
+  }else{
+    if(tag.textContent!=='静电'){tag.textContent='静电';tx.classList.add('fade');setTimeout(()=>tx.classList.remove('fade'),300);}
+    tx.textContent='▓▒░ ▓▓▒░ ▓ ▒▓░ ▓▒ ░▓▒ …';
+  }
+}
+
+/* ---------------- 主循环 ---------------- */
+let lastFrame=0,accTick=0;
+function frame(ts){
+  const dt=Math.min(100,ts-lastFrame||16);lastFrame=ts;
+  if(state.sweeping){
+    setFreq(state.freq+state.sweepDir*0.25*dt/1000);
+    if(state.freq>=FM_MAX){state.freq=FM_MAX;state.sweepDir=-1;}
+    if(state.freq<=FM_MIN){state.freq=FM_MIN;state.sweepDir=1;}
+  }
+  const list=effectiveStations();
+  const {s,d}=nearestStation(state.freq,list);
+  state.near=s;
+  const sig=Math.max(0,Math.min(1,1-d/0.85));
+  const lvl=Math.pow(sig,1.6);
+  Aud.setLevel(lvl);
+  Aud.setGenre(d<1.6&&s?s.genre:null);
+  renderVU(lvl*0.95+(state.sweeping?0.08:0));
+  drawDial();
+  $('lcdFreq').textContent=state.freq.toFixed(2);
+  const lock=lockCheck();
+  const nm=$('lcdName');
+  if(lock&&s){nm.innerHTML='<b>●</b> '+s.name+' — '+s.tag;}
+  else if(d<1.2&&s){nm.textContent='附近有信号… '+s.name;}
+  else nm.textContent='—— 正在搜索信号 ——';
+  accTick+=dt;
+  if(accTick>420){accTick=0;updateTicker();}
+  if(state.startedAt){state.listenMs=Date.now()-state.startedAt;}
+  requestAnimationFrame(frame);
+}
+
+/* ---------------- 交互 ---------------- */
+$('btnDown').addEventListener('click',()=>{stopSweep();setFreq(state.freq-0.1);});
+$('btnUp').addEventListener('click',()=>{stopSweep();setFreq(state.freq+0.1);});
+function stopSweep(){if(state.sweeping){state.sweeping=false;$('btnSweep').classList.remove('sweeping');$('btnSweep').textContent='扫 台';}}
+$('btnSweep').addEventListener('click',()=>{
+  if(state.sweeping){stopSweep();toast('已停在 '+state.freq.toFixed(2)+' MHz');return;}
+  state.sweeping=true;state.sweepDir=1;
+  $('btnSweep').classList.add('sweeping');$('btnSweep').textContent='停 止';
+  toast('正在扫台，靠近信号时按停止');
+});
+const VOLS=[0,0.35,0.6,0.85];
+let volIdx=3;try{volIdx=VOLS.indexOf(parseFloat(localStorage.getItem(K_VOL)||'0.85'));if(volIdx<0)volIdx=3;}catch(e){}
+function renderVolBtn(){let s='';for(let i=0;i<3;i++)s+=i<=volIdx?'●':'○';$('btnVol').textContent='音量 '+s;}
+$('btnVol').addEventListener('click',()=>{
+  volIdx=(volIdx+1)%4;state.vol=VOLS[volIdx];Aud.setVol(state.vol);saveVol();renderVolBtn();
+  toast(state.vol?'音量 '+Math.round(state.vol*100)+'%':'已静音');
+});
+$('btnPost').addEventListener('click',()=>{renderPosts();showScreen('post');});
+$('btnReport').addEventListener('click',()=>{buildReport();showScreen('report');});
+$('btnPostBack').addEventListener('click',()=>showScreen('radio'));
+$('btnReportBack').addEventListener('click',()=>showScreen('radio'));
+
+// 旋钮拖动
+let dragging=false;
+function dialTo(e){
+  const r=dial.getBoundingClientRect();
+  const x=(e.clientX!==undefined?e.clientX:e.touches[0].clientX)-r.left;
+  const f=FM_MIN+Math.max(0,Math.min(1,(x-16)/(DW-32)))*(FM_MAX-FM_MIN);
+  stopSweep();setFreq(f);
+}
+dial.addEventListener('pointerdown',e=>{dragging=true;dial.setPointerCapture&&dial.setPointerCapture(e.pointerId);dialTo(e);e.preventDefault();});
+dial.addEventListener('pointermove',e=>{if(dragging)dialTo(e);});
+dial.addEventListener('pointerup',()=>{dragging=false;});
+dial.addEventListener('pointercancel',()=>{dragging=false;});
+dial.addEventListener('touchstart',e=>{e.preventDefault();},{passive:false});
+dial.addEventListener('touchmove',e=>{e.preventDefault();},{passive:false});
+
+document.addEventListener('keydown',e=>{
+  if(e.target&&/INPUT|TEXTAREA/.test(e.target.tagName))return;
+  if(e.key==='ArrowLeft'){stopSweep();setFreq(state.freq-0.1);e.preventDefault();}
+  if(e.key==='ArrowRight'){stopSweep();setFreq(state.freq+0.1);e.preventDefault();}
+});
+
+// 开机
+$('btnPower').addEventListener('click',()=>{
+  Aud.init();Aud.resume();Aud.setVol(state.vol);
+  $('power').classList.add('off');
+  state.startedAt=Date.now();
+  toast('电台已通电，开始扫频');
+});
+
+/* ---------------- 点播台 ---------------- */
+$('btnMake').addEventListener('click',()=>{
+  const raw=$('postText').value.replace(/\s+/g,' ').trim();
+  const rep=$('postReply');
+  if(!raw){rep.style.display='block';rep.textContent='先写点什么吧，哪怕只有两个字。';return;}
+  const used=state.posts.map(p=>p.f);
+  let f=null;
+  for(const c of POST_FREQS){if(used.indexOf(c)<0){f=c;break;}}
+  if(f===null){toast('频率用完了，明天再来');return;}
+  const url=location.href.split('#')[0]+'#p='+f.toFixed(1)+'|'+b64url(raw);
+  state.posts.push({f:f,text:raw,url:url,at:Date.now()});
+  savePosts();renderPosts();
+  $('postCode').style.display='block';
+  $('postCode').textContent='FM '+f.toFixed(1)+' MHz\n'+url;  let reply='收到。这句话已被锁在 '+f.toFixed(1)+' MHz 上。';
+  for(const k of KEYWORDS){ if(raw.indexOf(k[0])>=0){reply=k[1];break;} }
+  rep.style.display='block';rep.textContent='台长回复：'+reply;
+  $('postText').value='';
+  toast('点播已生成，频率 '+f.toFixed(1)+' MHz');
+});
+function b64url(str){
+  const bytes=new TextEncoder().encode(str);
+  let bin='';
+  for(let i=0;i<bytes.length;i++)bin+=String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function unb64url(s){
+  s=s.replace(/-/g,'+').replace(/_/g,'/');
+  while(s.length%4)s+='=';
+  const bin=atob(s);
+  const bytes=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+$('btnCopyPost').addEventListener('click',()=>{
+  const p=state.posts[state.posts.length-1];
+  if(!p){toast('还没有生成点播');return;}
+  const txt='深夜电台点播：把频率调到 '+p.f.toFixed(1)+' MHz，就能听到这句——\n「'+p.text+'」\n'+p.url;
+  copyText(txt,()=>toast('口令已复制，发给 TA 吧'));
+});
+$('btnCopyReport').addEventListener('click',()=>{
+  copyText(reportText(),()=>toast('报告已复制'));
+});
+function copyText(txt,cb){
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(()=>cb&&cb()).catch(()=>fallbackCopy(txt,cb));
+  }else fallbackCopy(txt,cb);
+}
+function fallbackCopy(txt,cb){
+  const ta=document.createElement('textarea');
+  ta.value=txt;ta.style.position='fixed';ta.style.left='-9999px';
+  document.body.appendChild(ta);ta.select();
+  let ok=false;try{ok=document.execCommand('copy');}catch(e){ok=false;}
+  document.body.removeChild(ta);
+  if(ok){cb&&cb();}else{toast('复制失败，请手动长按选择');}
+}
+
+/* ---------------- 收听报告 ---------------- */
+function reportLines(){
+  const list=effectiveStations();
+  const rows=state.found.map(f=>{
+    const s=list.find(x=>x.f===f.f);
+    return {f:f.f,name:s?s.name:(f.name||'未知台'),tag:s?s.tag:'',at:f.at,egg:!!f.egg};
+  }).sort((a,b)=>a.at-b.at);
+  return rows;
+}
+function reportText(){
+  const rows=reportLines();
+  const head='【深夜电台 FM · '+ISSUE_DATE+' 收听报告】';
+  const body='今晚调到了 '+coreFoundCount()+' / '+STATIONS.length+' 个台，用时 '+fmtTime(state.listenMs)+'。';
+  const lines=rows.map((r,i)=>(i+1)+'. '+r.f.toFixed(1)+' MHz '+r.name+(r.egg?'（彩蛋台）':'')+'（'+r.tag+'）');
+  const tail=blurb();
+  return [head,body].concat(lines).concat(['',tail]).join('\n');
+}
+function blurb(){
+  const n=coreFoundCount();
+  const egg=state.found.filter(f=>f.egg).length;
+  let s;
+  if(n===0)s='今晚你几乎没有停留。信号比你更执着。';
+  else if(n<=2)s='只调到了少数几个台，但深夜本来就适合走神。';
+  else if(n<=4)s='你在夜里兜了一圈，收下了几段声音。';
+  else if(n<=6)s='几乎找齐了整条频段，你对深夜有耐心。';
+  else s='七个台全收齐了。你今晚几乎没有放过任何一个频道。';
+  if(egg>0)s+=' 还顺手捡到了 '+egg+' 个不在频谱表上的台。';
+  return s;
+}
+function buildReport(){
+  const rows=reportLines();
+  $('stFound').textContent=coreFoundCount();
+  $('stTime').textContent=fmtTime(state.listenMs);
+  $('stPost').textContent=state.posts.length;
+  $('reportText').textContent=blurb();
+  const box=$('reportList');box.innerHTML='';
+  if(!rows.length){
+    const e=document.createElement('div');e.className='empty';e.textContent='一份空白报告。明天再来收音。';
+    box.appendChild(e);
+  }
+  rows.forEach(r=>{
+    const el=document.createElement('div');el.className='item';
+    el.innerHTML='<span class="f">'+r.f.toFixed(1)+'</span><span class="n">'+escapeHtml(r.name)+'<small>'+
+      escapeHtml(r.tag)+'</small></span>'+(r.egg?'<span class="badge p">彩蛋</span>':'<span class="badge">'+clockOf(r.at)+'</span>');
+    box.appendChild(el);
+  });
+}
+function clockOf(ts){
+  const d=new Date(ts||Date.now());
+  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+$('btnPoster').addEventListener('click',()=>{drawPoster();$('poster').style.display='block';$('posterRow').style.display='flex';toast('海报已生成，可下载');});
+$('btnDlPoster').addEventListener('click',()=>{
+  const c=$('poster');
+  try{
+    const a=document.createElement('a');
+    a.href=c.toDataURL('image/png');
+    a.download='深夜电台-'+ISSUE_DATE+'.png';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    toast('海报已下载');
+  }catch(e){toast('海报导出失败');}
+});
+function drawPoster(){
+  const c=$('poster'),g=c.getContext('2d'),W=1080,H=1350;
+  const bg=g.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#3a2817');bg.addColorStop(.5,'#1d140c');bg.addColorStop(1,'#0d0805');
+  g.fillStyle=bg;g.fillRect(0,0,W,H);
+  g.strokeStyle='rgba(240,192,112,.28)';g.lineWidth=3;g.strokeRect(38,38,W-76,H-76);
+  g.strokeStyle='rgba(240,192,112,.14)';g.lineWidth=1.5;g.strokeRect(56,56,W-112,H-112);
+  g.fillStyle='#f0c070';g.font='700 30px "Microsoft YaHei",sans-serif';g.textAlign='center';
+  g.fillText('深 夜 电 台',W/2,140);
+  g.fillStyle='#a97f3f';g.font='20px "Microsoft YaHei",sans-serif';
+  g.fillText('FM · 收 听 报 告',W/2,180);
+  g.fillStyle='#c8a878';g.font='24px ui-monospace,Menlo,Consolas,monospace';
+  g.fillText(ISSUE_DATE,W/2,222);
+  g.strokeStyle='rgba(240,192,112,.35)';g.lineWidth=1;
+  g.beginPath();g.moveTo(150,252);g.lineTo(W-150,252);g.stroke();
+  const rows=reportLines();
+  g.textAlign='left';
+  g.font='700 40px "Microsoft YaHei",sans-serif';g.fillStyle='#f0c070';
+  g.fillText('调到的台  '+coreFoundCount()+' / '+STATIONS.length,140,320);
+  g.font='32px "Microsoft YaHei",sans-serif';g.fillStyle='#c8a878';
+  g.fillText('收听时长  '+fmtTime(state.listenMs),140,378);
+  g.fillText('点播台    '+state.posts.length+' 条',140,428);
+  const eggN=state.found.filter(f=>f.egg).length;
+  if(eggN)g.fillText('彩蛋台    '+eggN+' 个',140,478);
+  let y=eggN?560:510;
+  g.font='30px "Microsoft YaHei",sans-serif';
+  const lh=Math.min(62,Math.max(38,(H-330-y)/Math.max(1,rows.length)));
+  rows.forEach((r,i)=>{
+    g.fillStyle=r.egg?'#d94f3d':'#f0c070';g.font='700 30px ui-monospace,Menlo,Consolas,monospace';
+    g.fillText(r.f.toFixed(1),140,y);
+    g.fillStyle='#e7d6bb';g.font='30px "Microsoft YaHei",sans-serif';
+    g.fillText(r.name+(r.egg?'（彩蛋）':'')+'  ·  '+r.tag,270,y);
+    g.fillStyle='rgba(240,192,112,.16)';g.fillRect(140,y+18,W-280,1);
+    y+=lh;
+  });
+  if(!rows.length){g.fillStyle='#8d7a61';g.font='28px "Microsoft YaHei",sans-serif';g.fillText('（今晚什么都没收到）',140,y);}
+  // 评语
+  g.textAlign='left';
+  const bx=140,by=H-320,bw=W-280,bh=150;
+  g.fillStyle='rgba(240,192,112,.08)';g.fillRect(bx,by,bw,bh);
+  g.strokeStyle='rgba(240,192,112,.3)';g.lineWidth=2;g.strokeRect(bx,by,bw,bh);
+  g.fillStyle='#f0c070';g.font='22px "Microsoft YaHei",sans-serif';
+  g.fillText('台 长 评 语',bx+30,by+48);
+  g.fillStyle='#e2cda9';g.font='26px "Microsoft YaHei",sans-serif';
+  const bl=blurb().replace('台长评语：','');
+  wrapText(g,bl,bx+30,by+92,bw-60,38,3);
+  g.textAlign='center';g.fillStyle='#7d6444';g.font='22px "Microsoft YaHei",sans-serif';
+  g.fillText('今晚你想听点什么',W/2,H-110);
+  g.fillStyle='#5d4c38';g.font='18px "Microsoft YaHei",sans-serif';
+  g.fillText('hulinkang9527.github.io/daily-mini-apps',W/2,H-72);
+}
+function wrapText(g,txt,x,y,maxW,lh,maxLines){
+  g.font=g.font;
+  let line='',ln=0;
+  for(const ch of txt){
+    if(g.measureText(line+ch).width>maxW&&line){
+      g.fillText(line,x,y+ln*lh);ln++;line=ch;
+      if(ln>=maxLines-1)break;
+    }else line+=ch;
+  }
+  g.fillText(line,x,y+ln*lh);
+}
+
+/* ---------------- 初始化 ---------------- */
+function initIncoming(){
+  const h=location.hash;
+  if(h&&h.indexOf('#p=')===0){
+    const raw=h.slice(3);
+    const bar=raw.indexOf('|');
+    if(bar>0){
+      const f=parseFloat(raw.slice(0,bar));
+      let txt='';
+      try{txt=unb64url(raw.slice(bar+1));}catch(e){}
+      if(isFinite(f)&&txt){
+        state._incoming={f:f,text:txt};
+        setTimeout(()=>{
+          setFreq(f);
+          toast('收到一条点播 · 调到 '+f.toFixed(1)+' MHz');
+          $('tickTag').textContent='点播台';
+          $('tickTxt').textContent=txt;
+        },600);
+      }
+    }
+  }
+}
+function tickClock(){
+  const d=new Date();
+  $('clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+window.addEventListener('resize',()=>{sizeDial();});
+sizeDial();renderVolBtn();renderStationList();renderPosts();tickClock();
+setInterval(tickClock,20000);
+initIncoming();
+requestAnimationFrame(frame);
+window.__radio={state:state,setFreq:setFreq,st:effectiveStations,reportLines:reportLines};
+</script>
+</body>
+</html>
