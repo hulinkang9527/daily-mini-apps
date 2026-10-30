@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>钓鱼佬 · 今晚谁空军</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23e9e0cd'/%3E%3Cpath d='M6 40 Q32 30 58 40 L58 46 Q32 36 6 46 Z' fill='%233a5a6b'/%3E%3Crect x='30' y='20' width='6' height='20' rx='3' fill='%23c0392b'/%3E%3Crect x='30' y='20' width='6' height='7' rx='3' fill='%23fff'/%3E%3Cpath d='M33 40 L52 30' stroke='%232b2620' stroke-width='1.6'/%3E%3C/svg%3E" />
+<style>
+  :root{
+    --paper:#efe7d4; --card:#fbf6ea; --ink:#2b2620; --dim:#7a6f5c;
+    --red:#c0392b; --teal:#3a5a6b; --wood:#8a6a43; --gold:#b8893b;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; padding:0; height:100%; }
+  body{
+    font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--paper); color:var(--ink); overflow:hidden;
+    user-select:none; -webkit-user-select:none;
+  }
+  #scene{ position:fixed; inset:0; z-index:0; display:block; }
+  .hud{ position:fixed; inset:0; z-index:1; display:flex; flex-direction:column;
+        justify-content:space-between; pointer-events:none; }
+  .topbar{ display:flex; justify-content:space-between; gap:8px; padding:14px 14px 0;
+           font-size:13px; }
+  .stat{ background:rgba(251,246,234,.82); border:1px solid rgba(43,38,32,.18);
+         border-radius:10px; padding:7px 11px; backdrop-filter:blur(2px);
+         box-shadow:0 2px 6px rgba(43,38,32,.10); }
+  .stat b{ color:var(--red); font-size:16px; }
+  .stat .lab{ color:var(--dim); font-size:11px; display:block; }
+  .mid{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+        pointer-events:none; padding:0 16px; }
+  .hint{ background:rgba(43,38,32,.78); color:#f6efe0; border-radius:14px;
+         padding:10px 18px; font-size:15px; max-width:88%; text-align:center;
+         line-height:1.5; opacity:0; transform:translateY(8px); transition:.25s;
+         box-shadow:0 4px 14px rgba(43,38,32,.25); }
+  .hint.show{ opacity:1; transform:translateY(0); }
+  .hint.hot{ background:var(--red); color:#fff; font-weight:700; animation:pulse .5s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+  .reelwrap{ width:min(86%,360px); display:none; flex-direction:column; align-items:center; gap:8px; }
+  .reelwrap.on{ display:flex; }
+  .reelbar{ position:relative; width:46px; height:230px; border-radius:24px;
+            background:linear-gradient(180deg,#dfd3b8,#c9b98f); border:2px solid var(--ink);
+            overflow:hidden; box-shadow:inset 0 2px 6px rgba(0,0,0,.18); }
+  .zone{ position:absolute; left:-4px; right:-4px; background:rgba(58,90,107,.34);
+         border-top:2px solid var(--teal); border-bottom:2px solid var(--teal);
+         transition:top .08s linear, height .08s linear; }
+  .tension{ position:absolute; left:50%; width:8px; height:8px; margin-left:-4px;
+            border-radius:50%; background:var(--red); box-shadow:0 0 8px rgba(192,57,43,.8);
+            transition:top .05s linear; }
+  .prog{ width:min(86%,360px); height:12px; border-radius:8px; background:rgba(43,38,32,.12);
+         overflow:hidden; border:1px solid rgba(43,38,32,.2); }
+  .prog>i{ display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--gold),var(--red)); }
+  .bottom{ padding:0 16px calc(20px + env(safe-area-inset-bottom)); display:flex;
+           justify-content:center; pointer-events:none; }
+  .mainbtn{ pointer-events:auto; min-width:200px; min-height:58px; border:none;
+            border-radius:16px; font-size:19px; font-weight:700; color:#fff;
+            background:var(--teal); box-shadow:0 6px 16px rgba(43,38,32,.28);
+            font-family:inherit; cursor:pointer; transition:transform .08s; letter-spacing:1px; }
+  .mainbtn:active{ transform:translateY(2px) scale(.99); }
+  .mainbtn.go{ background:var(--red); }
+  .mainbtn small{ display:block; font-size:11px; font-weight:400; opacity:.85; }
+
+  .screen{ display:none; position:fixed; inset:0; z-index:3; flex-direction:column;
+           align-items:center; justify-content:center; padding:24px;
+           background:rgba(239,231,212,.96); backdrop-filter:blur(3px); text-align:center; }
+  .screen.on{ display:flex; }
+  .title{ font-family:"Kaiti SC","STKaiti","KaiTi",serif; font-size:40px; color:var(--ink);
+          letter-spacing:3px; margin-bottom:6px; }
+  .subtitle{ color:var(--dim); font-size:14px; margin-bottom:22px; letter-spacing:1px; }
+  .seal{ display:inline-block; color:var(--red); border:3px solid var(--red); border-radius:8px;
+         font-family:"Kaiti SC",serif; font-size:18px; padding:6px 10px; transform:rotate(-7deg);
+         margin-bottom:18px; }
+  .howto{ max-width:420px; background:var(--card); border:1px solid rgba(43,38,32,.15);
+          border-radius:14px; padding:16px 18px; font-size:14px; line-height:1.9; color:var(--ink);
+          text-align:left; margin-bottom:24px; }
+  .howto b{ color:var(--red); }
+  .bigbtn{ pointer-events:auto; min-width:220px; min-height:58px; border:none; border-radius:16px;
+           font-size:20px; font-weight:700; color:#fff; background:var(--red);
+           box-shadow:0 6px 16px rgba(43,38,32,.28); font-family:inherit; cursor:pointer;
+           letter-spacing:2px; }
+  .bigbtn.ghost{ background:transparent; color:var(--teal); border:2px solid var(--teal); box-shadow:none; }
+  .row{ display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+  .poster{ max-width:min(78vw,300px); max-height:36vh; border-radius:12px; box-shadow:0 10px 30px rgba(43,38,32,.35);
+           border:6px solid #fbf6ea; }
+  .report{ background:var(--card); border:1px solid rgba(43,38,32,.15); border-radius:14px;
+           padding:14px 18px; font-size:14px; line-height:1.8; max-width:420px; margin-bottom:18px;
+           text-align:left; word-break:keep-all; overflow-wrap:anywhere; }
+  #screenOver{ justify-content:flex-start; overflow-y:auto; padding-top:18px; }
+  #screenOver .title{ font-size:30px; margin-bottom:4px; }
+  #screenOver .seal{ margin-bottom:12px; font-size:16px; padding:4px 9px; }
+  #screenOver .report{ margin-bottom:14px; font-size:13px; line-height:1.7; padding:10px 14px; }
+  #screenOver .row{ padding-bottom:22px; }
+  .report .k{ color:var(--dim); } .report .v{ color:var(--ink); font-weight:700; }
+  .report .quip{ color:var(--red); font-family:"Kaiti SC",serif; font-size:16px; margin-top:8px; }
+  .toast{ position:fixed; left:50%; bottom:96px; transform:translateX(-50%); z-index:5;
+          background:rgba(43,38,32,.9); color:#f6efe0; padding:9px 16px; border-radius:20px;
+          font-size:13px; opacity:0; transition:.25s; pointer-events:none; }
+  .toast.show{ opacity:1; }
+  .credit{ position:fixed; bottom:8px; right:12px; z-index:2; font-size:10px; color:var(--dim);
+           opacity:.7; }
+  @media (max-height:640px){ .reelbar{ height:190px; } .title{font-size:34px;} }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+
+<div class="hud">
+  <div class="topbar">
+    <div class="stat"><span class="lab">鱼饵</span><b id="stBait">8</b></div>
+    <div class="stat"><span class="lab">今日总重</span><b id="stW">0.0</b>kg</div>
+    <div class="stat"><span class="lab">鱼种</span><b id="stSp">0</b></div>
+  </div>
+  <div class="mid">
+    <div class="hint" id="hint"></div>
+    <div class="reelwrap" id="reelwrap">
+      <div class="reelbar"><div class="zone" id="zone"></div><div class="tension" id="tension"></div></div>
+      <div class="prog"><i id="prog"></i></div>
+      <div style="font-size:12px;color:var(--dim)">让红点在青色安全带内，把进度拉满</div>
+    </div>
+  </div>
+  <div class="bottom">
+    <button class="mainbtn" id="mainbtn">抛竿<small>轻点一下</small></button>
+  </div>
+</div>
+
+<div class="screen on" id="screenIntro">
+  <div class="title">钓鱼佬</div>
+  <div class="subtitle">—— 今晚，谁空军 ——</div>
+  <div class="seal">江 边 有 约</div>
+  <div class="howto">
+    <b>①</b> 点「抛竿」把钩甩进江里<br/>
+    <b>②</b> 浮标猛地一沉的瞬间，赶紧点「提竿！」抓住咬口<br/>
+    <b>③</b> 上鱼后<b>按住</b>「收线」，让红点停在青色安全带里，把进度拉满<br/>
+    <b>④</b> 8 根鱼饵用完，看你是「海王」还是「空军司令」<br/>
+    <span style="color:var(--dim)">提示：空格也能操作；连点标题有惊喜。</span>
+  </div>
+  <button class="bigbtn" id="startBtn">开 杆</button>
+</div>
+
+<div class="screen" id="screenOver">
+  <div class="title" id="overTitle">今日渔获</div>
+  <div class="seal" id="overSeal">钓 鱼 封 神</div>
+  <img class="poster" id="posterImg" alt="战报海报" />
+  <div class="report" id="overReport"></div>
+  <div class="row">
+    <button class="bigbtn" id="copyBtn">复制战报</button>
+    <button class="bigbtn ghost" id="againBtn">再来一局</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="credit">2026-10-31 · 钓鱼佬</div>
+
+<script>
+"use strict";
+(function(){
+  var ISSUE_DATE = '2026-10-31';
+  var canvas = document.getElementById('scene');
+  var ctx = canvas.getContext('2d');
+  var W = 0, H = 0, DPR = 1;
+  function resize(){
+    DPR = Math.min(window.devicePixelRatio||1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = Math.floor(W*DPR); canvas.height = Math.floor(H*DPR);
+    canvas.style.width = W+'px'; canvas.style.height = H+'px';
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  window.addEventListener('resize', resize); resize();
+
+  // ---------- 鱼种数据 ----------
+  var FISH = [
+    {n:'白条',  lo:0.05, hi:0.25, size:0.10, w:18, q:'银光一闪，炸个椒盐刚好下酒。'},
+    {n:'鲫鱼',  lo:0.20, hi:0.80, size:0.20, w:16, q:'鲜掉眉毛，炖汤是一绝。'},
+    {n:'罗非',  lo:0.30, hi:1.00, size:0.25, w:12, q:'外来户，但架不住它好钓。'},
+    {n:'鲤鱼',  lo:0.50, hi:2.50, size:0.40, w:12, q:'年年有余，今晚你有余了。'},
+    {n:'鲢鱼',  lo:1.00, hi:3.00, size:0.50, w:8,  q:'胖头一尾，酸菜鱼安排上。'},
+    {n:'草鱼',  lo:1.50, hi:4.00, size:0.55, w:7,  q:'草饲的，肉质紧实顶饱。'},
+    {n:'鲶鱼',  lo:1.00, hi:3.50, size:0.50, w:6,  q:'滑不溜手，夜钓常客。'},
+    {n:'鳜鱼',  lo:0.50, hi:1.80, size:0.40, w:5,  q:'桃花流水鳜鱼肥，你这会儿也肥。'},
+    {n:'鲈鱼',  lo:0.80, hi:2.50, size:0.45, w:6,  q:'清蒸最鲜，别辜负它。'},
+    {n:'黑鱼',  lo:1.00, hi:3.00, size:0.50, w:5,  q:'护仔猛将，咬钩那下真猛。'},
+    {n:'锦鲤',  lo:0.50, hi:3.00, size:0.40, w:3,  q:'好运加身！转发这条锦鲤。'},
+    {n:'中华鲟',lo:5.00, hi:15.0, size:0.90, w:1,  q:'国宝级大鱼！建议放流 +999 功德。'}
+  ];
+  var TOTAL_W = FISH.reduce(function(s,f){return s+f.w;},0);
+  function fishRoll(rng){
+    rng = rng || Math.random;
+    var r = rng()*TOTAL_W, acc=0, f=null;
+    for(var i=0;i<FISH.length;i++){ acc+=FISH[i].w; if(r<=acc){ f=FISH[i]; break; } }
+    if(!f) f = FISH[0];
+    var t = rng();
+    var wt = f.lo + (f.hi-f.lo)*t;
+    wt = Math.round(wt*100)/100;
+    return {n:f.n, w:wt, size:f.size, q:f.q, legend:(f.n==='中华鲟'), rare:(f.n==='锦鲤')};
+  }
+
+  // ---------- 提竿判定 ----------
+  function judgeHook(now, st){
+    // st: {castAt, nibbleAt, biteAt, win}
+    if(now < st.nibbleAt) return {r:'early'};          // 太早惊鱼
+    if(now < st.biteAt)  return {r:'pre', chance:0.7}; // 试探咬钩
+    if(now <= st.biteAt + st.win) return {r:'hit'};    // 命中窗口
+    return {r:'late'};                                  // 鱼跑了
+  }
+
+  // ---------- 遛鱼物理（可步进，便于测试） ----------
+  function newReel(fish, buff){
+    var size = fish.size;
+    return {
+      tension:0.5, zoneC:0.5,
+      zoneH: Math.max(0.11, 0.17 - 0.07*size) * (buff?1.5:1),
+      progress:0, strain:0,
+      fishPull:0.45, hold:false, done:false, win:false,
+      size:size, t:0
+    };
+  }
+  function reelStep(s, dt){
+    if(s.done) return s;
+    s.t += dt;
+    // 鱼拉力随机游走
+    s.fishPull += (Math.random()-0.5)*0.05;
+    if(s.fishPull < 0.28) s.fishPull = 0.28;
+    if(s.fishPull > 0.30 + 0.55*s.size) s.fishPull = 0.30 + 0.55*s.size;
+    // 安全带中心游走
+    s.zoneC += (Math.random()-0.5)*0.012;
+    if(s.zoneC < 0.28) s.zoneC = 0.28;
+    if(s.zoneC > 0.72) s.zoneC = 0.72;
+    // 张力变化
+    var pull = s.hold ? 1.15 : 0;
+    var drop = s.fishPull + 0.18;
+    s.tension += (pull - drop)*dt;
+    if(s.tension < 0) s.tension = 0;
+    if(s.tension > 1) s.tension = 1;
+    // 是否在安全带
+    var lo = s.zoneC - s.zoneH, hi = s.zoneC + s.zoneH;
+    var inZone = s.tension >= lo && s.tension <= hi;
+    if(inZone){ s.progress += 0.16*dt; s.strain = Math.max(0, s.strain - dt*0.5); }
+    else { s.progress -= 0.10*dt; s.strain += dt; }
+    if(s.progress < 0) s.progress = 0;
+    if(s.progress >= 1){ s.progress=1; s.done=true; s.win=true; return s; }
+    if(s.tension >= 0.985){ s.done=true; s.win=false; s.fail='断线'; return s; }
+    if(s.tension <= 0.015){ s.done=true; s.win=false; s.fail='松线'; return s; }
+    return s;
+  }
+  // 启发式机器人：tension 低于带中心就收线
+  function reelSim(fish, buff, maxSteps){
+    var s = newReel(fish, buff);
+    var dt = 1/60, steps = 0, lim = maxSteps||4000;
+    while(!s.done && steps<lim){
+      s.hold = s.tension < (s.zoneC);
+      reelStep(s, dt); steps++;
+    }
+    return s;
+  }
+
+  // ---------- 游戏状态 ----------
+  var G = {
+    phase:'intro', bait:8, totalW:0, species:{}, maxFish:0, caught:0, misses:0,
+    combo:0, bestCombo:0, lastFish:null, startTime:0, cast:null, reel:null,
+    buff:false, buffUsed:false
+  };
+  var bob = {x:0, y:0, baseY:0, sink:0, sway:0, jump:0};
+  var splashes = [];
+
+  function rnd(a,b){ return a + Math.random()*(b-a); }
+
+  // ---------- DOM ----------
+  var elHint=document.getElementById('hint');
+  var elReel=document.getElementById('reelwrap');
+  var elZone=document.getElementById('zone');
+  var elTen=document.getElementById('tension');
+  var elProg=document.getElementById('prog');
+  var elMain=document.getElementById('mainbtn');
+  var elBait=document.getElementById('stBait');
+  var elW=document.getElementById('stW');
+  var elSp=document.getElementById('stSp');
+  var elToast=document.getElementById('toast');
+  var screenIntro=document.getElementById('screenIntro');
+  var screenOver=document.getElementById('screenOver');
+
+  function showHint(txt, hot){
+    elHint.textContent = txt;
+    elHint.className = 'hint show' + (hot?' hot':'');
+  }
+  function hideHint(){ elHint.className='hint'; }
+  function toast(t){
+    elToast.textContent=t; elToast.className='toast show';
+    clearTimeout(toast._t); toast._t=setTimeout(function(){elToast.className='toast';},1600);
+  }
+  function syncTop(){
+    elBait.textContent=G.bait;
+    elW.textContent=(Math.round(G.totalW*10)/10).toFixed(1);
+    elSp.textContent=Object.keys(G.species).length;
+  }
+
+  // ---------- 主按钮 / 操作 ----------
+  function press(){
+    if(G.phase==='idle'){ castRod(); }
+    else if(G.phase==='waiting'){ hookJudge(); }
+    else if(G.phase==='result'){ nextRod(); }
+    // reeling 阶段 press 无效
+  }
+  function setHold(v){
+    if(G.phase==='reeling' && G.reel){ G.reel.hold = !!v; }
+  }
+
+  function castRod(){
+    if(G.bait<=0) return;
+    G.bait--; syncTop();
+    G.phase='waiting';
+    var now=performance.now();
+    var nibbleAt = now + rnd(1500,4200);
+    var biteAt = nibbleAt + rnd(400,900);
+    G.cast = {castAt:now, nibbleAt:nibbleAt, biteAt:biteAt, win:1400};
+    bob.sink=0; bob.jump=0;
+    showHint('抛竿入水，静候咬口……');
+    elMain.className='mainbtn go'; elMain.innerHTML='提竿！<small>浮标一沉就点</small>';
+    elReel.className='reelwrap';
+  }
+  function hookJudge(){
+    if(G.phase!=='waiting' || !G.cast) return;
+    var res = judgeHook(performance.now(), G.cast);
+    if(res.r==='early'){
+      G.misses++; G.combo=0;
+      endRod(false, '手太快，鱼被你吓跑了……');
+    } else if(res.r==='late'){
+      G.misses++; G.combo=0;
+      endRod(false, '晚了一步，鱼吐钩溜了。');
+    } else if(res.r==='pre'){
+      if(Math.random()<res.chance){ startReel(); }
+      else { G.misses++; G.combo=0; endRod(false,'提早了半拍，脱钩。'); }
+    } else { // hit
+      startReel();
+    }
+  }
+  function startReel(){
+    G.phase='reeling';
+    G.lastFish = fishRoll();
+    var buff = (G.buff && !G.buffUsed);
+    if(buff){ G.buffUsed=true; toast('🎏 鱼竿开光！安全带加宽'); }
+    G.reel = newReel(G.lastFish, buff);
+    showHint('上鱼了！按住收线，红点别出青带', false);
+    elReel.className='reelwrap on';
+    elMain.className='mainbtn go'; elMain.innerHTML='按住收线<small>松开就松线</small>';
+  }
+  function endRod(success, msg){
+    G.phase='result';
+    elReel.className='reelwrap';
+    if(success){
+      G.caught++; G.combo++; if(G.combo>G.bestCombo)G.bestCombo=G.combo;
+      var f=G.lastFish;
+      G.totalW = Math.round((G.totalW + f.w)*100)/100;
+      G.species[f.n]=(G.species[f.n]||0)+1;
+      if(f.w>G.maxFish)G.maxFish=f.w;
+      syncTop();
+      if(f.legend){ toast('🐟 国宝！建议放流 +999 功德'); }
+      else if(f.rare){ toast('🎏 钓到锦鲤！好运加身'); }
+      showHint('钓到 '+f.n+'  '+f.w.toFixed(2)+'kg！'+(G.combo>1?('连击 x'+G.combo):''), false);
+    } else {
+      showHint(msg||'这杆空军。', false);
+    }
+    if(G.bait>0){
+      elMain.className='mainbtn'; elMain.innerHTML='下一杆<small>还剩 '+G.bait+' 饵</small>';
+    } else {
+      elMain.className='mainbtn go'; elMain.innerHTML='看战报';
+    }
+  }
+  function nextRod(){
+    if(G.bait>0){
+      G.phase='idle';
+      showHint('甩下一杆？', false);
+      elMain.className='mainbtn'; elMain.innerHTML='抛竿<small>轻点一下</small>';
+    } else {
+      finish();
+    }
+  }
+
+  // ---------- 结束 / 战报 ----------
+  function titleFor(){
+    if(G.caught===0) return '空军司令';
+    if(G.lastFish && G.lastFish.legend) return '龙骨降世';
+    if(G.caught>=8 && G.totalW>=12) return '海王';
+    if(G.caught>=7) return '钓鱼封神';
+    if(G.caught>=4) return '江边老炮';
+    return '休闲钓友';
+  }
+  function sealFor(){
+    var t=titleFor();
+    return t.replace(/./g,' ').trim()? t : t;
+  }
+  function buildReport(){
+    var t=titleFor();
+    var spList = Object.keys(G.species).map(function(k){return k+'×'+G.species[k];}).join('、') || '一条没上';
+    var quip;
+    if(G.caught===0) quip='空军第 1 天。江风很凉，鱼很聪明。';
+    else if(G.lastFish && G.lastFish.legend) quip='一条中华鲟够吹三年，记得放流。';
+    else if(G.lastFish && G.lastFish.rare) quip='锦鲤入手，今晚转发不亏。';
+    else if(G.caught>=8) quip='八杆全中，你是江边的神。';
+    else if(G.bestCombo>=3) quip='连击 '+G.bestCombo+'，手感滚烫。';
+    else quip='小有收获，明天接着蹲。';
+    return {
+      title:t,
+      lines:[
+        ['出钓', ISSUE_DATE],
+        ['总渔获', G.totalW.toFixed(2)+' kg'],
+        ['上岸', G.caught+' 尾'],
+        ['鱼种', spList],
+        ['最大单尾', (G.maxFish>0?G.maxFish.toFixed(2)+' kg':'—')],
+        ['最长连击', 'x'+G.bestCombo],
+        ['空军次数', G.misses+' 次']
+      ],
+      quip:quip
+    };
+  }
+  function copyText(){
+    var r=buildReport();
+    var s='【钓鱼佬 · '+ISSUE_DATE+'】'+'\n称号：'+r.title+'\n总渔获：'+G.totalW.toFixed(2)+'kg（'+G.caught+'尾）'+'\n鱼种：'+Object.keys(G.species).map(function(k){return k+'×'+G.species[k];}).join('、')+'\n最大单尾：'+(G.maxFish>0?G.maxFish.toFixed(2)+'kg':'—')+'\n最长连击：x'+G.bestCombo+'\n'+r.quip;
+    return s;
+  }
+  function finish(){
+    G.phase='over';
+    hideHint(); elReel.className='reelwrap';
+    var r=buildReport();
+    document.getElementById('overTitle').textContent=r.title;
+    document.getElementById('overSeal').textContent=r.title;
+    var rep=document.getElementById('overReport');
+    rep.innerHTML = r.lines.map(function(l){return '<div><span class="k">'+l[0]+'：</span><span class="v">'+l[1]+'</span></div>';}).join('')
+      + '<div class="quip">「'+r.quip+'」</div>';
+    drawPoster(r);
+    screenOver.className='screen on';
+  }
+
+  // ---------- 海报绘制 ----------
+  function drawPoster(r){
+    var PW=1080, PH=1350;
+    var pc=document.createElement('canvas'); pc.width=PW; pc.height=PH;
+    var p=pc.getContext('2d');
+    // 宣纸底
+    var g=p.createLinearGradient(0,0,0,PH);
+    g.addColorStop(0,'#f3ecda'); g.addColorStop(1,'#e7dcc2');
+    p.fillStyle=g; p.fillRect(0,0,PW,PH);
+    // 网点纹理
+    p.fillStyle='rgba(120,100,70,.05)';
+    for(var y=0;y<PH;y+=14){ for(var x=((y/14)%2)*7;x<PW;x+=14){ p.fillRect(x,y,2,2); } }
+    // 边框
+    p.strokeStyle='#2b2620'; p.lineWidth=6; p.strokeRect(40,40,PW-80,PH-80);
+    // 标题
+    p.fillStyle='#2b2620'; p.textAlign='center';
+    p.font='bold 86px "Kaiti SC","STKaiti","KaiTi",serif';
+    p.fillText('今 日 渔 获', PW/2, 175);
+    p.fillStyle='#7a6f5c'; p.font='30px "PingFang SC",sans-serif';
+    p.fillText('钓鱼佬 · '+ISSUE_DATE, PW/2, 225);
+    // 分隔
+    p.strokeStyle='#c0392b'; p.lineWidth=3;
+    p.beginPath(); p.moveTo(120,260); p.lineTo(PW-120,260); p.stroke();
+    // 大称号
+    p.fillStyle='#c0392b'; p.font='bold 110px "Kaiti SC","STKaiti",serif';
+    p.fillText(r.title, PW/2, 410);
+    // 数据（按「、」断行，行距自适应，多行时后续行自动下移）
+    p.textAlign='left';
+    var lx=140, vx=lx+200, maxW=PW-140-vx;
+    var vFont='bold 40px "PingFang SC",sans-serif';
+    var lh2=72;
+    function tokWrap(txt, draw, startY){
+      p.font=vFont;
+      var toks=String(txt).split('、'), cur='', used=1, yy=startY;
+      for(var i=0;i<toks.length;i++){
+        var t=toks[i]+(i<toks.length-1?'、':'');
+        if(p.measureText(cur+t).width>maxW && cur!==''){
+          if(draw) p.fillText(cur,vx,yy);
+          yy+=lh2; used++; cur=t;
+        } else cur+=t;
+      }
+      if(draw && cur!=='') p.fillText(cur,vx,yy);
+      return used;
+    }
+    var totalLines=0;
+    r.lines.forEach(function(l){ totalLines+=tokWrap(l[1],false,0); });
+    lh2=Math.min(72, Math.max(52, Math.floor((1000-480)/Math.max(totalLines,1))));
+    var ly=480;
+    r.lines.forEach(function(l){
+      p.fillStyle='#7a6f5c'; p.font='36px "PingFang SC",sans-serif';
+      p.fillText(l[0], lx, ly);
+      p.fillStyle='#2b2620';
+      var used=tokWrap(l[1], true, ly);
+      ly+=lh2*used;
+    });
+    // 吐槽（左对齐，避开右下印章）
+    p.fillStyle='#c0392b'; p.textAlign='left';
+    p.font='italic 42px "Kaiti SC","STKaiti",serif';
+    wrapText(p, '「'+r.quip+'」', 150, Math.max(ly+50,1040), 620, 56);
+    // 朱印
+    p.save();
+    p.translate(PW-190, PH-185); p.rotate(-0.12);
+    p.strokeStyle='#c0392b'; p.lineWidth=6; p.strokeRect(-78,-78,156,156);
+    p.fillStyle='#c0392b'; p.textAlign='center'; p.font='bold 40px "Kaiti SC",serif';
+    p.fillText('江',0,-30); p.fillText('钓',0,20); p.fillText('为',-40,60); p.fillText('乐',40,60);
+    p.restore();
+    // 浮标装饰（左下）
+    p.fillStyle='#c0392b'; p.fillRect(150,PH-120,80,46);
+    p.fillStyle='#fff'; p.fillRect(150,PH-120,80,18);
+    var url=pc.toDataURL('image/png');
+    document.getElementById('posterImg').src=url;
+    G._posterURL=url;
+  }
+  function wrapText(c, text, x, y, maxW, lh){
+    var chars=text.split(''), line='', yy=y;
+    for(var i=0;i<chars.length;i++){
+      var test=line+chars[i];
+      if(c.measureText(test).width>maxW && line){ c.fillText(line,x,yy); line=chars[i]; yy+=lh; }
+      else line=test;
+    }
+    if(line) c.fillText(line,x,yy);
+  }
+
+  // ---------- 主循环 ----------
+  var lastT=performance.now();
+  function loop(now){
+    var dt=Math.min(0.05,(now-lastT)/1000); lastT=now;
+    update(dt); render();
+    requestAnimationFrame(loop);
+  }
+  function update(dt){
+    // 等待超时自动判 late
+    if(G.phase==='waiting' && G.cast && performance.now() > G.cast.biteAt + G.cast.win){
+      G.cast=null; G.misses++; G.combo=0; endRod(false,'错过窗口，鱼跑了。');
+    }
+    // 遛鱼推进
+    if(G.phase==='reeling' && G.reel){
+      reelStep(G.reel, dt);
+      // 同步 HUD
+      var lo=G.reel.zoneC-G.reel.zoneH, hi=G.reel.zoneC+G.reel.zoneH;
+      elZone.style.top=(lo*230)+'px'; elZone.style.height=((hi-lo)*230)+'px';
+      elTen.style.top=(G.reel.tension*230)+'px';
+      elProg.style.width=(G.reel.progress*100)+'%';
+      if(G.reel.done){
+        if(G.reel.win){ bob.jump=1; spawnSplash(bob.x, bob.y); endRod(true); }
+        else { spawnSplash(bob.x, bob.y); endRod(false, G.reel.fail==='断线'?'线断了，鱼跑了！':'松了线，鱼跑了！'); }
+      }
+    }
+    // 浮标动画
+    var yWater=H*0.60;
+    bob.baseY=yWater;
+    if(G.phase==='idle' || G.phase==='intro' || G.phase==='over'){
+      bob.sink=0; bob.sway=Math.sin(performance.now()/600)*4;
+    } else if(G.phase==='waiting' && G.cast){
+      var tnow=performance.now();
+      if(tnow>G.cast.nibbleAt){ bob.sink=Math.sin(tnow/90)*6; } // 试探轻点
+      else bob.sink=Math.sin(tnow/700)*2;
+    } else if(G.phase==='reeling'){
+      bob.sink=10+Math.sin(performance.now()/120)*6 + (1-G.reel.tension)*20;
+      bob.sway=Math.sin(performance.now()/80)*10;
+    }
+    if(bob.jump>0){ bob.jump=Math.max(0,bob.jump-dt*1.6); }
+    // 粒子
+    for(var i=splashes.length-1;i>=0;i--){
+      var s=splashes[i]; s.life-=dt; s.y+=s.vy*dt; s.vy+=400*dt; s.x+=s.vx*dt;
+      if(s.life<=0) splashes.splice(i,1);
+    }
+  }
+  function spawnSplash(x,y){
+    for(var i=0;i<14;i++){
+      var a=-Math.PI/2 + rnd(-0.9,0.9);
+      var sp=rnd(80,260);
+      splashes.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:rnd(0.4,0.9)});
+    }
+  }
+  function render(){
+    var yWater=H*0.60;
+    // 天空（晨雾）
+    var sky=ctx.createLinearGradient(0,0,0,yWater);
+    sky.addColorStop(0,'#dcdccf'); sky.addColorStop(0.6,'#e8e3d4'); sky.addColorStop(1,'#cfd6cf');
+    ctx.fillStyle=sky; ctx.fillRect(0,0,W,yWater+2);
+    // 远山（圆滑水墨剪影）
+    function mtn(color, base, peaks, endY){
+      ctx.fillStyle=color;
+      ctx.beginPath(); ctx.moveTo(0, base);
+      var prev=[0, base];
+      for(var i=0;i<peaks.length;i++){
+        var px=peaks[i][0], py=peaks[i][1];
+        var nx=(i<peaks.length-1)?(px+peaks[i+1][0])/2:(endX2(px));
+        var ny=(i<peaks.length-1)?(py+peaks[i+1][1])/2:endY;
+        ctx.quadraticCurveTo(px,py,nx,ny);
+        prev=[nx,ny];
+      }
+      function endX2(x){ return Math.min(W, x+ (W-x)*0.4); }
+      ctx.lineTo(W, yWater); ctx.lineTo(0, yWater); ctx.fill();
+    }
+    mtn('rgba(120,134,130,.55)', yWater*0.66, [
+      [W*0.18,yWater*0.46],[W*0.34,yWater*0.60],[W*0.55,yWater*0.40],[W*0.74,yWater*0.58],[W*0.92,yWater*0.44]
+    ], yWater*0.60);
+    mtn('rgba(90,108,105,.45)', yWater*0.80, [
+      [W*0.25,yWater*0.62],[W*0.5,yWater*0.74],[W*0.78,yWater*0.60]
+    ], yWater*0.74);
+    // 雾层
+    var mist=ctx.createLinearGradient(0,yWater*0.45,0,yWater);
+    mist.addColorStop(0,'rgba(245,242,232,0)'); mist.addColorStop(1,'rgba(245,242,232,.7)');
+    ctx.fillStyle=mist; ctx.fillRect(0,yWater*0.45,W,yWater*0.55);
+    // 水面
+    var wat=ctx.createLinearGradient(0,yWater,0,H);
+    wat.addColorStop(0,'#9fb3ad'); wat.addColorStop(1,'#5d7d7a');
+    ctx.fillStyle=wat; ctx.fillRect(0,yWater,W,H-yWater);
+    // 波光
+    var tt=performance.now()/1000;
+    ctx.strokeStyle='rgba(255,255,255,.22)'; ctx.lineWidth=2;
+    for(var r=0;r<6;r++){
+      ctx.beginPath();
+      var yy=yWater+12+r*((H-yWater)/7);
+      for(var xx=0;xx<=W;xx+=8){
+        var yo=Math.sin(xx/46 + tt*1.3 + r)*3;
+        if(xx===0) ctx.moveTo(xx,yy+yo); else ctx.lineTo(xx,yy+yo);
+      }
+      ctx.stroke();
+    }
+    // 芦苇（右下）
+    drawReed(W*0.9, yWater, 1.0); drawReed(W*0.95, yWater, 0.8); drawReed(W*0.85, yWater, 0.7);
+    // 鱼竿线 + 浮标
+    var cornerX=W*0.93, cornerY=H*0.30;
+    bob.x=W*0.46;
+    var by=yWater - (bob.sink) + bob.sway;
+    if(bob.jump>0){
+      by = yWater - 0 + bob.sway - Math.sin((1-bob.jump)*Math.PI)*90;
+    }
+    ctx.strokeStyle='rgba(43,38,32,.7)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(cornerX,cornerY); ctx.lineTo(bob.x,by); ctx.stroke();
+    // 鱼竿
+    ctx.strokeStyle='#8a6a43'; ctx.lineWidth=6; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(cornerX+40,cornerY-70); ctx.lineTo(cornerX,cornerY); ctx.stroke();
+    ctx.lineCap='butt';
+    // 浮标
+    if(bob.jump<=0 || by<yWater){
+      ctx.fillStyle='#c0392b'; ctx.fillRect(bob.x-5,by-14,10,16);
+      ctx.fillStyle='#fff'; ctx.fillRect(bob.x-5,by-14,10,6);
+      ctx.fillStyle='#2b2620'; ctx.beginPath(); ctx.arc(bob.x,by+4,2.5,0,7); ctx.fill();
+    } else {
+      // 鱼跃出水面
+      ctx.fillStyle='#3a5a6b'; ctx.beginPath();
+      ctx.ellipse(bob.x, by, 22, 9, bob.sway/40, 0, 7); ctx.fill();
+      ctx.fillStyle='#2b2620'; ctx.beginPath(); ctx.arc(bob.x+14,by-2,2,0,7); ctx.fill();
+    }
+    // 涟漪
+    if(G.phase==='waiting'||G.phase==='reeling'){
+      var rad=(performance.now()/600)%1;
+      ctx.strokeStyle='rgba(255,255,255,'+(0.4*(1-rad))+')'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.ellipse(bob.x, yWater, 8+rad*30, 3+rad*9, 0,0,7); ctx.stroke();
+    }
+    // 粒子
+    ctx.fillStyle='rgba(255,255,255,.85)';
+    splashes.forEach(function(s){ ctx.beginPath(); ctx.arc(s.x,s.y,3,0,7); ctx.fill(); });
+    // 前层薄雾
+    var fm=ctx.createLinearGradient(0,0,0,H*0.4);
+    fm.addColorStop(0,'rgba(245,242,232,.35)'); fm.addColorStop(1,'rgba(245,242,232,0)');
+    ctx.fillStyle=fm; ctx.fillRect(0,0,W,H*0.4);
+  }
+  function drawReed(x, baseY, sc){
+    ctx.strokeStyle='rgba(70,90,60,.8)'; ctx.lineWidth=3*sc; ctx.lineCap='round';
+    var h=70*sc, sway=Math.sin(performance.now()/1400 + x)*6*sc;
+    ctx.beginPath(); ctx.moveTo(x,baseY); ctx.quadraticCurveTo(x+sway*0.5,baseY-h*0.6,x+sway,baseY-h); ctx.stroke();
+    ctx.strokeStyle='rgba(150,120,60,.9)'; ctx.lineWidth=2*sc;
+    ctx.beginPath(); ctx.moveTo(x+sway,baseY-h); ctx.lineTo(x+sway-6*sc,baseY-h+14*sc); ctx.stroke();
+    ctx.lineCap='butt';
+  }
+
+  // ---------- 事件 ----------
+  function onDown(e){
+    if(G.phase==='reeling'){ setHold(true); }
+    else { press(); }
+  }
+  function onUp(){ setHold(false); }
+  elMain.addEventListener('pointerdown', function(e){ e.preventDefault(); onDown(e); });
+  elMain.addEventListener('pointerup', function(e){ e.preventDefault(); onUp(); });
+  elMain.addEventListener('pointercancel', function(){ onUp(); });
+  elMain.addEventListener('pointerleave', function(){ /* 保持，松手在主document */ });
+  document.addEventListener('pointerup', function(){ setHold(false); });
+
+  window.addEventListener('keydown', function(e){
+    if(e.code==='Space' || e.key===' '){
+      e.preventDefault();
+      if(G.phase==='reeling'){ setHold(true); }
+      else { if(!e.repeat) press(); }
+    }
+  });
+  window.addEventListener('keyup', function(e){
+    if(e.code==='Space' || e.key===' '){ e.preventDefault(); setHold(false); }
+  });
+
+  document.getElementById('startBtn').addEventListener('click', function(){
+    screenIntro.className='screen';
+    G.phase='idle'; G.startTime=Date.now();
+    showHint('甩出第一杆？', false);
+    elMain.className='mainbtn'; elMain.innerHTML='抛竿<small>轻点一下</small>';
+    syncTop();
+  });
+  document.getElementById('againBtn').addEventListener('click', function(){
+    screenOver.className='screen';
+    G={phase:'idle',bait:8,totalW:0,species:{},maxFish:0,caught:0,misses:0,combo:0,bestCombo:0,lastFish:null,startTime:Date.now(),cast:null,reel:null,buff:G.buff,buffUsed:false};
+    syncTop(); hideHint();
+    elMain.className='mainbtn'; elMain.innerHTML='抛竿<small>轻点一下</small>';
+  });
+  document.getElementById('copyBtn').addEventListener('click', function(){
+    var txt=copyText();
+    function ok(){ toast('战报已复制，去炫耀吧'); }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(ok, function(){ fallbackCopy(txt,ok); });
+    } else fallbackCopy(txt,ok);
+  });
+  function fallbackCopy(txt, ok){
+    try{
+      var ta=document.createElement('textarea'); ta.value=txt;
+      ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy'); document.body.removeChild(ta); ok();
+    }catch(e){ toast('复制失败，请手动选择'); }
+  }
+  // 下载海报
+  document.getElementById('posterImg').addEventListener('click', function(){
+    if(!G._posterURL) return;
+    var a=document.createElement('a'); a.href=G._posterURL;
+    a.download='钓鱼佬-'+ISSUE_DATE+'.png'; document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+  });
+  // 隐藏彩蛋：连点标题 5 次解锁鱼竿开光
+  var titleEl=document.querySelector('#screenIntro .title');
+  var tapCount=0, tapTimer=null;
+  titleEl.style.pointerEvents='auto'; titleEl.style.cursor='pointer';
+  titleEl.addEventListener('click', function(){
+    tapCount++; clearTimeout(tapTimer); tapTimer=setTimeout(function(){tapCount=0;},1500);
+    if(tapCount>=5){
+      tapCount=0; G.buff=true;
+      titleEl.textContent='🎏 鱼竿已开光';
+      toast('隐藏彩蛋：鱼竿开光！本局安全带加宽');
+    }
+  });
+
+  syncTop();
+  requestAnimationFrame(loop);
+
+  // ---------- 测试接口 ----------
+  window.__test = {
+    state:function(){ return {phase:G.phase, bait:G.bait, totalW:G.totalW, caught:G.caught,
+      misses:G.misses, species:Object.keys(G.species).length, reel:G.reel?{tension:G.reel.tension,zoneC:G.reel.zoneC,zoneH:G.reel.zoneH,progress:G.reel.progress,done:G.reel.done,win:G.reel.win}:null}; },
+    fishRoll:fishRoll, judgeHook:judgeHook, reelSim:reelSim, FISH:FISH,
+    drawPoster:function(r){ drawPoster(r); },
+    start:function(){ document.getElementById('startBtn').click(); },
+    press:press, setHold:setHold,
+    cast:castRod, hook:hookJudge,
+    setCastTiming:function(nib, bite, win){ if(G.cast){ G.cast.nibbleAt=performance.now()+nib; G.cast.biteAt=performance.now()+bite; G.cast.win=win; } },
+    forceBite:function(){ if(G.cast){ G.cast.nibbleAt=performance.now()-1000; G.cast.biteAt=performance.now()-100; } },
+    getReel:function(){ return G.reel; }
+  };
+})();
+</script>
+</body>
+</html>
