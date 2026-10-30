@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>橡皮章工厂 · 给自己刻一个章</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3Crect width='64' height='64' fill='%23f2eee4'/%3Ccircle cx='32' cy='32' r='23' fill='none' stroke='%23e2402c' stroke-width='6'/%3Ccircle cx='32' cy='32' r='4' fill='%23e2402c'/%3Cpath d='M32 18v14l9 6' stroke='%231c46b8' stroke-width='4' fill='none' stroke-linecap='round'/%3C/svg%3E" />
+<style>
+  :root{
+    --paper:#f2eee4;
+    --paper-2:#e7e0d0;
+    --ink:#1b1a17;
+    --red:#e2402c;
+    --blue:#1c46b8;
+    --pink:#ff4f9a;
+    --green:#0e7c56;
+    --dim:#6f6a5f;
+    --line:rgba(27,26,23,.16);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
+    background-color:var(--paper);
+    background-image:radial-gradient(circle at 1px 1px, rgba(27,26,23,.075) 1px, transparent 1.4px);
+    background-size:7px 7px;
+    color:var(--ink);
+    min-height:100vh;
+    line-height:1.6;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .screen{display:none}
+  .screen.on{display:block}
+
+  /* ---------- 通用 ---------- */
+  .wrap{max-width:920px;margin:0 auto;padding:16px 14px 40px}
+  .riso-title{position:relative;display:inline-block;font-weight:900;letter-spacing:.02em;line-height:1.05}
+  .riso-title span{position:absolute;left:0;top:0;color:var(--red)}
+  .riso-title i{font-style:normal;color:var(--blue);text-shadow:2.5px 2.5px 0 var(--red);-webkit-text-stroke:0}
+  .panel{background:rgba(255,253,247,.82);border:2px solid var(--ink);border-radius:4px;padding:14px}
+  .panel.blue{border-color:var(--blue)}
+  .panel.red{border-color:var(--red)}
+  .tagrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    min-height:48px;min-width:48px;padding:10px 18px;border:2px solid var(--ink);
+    border-radius:3px;background:var(--ink);color:var(--paper);font-size:16px;font-weight:700;
+    cursor:pointer;font-family:inherit;letter-spacing:.02em;
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn.ghost{background:transparent;color:var(--ink)}
+  .btn.red{background:var(--red);border-color:var(--red)}
+  .btn.blue{background:var(--blue);border-color:var(--blue)}
+  .btn.small{min-height:44px;font-size:14px;padding:8px 13px}
+  .btn[disabled]{opacity:.45;cursor:not-allowed}
+  .chip{
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    min-height:44px;min-width:44px;padding:8px 13px;border:2px solid var(--ink);border-radius:3px;
+    background:rgba(255,253,247,.9);color:var(--ink);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;
+  }
+  .chip.on{background:var(--ink);color:var(--paper)}
+  .chip.on.inkred{background:var(--red);border-color:var(--red);color:#fff}
+  .chip.on.inkblue{background:var(--blue);border-color:var(--blue);color:#fff}
+  .lab{font-size:12px;font-weight:800;letter-spacing:.16em;color:var(--dim);text-transform:uppercase;margin:16px 0 8px;display:flex;align-items:center;gap:8px}
+  .lab:before{content:"";width:16px;height:3px;background:var(--red);display:inline-block}
+  .lab.b:before{background:var(--blue)}
+  .lab:first-child{margin-top:0}
+  input[type=text],textarea,select{
+    width:100%;min-height:48px;padding:10px 12px;border:2px solid var(--ink);border-radius:3px;
+    background:#fffdf7;color:var(--ink);font-size:16px;font-family:inherit;line-height:1.5;
+  }
+  textarea{min-height:76px;resize:vertical}
+  input:focus,textarea:focus{outline:3px solid var(--blue);outline-offset:1px}
+  .hint{font-size:13px;color:var(--dim);margin-top:6px}
+  .toast{
+    position:fixed;left:50%;transform:translateX(-50%);bottom:22px;z-index:99;
+    background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:3px;font-size:14px;font-weight:700;
+    max-width:88vw;text-align:center;box-shadow:4px 4px 0 var(--red);opacity:0;pointer-events:none;transition:opacity .18s;
+  }
+  .toast.on{opacity:1}
+
+  /* ---------- 封面 ---------- */
+  #screenIntro .hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding:8px 0 4px}
+  #screenIntro h1{font-size:clamp(34px,11vw,62px);margin:14px 0 4px}
+  .sub{color:var(--dim);font-size:15px;max-width:520px;margin:0 auto}
+  .stamp-big{width:min(78vw,300px);height:min(78vw,300px);margin:10px 0 4px;display:block}
+  .feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:18px 0 22px;text-align:left}
+  .feat div{background:rgba(255,253,247,.86);border:2px solid var(--ink);border-radius:3px;padding:10px 12px;font-size:13.5px;line-height:1.55}
+  .feat b{display:block;font-size:15px;margin-bottom:2px}
+
+  /* ---------- 工作台 ---------- */
+  .studio{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:16px;align-items:start}
+  @media(max-width:760px){.studio{grid-template-columns:1fr}}
+  .preview-box{position:sticky;top:10px}
+  @media(max-width:760px){.preview-box{position:static}}
+  #previewCanvas{width:100%;max-width:340px;display:block;margin:0 auto;border:2px solid var(--ink);border-radius:3px;background:#fffdf7}
+  .inkrow{display:flex;flex-wrap:wrap;gap:9px}
+  .inkdot{width:46px;height:46px;border-radius:50%;border:2px solid var(--ink);cursor:pointer;position:relative;padding:0}
+  .inkdot.on::after{content:"";position:absolute;inset:-7px;border:2px solid var(--ink);border-radius:50%}
+  .cols2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:520px){.cols2{grid-template-columns:1fr}}
+  .navbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+
+  /* ---------- 成品 ---------- */
+  #screenPrint .paperwrap{max-width:760px;margin:0 auto}
+  #paperCanvas{width:100%;display:block;border:2px solid var(--ink);border-radius:2px;background:#fffdf7}
+  .verdict{background:var(--ink);color:var(--paper);padding:12px 14px;border-radius:3px;font-size:15px;margin:12px 0;line-height:1.65}
+  .verdict b{color:#ffd166}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+  .meta span{font-size:12.5px;font-weight:700;border:2px solid var(--ink);border-radius:999px;padding:3px 11px;background:rgba(255,253,247,.9)}
+
+  /* ---------- 收藏册 ---------- */
+  .gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:12px;margin-top:12px}
+  .gal figure{margin:0;background:rgba(255,253,247,.9);border:2px solid var(--ink);border-radius:3px;padding:8px;text-align:center}
+  .gal canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:2px}
+  .gal figcaption{font-size:12px;margin-top:6px;color:var(--dim);word-break:break-all;line-height:1.45}
+  .gal figcaption b{display:block;color:var(--ink);font-size:13px}
+  .empty-note{border:2px dashed var(--ink);border-radius:3px;padding:22px;text-align:center;color:var(--dim);font-size:14px;margin-top:12px}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+  .topbar h2{font-size:clamp(22px,6vw,32px);font-weight:900}
+  .badge-no{font-size:12px;font-weight:800;border:2px solid var(--red);color:var(--red);border-radius:999px;padding:3px 10px;white-space:nowrap}
+</style>
+</head>
+<body>
+
+<!-- ============ 封面 ============ -->
+<section id="screenIntro" class="screen on">
+  <div class="wrap">
+    <div class="hero">
+      <span class="riso-title" style="font-size:clamp(30px,9vw,52px)"><i>橡皮章工厂</i><span aria-hidden="true">橡皮章工厂</span></span>
+      <p class="sub" style="margin-top:14px">刻一枚只属于你的章，然后盖在便签、请假条、辞职信、收据上。<br/>印泥会晕、章角会缺、每一次盖章都歪一点——这才像真的。</p>
+      <canvas id="stampBig" class="stamp-big" width="600" height="600" aria-label="橡皮章预览"></canvas>
+      <div class="tagrow" style="justify-content:center;margin-bottom:16px">
+        <span class="badge-no">5 种章形</span>
+        <span class="badge-no" style="border-color:var(--blue);color:var(--blue)">5 种墨色</span>
+        <span class="badge-no">7 种内纹</span>
+        <span class="badge-no" style="border-color:var(--blue);color:var(--blue)">6 种纸</span>
+      </div>
+      <div class="feat">
+        <div><b>做旧质感</b>章面有磨损缺口与墨点飞溅，同一枚章每次盖出来磨损都一样——因为那是章自己的伤。</div>
+        <div><b>套印错位</b>朱红与靛蓝故意错开一点点，像丝网印刷没对准。</div>
+        <div><b>盖章即作品</b>盖完生成一张编号明信片，可导出 PNG，也能复制一句话发给朋友。</div>
+        <div><b>收藏册</b>盖过的每一枚章都会收进册子，攒满 5 种章形解锁「全能章师」。</div>
+      </div>
+      <button class="btn red" id="btnStart" style="min-height:52px;font-size:18px">开始刻章</button>
+      <p class="hint">全部在本机完成，纸和印章都不会离开你的设备。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 工作台 ============ -->
+<section id="screenStudio" class="screen">
+  <div class="wrap">
+    <div class="topbar">
+      <h2 class="riso-title" style="font-size:clamp(22px,6vw,30px)"><i>刻章台</i><span aria-hidden="true">刻章台</span></h2>
+      <span class="badge-no" id="serialNo">No.0000</span>
+    </div>
+
+    <div class="studio">
+      <div class="preview-box">
+        <div class="panel blue">
+          <canvas id="previewCanvas" width="680" height="680"></canvas>
+          <p class="hint" id="previewHint">章面预览 · 改参数会实时重刻</p>
+          <div class="navbar" style="margin-top:12px">
+            <button class="btn small ghost" id="btnRandom">随机一枚</button>
+            <button class="btn small ghost" id="btnGallery">收藏册</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="panel">
+          <div class="lab">印文</div>
+          <input type="text" id="inText" maxlength="8" placeholder="主文字，1-8 个字" value="橡皮章" />
+          <input type="text" id="inSub" maxlength="14" placeholder="副文字（环形小字，可留空）" value="工坊出品" style="margin-top:10px" />
+
+          <div class="lab b">章形</div>
+          <div class="tagrow" id="shapeRow"></div>
+
+          <div class="lab">墨色</div>
+          <div class="inkrow" id="inkRow"></div>
+
+          <div class="lab b">内纹</div>
+          <div class="tagrow" id="motifRow"></div>
+
+          <div class="lab">字体</div>
+          <div class="tagrow" id="fontRow"></div>
+
+          <div class="lab b">印面</div>
+          <div class="tagrow" id="styleRow"></div>
+        </div>
+
+        <div class="panel" style="margin-top:14px">
+          <div class="lab">盖在什么纸上</div>
+          <div class="tagrow" id="paperRow"></div>
+          <div id="paperTextWrap" style="margin-top:10px;display:none">
+            <textarea id="inPaperText" maxlength="120" placeholder="写点要盖在这张纸上的话"></textarea>
+          </div>
+          <div class="navbar">
+            <button class="btn red" id="btnStamp" style="flex:1;min-height:54px;font-size:18px">盖下去</button>
+          </div>
+          <p class="hint">盖下去之后不能撤销——墨迹这东西，讲道理讲不通。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 成品 ============ -->
+<section id="screenPrint" class="screen">
+  <div class="wrap">
+    <div class="topbar">
+      <h2 class="riso-title" style="font-size:clamp(22px,6vw,30px)"><i>盖章成品</i><span aria-hidden="true">盖章成品</span></h2>
+      <span class="badge-no" id="printNo">No.0000</span>
+    </div>
+    <div class="paperwrap">
+      <canvas id="paperCanvas" width="1520" height="2000"></canvas>
+      <div class="verdict" id="verdictBox"></div>
+      <div class="meta" id="printMeta"></div>
+      <div class="navbar">
+        <button class="btn blue" id="btnExport">导出明信片 PNG</button>
+        <button class="btn ghost" id="btnCopy">复制转发语</button>
+      </div>
+      <div class="navbar">
+        <button class="btn red" id="btnAgain" style="flex:1">再盖一张</button>
+        <button class="btn ghost" id="btnBackStudio">回刻章台</button>
+        <button class="btn ghost" id="btnGallery2">收藏册</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 收藏册 ============ -->
+<section id="screenGallery" class="screen">
+  <div class="wrap">
+    <div class="topbar">
+      <h2 class="riso-title" style="font-size:clamp(22px,6vw,30px)"><i>收藏册</i><span aria-hidden="true">收藏册</span></h2>
+      <span class="badge-no" id="galCount">0 枚</span>
+    </div>
+    <div class="panel">
+      <div id="galBadge" class="hint" style="font-size:14px">盖过的章都会收进这里。集齐 5 种章形 → 解锁「全能章师」。</div>
+      <div class="gal" id="galGrid"></div>
+      <div class="empty-note" id="galEmpty">册子还是空的。去盖一枚吧。</div>
+      <div class="navbar">
+        <button class="btn ghost" id="btnGalBack">回刻章台</button>
+        <button class="btn small ghost" id="btnClearGal">清空册子</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+var ISSUE_DATE = '2026-10-30';
+var STORE_KEY = 'stampworks_v1';
+var COUNTER_KEY = 'stampworks_counter';
+
+/* ---------------- 常量表 ---------------- */
+var SHAPES = [
+  {id:'circle', name:'圆形', arc:true},
+  {id:'square', name:'方形', arc:false},
+  {id:'ellipse',name:'椭圆', arc:true},
+  {id:'hex',    name:'六边', arc:false},
+  {id:'shield', name:'盾形', arc:false}
+];
+var INKS = [
+  {id:'red',   name:'朱红', v:'#e2402c'},
+  {id:'blue',  name:'靛蓝', v:'#1c46b8'},
+  {id:'black', name:'墨黑', v:'#1b1a17'},
+  {id:'pink',  name:'粉墨', v:'#ff4f9a'},
+  {id:'green', name:'黛绿', v:'#0e7c56'}
+];
+var MOTIFS = [
+  {id:'none',  name:'空心'},
+  {id:'star',  name:'星'},
+  {id:'cup',   name:'杯'},
+  {id:'moon',  name:'月'},
+  {id:'bolt',  name:'闪'},
+  {id:'gear',  name:'轮'},
+  {id:'heart', name:'心'}
+];
+var FONTS = [
+  {id:'hei',  name:'黑体', css:'"PingFang SC","Microsoft YaHei",sans-serif', weight:'900'},
+  {id:'song', name:'宋体', css:'"SimSun","Songti SC","STSong",serif', weight:'700'},
+  {id:'kai',  name:'楷体', css:'"Kaiti SC","KaiTi","STKaiti",serif', weight:'700'}
+];
+var STYLES = [
+  {id:'outline', name:'空底墨字'},
+  {id:'solid',   name:'实底白字'}
+];
+var PAPERS = [
+  {id:'note',    name:'便签',   head:'便 签',   text:'记得给猫剪指甲。\n冰箱里还有前天的汤。\n周五之前把电费交了。'},
+  {id:'leave',   name:'请假条', head:'请 假 条', text:'本人身体不适，拟请假一日。\n望批准。'},
+  {id:'receipt', name:'收据',   head:'收    据', text:'今日消费：咖啡 × 1\n情绪 × 3\n无效会议 × 0\n合计：一个普通的星期三'},
+  {id:'contract',name:'合同',   head:'协 议 书', text:'甲方承诺：不再于周五 17:00 后\n提出新需求。乙方保留意见。'},
+  {id:'resign',  name:'辞职信', head:'辞 职 申 请', text:'本人自愿从「需求变更」中毕业，\n特此盖章。'},
+  {id:'blank',   name:'白纸',   head:'',        text:''}
+];
+
+/* ---------------- 印文批注库（通用） ---------------- */
+var QUIPS = [
+  '此章一盖，万物属实。',
+  '经查，该文件属实，盖章为证。',
+  '本印为真 章造物正大光明 —— 造物说。',
+  '恭喜您被官方认定为「有事要忙」。',
+  '盖章人已阅，符合心意，准予通过。',
+  '此章自带背书效果，附加好感度 +12。',
+  '本次盖章不收费，但下次要预约。',
+  '盖完之后，这张纸就有了法律地位（大概）。',
+  '已记录在册，编号永不重复，人会重复。',
+  '印泥尚湿，请勿用于重要谈判。',
+  '章到之处，谎言自动变短。',
+  '凭此章可兑换一杯奶茶，限本人。',
+  '这不是公章，但比公章有个性。',
+  '盖完记得晾干，别蹭到方案上。',
+  '章身轻，责任重。',
+  '一次盖章，一生保修。',
+  '经核验，盖章人心情不错。',
+  '此章已通过防伪检测，防的是你。'
+];
+/* 纸型专属批注 */
+var PAPER_QUIPS = {
+  note:    ['已提醒：猫、汤、电费，三选一也要做。','便签盖章等于把小事升格为大事。'],
+  leave:   ['准假一天，理由不重要，人重要。','已批准，并祝你睡到自然醒。'],
+  receipt: ['本单据可报销，报销对象暂缺。','合计为一个普通的星期三，无法退款。'],
+  contract:['甲方已画押生效，乙方保留沉默。','本协议自盖章之日起，需求冻结。'],
+  resign:  ['即日生效，准你走人。','恭喜毕业，学位不授予。'],
+  blank:   ['空纸一枚，章一盖，万物生义。','留白处自有深意，章替你说了。']
+};
+/* 彩蛋批注 */
+var EGG_QUIPS = {
+  name:    '名中有章，天生盖章人。此章与你八字相合。',
+  resign:  '盖完这枚章，HR 系统会自动弹出「已读并祝福」。',
+  nine:    '满版红成就达成：纸已经不够用了。',
+  master:  '全能章师认证通过，五种章形已集齐。',
+  secret:  '日进斗金——章里藏了这句话，你发现了。'
+};
+
+/* ---------------- 状态 ---------------- */
+var cfg = {
+  text:'橡皮章', sub:'工坊出品',
+  shape:'circle', ink:'red', motif:'star', font:'hei', style:'outline',
+  paper:'note', paperText:'',
+  seed: 20261030, misalign:true
+};
+var lastPrint = null;
+var printCount = 0;
+var stampTaps = 0;
+var gal = [];
+var galShapes = {};
+
+/* 每个章形的内容区（相对几何半径 R 的半宽/半高比例）
+   章形不同，文字能占的地方差别很大：椭圆又宽又矮，盾牌又窄又高。 */
+var GEO = {
+  circle: {hw:0.72, hh:0.70, arc:true},
+  square: {hw:0.62, hh:0.62, arc:false},
+  ellipse:{hw:0.86, hh:0.60, arc:true},
+  hex:    {hw:0.68, hh:0.64, arc:false},
+  shield: {hw:0.58, hh:0.62, arc:false}
+};
+/* ---------------- 工具 ---------------- */
+function $(id){ return document.getElementById(id); }
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function toast(msg){
+  var t=$('toast'); t.textContent=msg; t.classList.add('on');
+  clearTimeout(toast._t); toast._t=setTimeout(function(){ t.classList.remove('on'); },2100);
+}
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    var t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function hashStr(s){
+  var h = 2166136261;
+  for(var i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h,16777619); }
+  return h >>> 0;
+}
+function inkColor(){ return INKS.filter(function(x){return x.id===cfg.ink})[0].v; }
+function shapeById(id){ return SHAPES.filter(function(x){return x.id===id})[0]; }
+function fontById(id){ return FONTS.filter(function(x){return x.id===id})[0]; }
+function paperById(id){ return PAPERS.filter(function(x){return x.id===id})[0]; }
+function motifId(id){ return MOTIFS.filter(function(x){return x.id===id})[0]; }
+
+/* ---------------- 几何：章形路径 ---------------- */
+function shapePath(g, shape, cx, cy, R){
+  g.beginPath();
+  if(shape==='circle'){
+    g.arc(cx,cy,R,0,Math.PI*2);
+  }else if(shape==='square'){
+    var s=R*1.44, r=R*0.12;
+    roundRect(g, cx-s/2, cy-s/2, s, s, r);
+  }else if(shape==='ellipse'){
+    g.ellipse(cx, cy, R*1.02, R*0.80, 0, 0, Math.PI*2);
+  }else if(shape==='hex'){
+    for(var i=0;i<6;i++){
+      var a = -Math.PI/2 + i*Math.PI/3;
+      var x = cx + Math.cos(a)*R, y = cy + Math.sin(a)*R;
+      if(i===0) g.moveTo(x,y); else g.lineTo(x,y);
+    }
+    g.closePath();
+  }else{ /* shield */
+    var w=R*1.42, h=R*1.52, top=cy-R*0.92, bot=cy+R*1.00;
+    g.moveTo(cx-w/2, top);
+    g.lineTo(cx+w/2, top);
+    g.lineTo(cx+w/2, top+h*0.55);
+    g.quadraticCurveTo(cx+w/2, bot-R*0.18, cx, bot);
+    g.quadraticCurveTo(cx-w/2, bot-R*0.18, cx-w/2, top+h*0.55);
+    g.closePath();
+  }
+}
+function roundRect(g,x,y,w,h,r){
+  g.beginPath();
+  g.moveTo(x+r,y);
+  g.lineTo(x+w-r,y); g.quadraticCurveTo(x+w,y,x+w,y+r);
+  g.lineTo(x+w,y+h-r); g.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  g.lineTo(x+r,y+h); g.quadraticCurveTo(x,y+h,x,y+h-r);
+  g.lineTo(x,y+r); g.quadraticCurveTo(x,y,x+r,y);
+  g.closePath();
+}
+
+/* ---------------- 图形：内纹 ----------------
+   mr = 内纹自身半径（不是相对值）。全部用 evenodd 路径，避免 destination-out 误伤。 */
+function drawMotif(g, id, cx, cy, mr, color){
+  g.save();
+  g.fillStyle = color; g.strokeStyle = color;
+  g.lineWidth = mr*0.16; g.lineJoin='round'; g.lineCap='round';
+  if(id==='star'){
+    g.beginPath();
+    for(var i=0;i<10;i++){
+      var a = -Math.PI/2 + i*Math.PI/5, rr = (i%2===0)? mr : mr*0.42;
+      var x = cx+Math.cos(a)*rr, y = cy+Math.sin(a)*rr;
+      if(i===0) g.moveTo(x,y); else g.lineTo(x,y);
+    }
+    g.closePath(); g.fill();
+  }else if(id==='cup'){
+    var cw=mr*1.10, ch=mr*0.86;
+    roundRect(g, cx-cw/2, cy-ch/2, cw, ch, mr*0.16); g.fill();
+    g.beginPath(); g.arc(cx+cw*0.60, cy, mr*0.34, -Math.PI/2, Math.PI/2); g.stroke();
+    g.beginPath();
+    g.moveTo(cx-cw*0.18, cy-ch/2-mr*0.16);
+    g.quadraticCurveTo(cx-cw*0.10, cy-ch/2-mr*0.55, cx-cw*0.26, cy-ch/2-mr*0.85);
+    g.stroke();
+  }else if(id==='moon'){
+    /* 两个圆 evenodd 相减 = 月牙 */
+    g.beginPath();
+    g.arc(cx, cy, mr, 0, Math.PI*2);
+    g.arc(cx+mr*0.52, cy-mr*0.30, mr*0.86, 0, Math.PI*2);
+    g.fill('evenodd');
+  }else if(id==='bolt'){
+    g.beginPath();
+    g.moveTo(cx+mr*0.34, cy-mr*0.95);
+    g.lineTo(cx-mr*0.52, cy+mr*0.12);
+    g.lineTo(cx+mr*0.04, cy+mr*0.12);
+    g.lineTo(cx-mr*0.30, cy+mr*0.95);
+    g.lineTo(cx+mr*0.60, cy-mr*0.18);
+    g.lineTo(cx+mr*0.04, cy-mr*0.18);
+    g.closePath(); g.fill();
+  }else if(id==='gear'){
+    var teeth=8, tr=mr, inner=mr*0.66;
+    g.beginPath();
+    for(var i=0;i<teeth*2;i++){
+      var a = -Math.PI/2 + i*Math.PI/teeth, rr = (i%2===0)? tr : inner;
+      var x=cx+Math.cos(a)*rr, y=cy+Math.sin(a)*rr;
+      if(i===0) g.moveTo(x,y); else g.lineTo(x,y);
+    }
+    g.closePath();
+    g.moveTo(cx+mr*0.34, cy);
+    g.arc(cx, cy, mr*0.34, 0, Math.PI*2);
+    g.fill('evenodd');
+  }else if(id==='heart'){
+    g.beginPath();
+    g.moveTo(cx, cy+mr*0.86);
+    g.bezierCurveTo(cx-mr*1.16, cy+mr*0.06, cx-mr*0.84, cy-mr*0.84, cx, cy-mr*0.22);
+    g.bezierCurveTo(cx+mr*0.84, cy-mr*0.84, cx+mr*1.16, cy+mr*0.06, cx, cy+mr*0.86);
+    g.closePath(); g.fill();
+  }
+  g.restore();
+}
+
+/* ---------------- 环形副文字 ----------------
+   弧长按字符宽度计算，而不是固定铺满整圈—— 否则 4 个字会摊成 165° 乱麻。 */
+function arcSpread(text, size, Rs, g){
+  g = g || document.createElement('canvas').getContext('2d');
+  g.font = '700 ' + size.toFixed(1) + 'px ' + fontById(cfg.font).css;
+  var spread = 0;
+  for(var i=0;i<text.length;i++){
+    spread += (g.measureText(text[i]).width*1.16)/Rs;
+  }
+  return Math.min(spread, Math.PI*0.86);
+}
+function arcText(g, text, cx, cy, Rs, size, color){
+  g.save();
+  g.fillStyle = color;
+  g.font = '700 ' + size.toFixed(1) + 'px ' + fontById(cfg.font).css;
+  g.textAlign='center'; g.textBaseline='middle';
+  var n = text.length, i, ws=[];
+  for(i=0;i<n;i++){ ws.push(g.measureText(text[i]).width); }
+  /* 每字占的角度 = 弦长/半径，再乘一点间距系数 */
+  var spread = 0;
+  for(i=0;i<n;i++) spread += (ws[i]*1.16)/Rs;
+  spread = Math.min(spread, Math.PI*0.86);
+  var acc = -spread/2;
+  for(i=0;i<n;i++){
+    var step = (ws[i]*1.16)/Rs;
+    var a = acc + step/2;
+    acc += step;
+    var x = cx + Math.sin(a)*Rs;
+    var y = cy - Math.cos(a)*Rs;
+    g.save();
+    g.translate(x,y);
+    g.rotate(a);
+    g.fillText(text[i], 0, 0);
+    g.restore();
+  }
+  g.restore();
+}
+
+/* ---------------- 做旧磨损 ----------------
+   两种强度：
+   wearBody   —— 章身：颗粒 + 边缘磕碰 + 划痕 + 墨色不均（视觉冲击全在这）
+   wearFine   —— 内容：只做细颗粒淡墨，字形保持可读（字被啃烂就认不出了） */
+function wearBody(g, px, R, rnd){
+  g.save();
+  g.globalCompositeOperation='destination-out';
+  var i, x, y, r;
+  var dots = Math.round(px*px/1500);
+  for(i=0;i<dots;i++){
+    x=rnd()*px; y=rnd()*px; r=rnd()*px*0.0090+px*0.0012;
+    g.globalAlpha=0.22+rnd()*0.50;
+    g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.fill();
+  }
+  /* 边缘缺口：沿章沿磕碰 */
+  var chips = 3+Math.floor(rnd()*4);
+  for(i=0;i<chips;i++){
+    var ang = rnd()*Math.PI*2;
+    var dist = R*(0.80+rnd()*0.30);
+    x = px/2+Math.cos(ang)*dist; y = px/2+Math.sin(ang)*dist;
+    r = px*(0.010+rnd()*0.030);
+    g.globalAlpha=0.55+rnd()*0.45;
+    g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.fill();
+  }
+  /* 划痕 */
+  var scratches = 2+Math.floor(rnd()*3);
+  for(i=0;i<scratches;i++){
+    var sx=rnd()*px, sy=rnd()*px, len=px*(0.05+rnd()*0.18), ang2=rnd()*Math.PI;
+    g.globalAlpha=0.30+rnd()*0.35;
+    g.lineWidth=px*(0.0018+rnd()*0.004);
+    g.beginPath(); g.moveTo(sx,sy);
+    g.lineTo(sx+Math.cos(ang2)*len, sy+Math.sin(ang2)*len);
+    g.stroke();
+  }
+  /* 墨色不均 */
+  for(i=0;i<3;i++){
+    var bx=rnd()*px, by=rnd()*px, br=px*(0.05+rnd()*0.08);
+    var grad=g.createRadialGradient(bx,by,0,bx,by,br);
+    grad.addColorStop(0,'rgba(0,0,0,.20)');
+    grad.addColorStop(1,'rgba(0,0,0,0)');
+    g.globalAlpha=1;
+    g.fillStyle=grad;
+    g.beginPath(); g.arc(bx,by,br,0,Math.PI*2); g.fill();
+  }
+  g.restore();
+}
+function wearFine(g, px, rnd, strength){
+  g.save();
+  g.globalCompositeOperation='destination-out';
+  var dots = Math.round(px*px/2600);
+  for(var i=0;i<dots;i++){
+    var x=rnd()*px, y=rnd()*px, r=rnd()*px*0.0060+px*0.0008;
+    g.globalAlpha=(0.16+rnd()*0.42)*strength;
+    g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.fill();
+  }
+  for(i=0;i<2;i++){
+    var bx=rnd()*px, by=rnd()*px, br=px*(0.04+rnd()*0.06);
+    var grad=g.createRadialGradient(bx,by,0,bx,by,br);
+    grad.addColorStop(0,'rgba(0,0,0,'+(0.16*strength).toFixed(3)+')');
+    grad.addColorStop(1,'rgba(0,0,0,0)');
+    g.globalAlpha=1;
+    g.fillStyle=grad;
+    g.beginPath(); g.arc(bx,by,br,0,Math.PI*2); g.fill();
+  }
+  g.restore();
+}
+
+/* ---------------- 章面渲染 ----------------
+   关键做法：**先磨损章身，再叠加内容**。
+   旧版把内容和章身一起磨，主文字被啃成碎块认不出；
+   现在内容在磨损之后画（或从实底章身里镂空），字口保持清晰。 */
+function renderStampLayer(px, c, seedOverride){
+  var cnv = document.createElement('canvas');
+  cnv.width = px; cnv.height = px;
+  var g = cnv.getContext('2d');
+  var R = px*0.40, cx = px/2, cy = px/2;
+  var ink = inkColor();
+  var seed = (seedOverride===undefined) ? c.seed : seedOverride;
+  var rnd = mulberry32(seed);
+  var geo = GEO[c.shape] || GEO.circle;
+
+  /* 1) 章身 */
+  g.save();
+  shapePath(g, c.shape, cx, cy, R);
+  g.clip();
+  if(c.style==='solid'){
+    g.fillStyle = ink;
+    g.fillRect(0,0,px,px);
+  }else{
+    g.strokeStyle = ink;
+    g.lineWidth = px*0.040;
+    g.stroke();
+  }
+  g.restore();
+
+  /* 2) 章身做旧（全强度：颗粒 + 边缘磕碰 + 划痕） */
+  wearBody(g, px, R, rnd);
+
+  /* 3) 内容层：按章形分配空间
+     圆形/椭圆：副文字沿顶弧排；
+     方形/六边/盾形：副文字直排一行（弧形文字会溢出这些章的边界）。 */
+  var contentTop = cy - geo.hh*R;
+  var contentBot = cy + geo.hh*R;
+  var contentHalfW = geo.hw*R;
+  var main = (c.text||'').trim() || '空';
+  var n = main.length;
+  var size = Math.min(R*0.30, (contentHalfW*1.72)/Math.max(1,n));
+  var sub = (c.sub||'').trim();
+  var subBottom = contentTop;
+  var cc = document.createElement('canvas');
+  cc.width = px; cc.height = px;
+  var c2 = cc.getContext('2d');
+  var fg = (c.style==='solid') ? '#ffffff' : ink;
+  c2.textAlign='center'; c2.textBaseline='middle';
+
+  if(sub){
+    if(geo.arc){
+      var Rs = contentHalfW*0.98;
+      var sSize = Math.min(R*0.125, Rs*0.26);
+      arcText(c2, sub, cx, cy, Rs, sSize, fg);
+      /* 弧形文字最低点：两端字符的下沿 */
+      subBottom = cy - Rs*Math.cos(Math.min(0.62, arcSpread(sub, sSize, Rs)/2)) + sSize*0.75;
+    }else{
+      var sSize2 = Math.min(R*0.125, (contentHalfW*1.72)/Math.max(1,sub.length));
+      c2.font = '700 ' + sSize2 + 'px ' + fontById(c.font).css;
+      c2.fillStyle = fg;
+      c2.fillText(sub, cx, contentTop + sSize2*0.75);
+      subBottom = contentTop + sSize2*1.6;
+    }
+  }
+
+  var mainCenterY = contentBot - size*0.52;
+  var mainTop = mainCenterY - size*0.56;
+
+  var motifR = 0, motifCY = 0;
+  if(c.motif && c.motif!=='none'){
+    var bandTop = sub ? subBottom + R*0.04 : contentTop + R*0.04;
+    var bandBot = mainTop - R*0.04;
+    var bandH = Math.max(0, bandBot - bandTop);
+    motifR = Math.min(R*0.22, bandH*0.5);
+    motifCY = bandTop + bandH*0.5;
+  }
+  if(motifR > 0) drawMotif(c2, c.motif, cx, motifCY, motifR, fg);
+
+  c2.fillStyle = fg;
+  c2.font = fontById(c.font).weight + ' ' + size + 'px ' + fontById(c.font).css;
+  c2.fillText(main, cx, mainCenterY);
+
+  /* 4) 内容做旧（细颗粒，字保持可读）+ 合成
+     实底白字：把内容当作遮罩从章身上「镂空」，纸从镂空处透出来 = 白字；
+     空底墨字：内容本身就是墨色，直接叠加。 */
+  wearFine(c2, px, mulberry32(seed+991), 0.7);
+  if(c.style==='solid'){
+    g.save();
+    g.globalCompositeOperation='destination-out';
+    g.drawImage(cc,0,0);
+    g.restore();
+  }else{
+    g.drawImage(cc,0,0);
+  }
+
+  return cnv;
+}
+
+/* 把章面盖到目标 ctx 上（multiply 混色 + 随机位置旋转） */
+function pressStamp(targetCtx, layer, W, H, rnd, scale, rot){
+  var sw = Math.min(W,H)*scale;
+  var dw = sw, dh = sw;
+  var x = (W - dw)/2 + (rnd()-0.5)*W*0.10;
+  var y = (H - dh)/2 + (rnd()-0.5)*H*0.12;
+  targetCtx.save();
+  targetCtx.globalCompositeOperation = 'multiply';
+  targetCtx.globalAlpha = 0.80 + rnd()*0.14;
+  targetCtx.translate(x+dw/2, y+dh/2);
+  targetCtx.rotate(rot);
+  targetCtx.drawImage(layer, -dw/2, -dh/2, dw, dh);
+  targetCtx.restore();
+  return {x:x, y:y, w:dw, h:dh, rot:rot};
+}
+
+/* ---------------- 纸面 ---------------- */
+function paperTexture(g, W, H, seed, kind){
+  var rnd = mulberry32(seed);
+  g.fillStyle = '#fffdf7';
+  g.fillRect(0,0,W,H);
+  /* 纸纹 */
+  var n = Math.round(W*H/5200);
+  for(var i=0;i<n;i++){
+    var x=rnd()*W, y=rnd()*H;
+    g.fillStyle = rnd()>0.5 ? 'rgba(27,26,23,.035)' : 'rgba(255,255,255,.6)';
+    g.fillRect(x,y,1.6,1.6);
+  }
+  /* 各纸型的底纹（线条只画在正文区下方，避免压字） */
+  if(kind==='note'){
+    g.strokeStyle='rgba(28,70,184,.16)'; g.lineWidth=2;
+    for(var y2=520;y2<H-90;y2+=66){ g.beginPath(); g.moveTo(70,y2); g.lineTo(W-70,y2); g.stroke(); }
+    g.strokeStyle='rgba(224,64,44,.26)'; g.lineWidth=3;
+    g.beginPath(); g.moveTo(170,0); g.lineTo(170,H); g.stroke();
+  }else if(kind==='receipt'){
+    g.strokeStyle='rgba(27,26,23,.11)'; g.lineWidth=2;
+    for(var y3=560;y3<H-150;y3+=54){ g.beginPath(); g.moveTo(80,y3); g.lineTo(W-80,y3); g.stroke(); }
+  }else if(kind==='contract'){
+    g.strokeStyle='rgba(27,26,23,.20)'; g.lineWidth=3;
+    g.strokeRect(58, 108, W-116, H-230);
+    g.beginPath(); g.moveTo(58, 208); g.lineTo(W-58, 208); g.stroke();
+  }else if(kind==='leave'){
+    g.strokeStyle='rgba(224,64,44,.30)'; g.lineWidth=3;
+    g.beginPath(); g.moveTo(80, 500); g.lineTo(W-80, 500); g.stroke();
+  }else if(kind==='resign'){
+    g.strokeStyle='rgba(27,26,23,.16)'; g.lineWidth=2;
+    for(var y5=520;y5<H-190;y5+=60){ g.beginPath(); g.moveTo(80,y5); g.lineTo(W-80,y5); g.stroke(); }
+  }
+}
+
+function wrapText(g, text, maxW){
+  var out=[];
+  String(text).split('\n').forEach(function(para){
+    var line='';
+    for(var i=0;i<para.length;i++){
+      var ch=para[i];
+      var t = line + ch;
+      if(g.measureText(t).width > maxW && line){ out.push(line); line = ch; }
+      else line = t;
+    }
+    out.push(line);
+  });
+  return out;
+}
+
+function renderPaper(cnv, c, paper, bodyText){
+  var g = cnv.getContext('2d');
+  var W = cnv.width, H = cnv.height;
+  var S = W/760;                        /* 逻辑宽 760，缩放系数 */
+  g.setTransform(1,0,0,1,0,0);
+  g.clearRect(0,0,W,H);
+  paperTexture(g, W, H, c.seed, paper.id);
+
+  var ink='#1b1a17';
+  g.setTransform(S,0,0,S,0,0);
+  var LW = 760, LH = H/S;
+
+  if(paper.head){
+    g.fillStyle = ink;
+    g.textAlign='center'; g.textBaseline='middle';
+    g.font = '700 34px "SimSun","Songti SC",serif';
+    g.fillText(paper.head, LW/2, 78);
+  }
+  /* 正文：写在纸的上半部，绝不与横线重叠 */
+  g.fillStyle = 'rgba(27,26,23,.86)';
+  g.textAlign='left'; g.textBaseline='middle';
+  g.font = '400 25px "Kaiti SC","KaiTi","STKaiti",serif';
+  var lines = wrapText(g, bodyText || paper.text, LW-190);
+  var startY = paper.head ? 158 : 132;
+  var lh = 48;
+  for(var i=0;i<lines.length;i++){
+    g.fillText(lines[i], 90, startY + i*lh);
+  }
+  /* 签名线 */
+  if(paper.id==='resign' || paper.id==='leave' || paper.id==='contract'){
+    g.strokeStyle='rgba(27,26,23,.32)'; g.lineWidth=2;
+    g.beginPath(); g.moveTo(88, LH-150); g.lineTo(LW-330, LH-150); g.stroke();
+    g.fillStyle='rgba(27,26,23,.45)';
+    g.font='400 18px "Kaiti SC","KaiTi",serif';
+    g.textAlign='left';
+    g.fillText(paper.id==='resign' ? '申请人签名' : '签字', 100, LH-126);
+  }
+  g.setTransform(1,0,0,1,0,0);
+}
+
+/* ---------------- 预览绘制 ---------------- */
+function drawPreview(){
+  var cnv = $('previewCanvas');
+  var g = cnv.getContext('2d');
+  var W = cnv.width, H = cnv.height;
+  var rnd = mulberry32(cfg.seed + 7);
+  g.setTransform(1,0,0,1,0,0);
+  g.clearRect(0,0,W,H);
+  /* 纸底 */
+  g.fillStyle='#fffdf7'; g.fillRect(0,0,W,H);
+  g.fillStyle='rgba(28,70,184,.07)';
+  for(var i=0;i<24;i++){ g.fillRect(0, i*H/24, W, 1.5); }
+  /* 章 */
+  var layer = renderStampLayer(Math.round(W*0.86), cfg, cfg.seed);
+  pressStamp(g, layer, W, H, mulberry32(cfg.seed+31), 0.80, (mulberry32(cfg.seed+5)()-0.5)*0.10);
+}
+
+function drawStampBig(){
+  var cnv=$('stampBig');
+  var g=cnv.getContext('2d');
+  var W=cnv.width,H=cnv.height;
+  g.setTransform(1,0,0,1,0,0);
+  g.clearRect(0,0,W,H);
+  g.save();
+  g.translate(W/2,H/2);
+  g.rotate(-0.10);
+  var layer=renderStampLayer(Math.round(W*0.82), cfg, cfg.seed);
+  g.globalCompositeOperation='multiply';
+  g.drawImage(layer,-W*0.41,-H*0.41,W*0.82,H*0.82);
+  g.restore();
+}
+
+/* ---------------- 界面构建 ---------------- */
+function buildChips(){
+  var sr=$('shapeRow'); sr.innerHTML='';
+  SHAPES.forEach(function(s){
+    var b=document.createElement('button');
+    b.className='chip'+(cfg.shape===s.id?' on inkred':'');
+    b.textContent=s.name; b.dataset.v=s.id; b.type='button';
+    b.addEventListener('click',function(){ cfg.shape=s.id; syncChips(); drawPreview(); });
+    sr.appendChild(b);
+  });
+  var ir=$('inkRow'); ir.innerHTML='';
+  INKS.forEach(function(k){
+    var b=document.createElement('button');
+    b.className='inkdot'+(cfg.ink===k.id?' on':'');
+    b.style.background=k.v; b.title=k.name; b.dataset.v=k.id; b.type='button';
+    b.setAttribute('aria-label',k.name);
+    b.addEventListener('click',function(){ cfg.ink=k.id; syncChips(); drawPreview(); });
+    ir.appendChild(b);
+  });
+  var mr=$('motifRow'); mr.innerHTML='';
+  MOTIFS.forEach(function(m){
+    var b=document.createElement('button');
+    b.className='chip'+(cfg.motif===m.id?' on inkblue':'');
+    b.textContent=m.name; b.dataset.v=m.id; b.type='button';
+    b.addEventListener('click',function(){ cfg.motif=m.id; syncChips(); drawPreview(); });
+    mr.appendChild(b);
+  });
+  var fr=$('fontRow'); fr.innerHTML='';
+  FONTS.forEach(function(f){
+    var b=document.createElement('button');
+    b.className='chip'+(cfg.font===f.id?' on':'');
+    b.textContent=f.name; b.dataset.v=f.id; b.type='button';
+    b.addEventListener('click',function(){ cfg.font=f.id; syncChips(); drawPreview(); });
+    fr.appendChild(b);
+  });
+  var st=$('styleRow'); st.innerHTML='';
+  STYLES.forEach(function(s){
+    var b=document.createElement('button');
+    b.className='chip'+(cfg.style===s.id?' on inkblue':'');
+    b.textContent=s.name; b.dataset.v=s.id; b.type='button';
+    b.addEventListener('click',function(){ cfg.style=s.id; syncChips(); drawPreview(); });
+    st.appendChild(b);
+  });
+  var pr=$('paperRow'); pr.innerHTML='';
+  PAPERS.forEach(function(p){
+    var b=document.createElement('button');
+    b.className='chip'+(cfg.paper===p.id?' on inkred':'');
+    b.textContent=p.name; b.dataset.v=p.id; b.type='button';
+    b.addEventListener('click',function(){
+      cfg.paper=p.id;
+      $('paperTextWrap').style.display = (p.id==='blank') ? 'block' : 'none';
+      syncChips(); drawPreview();
+    });
+    pr.appendChild(b);
+  });
+}
+function syncChips(){
+  Array.prototype.forEach.call(document.querySelectorAll('#shapeRow .chip'),function(b){
+    b.className='chip'+(cfg.shape===b.dataset.v?' on inkred':''); });
+  Array.prototype.forEach.call(document.querySelectorAll('#inkRow .inkdot'),function(b){
+    b.className='inkdot'+(cfg.ink===b.dataset.v?' on':''); });
+  Array.prototype.forEach.call(document.querySelectorAll('#motifRow .chip'),function(b){
+    b.className='chip'+(cfg.motif===b.dataset.v?' on inkblue':''); });
+  Array.prototype.forEach.call(document.querySelectorAll('#fontRow .chip'),function(b){
+    b.className='chip'+(cfg.font===b.dataset.v?' on':''); });
+  Array.prototype.forEach.call(document.querySelectorAll('#styleRow .chip'),function(b){
+    b.className='chip'+(cfg.style===b.dataset.v?' on inkblue':''); });
+  Array.prototype.forEach.call(document.querySelectorAll('#paperRow .chip'),function(b){
+    b.className='chip'+(cfg.paper===b.dataset.v?' on inkred':''); });
+}
+
+/* ---------------- 屏幕切换 ---------------- */
+var SCREENS=['screenIntro','screenStudio','screenPrint','screenGallery'];
+function show(id){
+  SCREENS.forEach(function(s){ $(s).classList.toggle('on', s===id); });
+  window.scrollTo(0,0);
+}
+
+/* ---------------- 盖章 ---------------- */
+function pickQuip(paperId, seed){
+  var egg = null;
+  if(cfg.paper==='resign') egg = EGG_QUIPS.resign;
+  else if(/[章印戳]/.test(cfg.text||'')) egg = EGG_QUIPS.name;
+  if(egg) return egg;
+  var rnd = mulberry32(seed);
+  var list = QUIPS.concat(PAPER_QUIPS[paperId]||[]);
+  return list[Math.floor(rnd()*list.length)];
+}
+
+function doStamp(){
+  stampTaps++;
+  var secret = false;
+  if(stampTaps>=5 && cfg.sub!=='日进斗金'){ secret = true; cfg.sub='日进斗金'; }
+
+  var paper = paperById(cfg.paper);
+  var body = (cfg.paper==='blank') ? ($('inPaperText').value||'（空白）') : paper.text;
+  var cnv = $('paperCanvas');
+  renderPaper(cnv, cfg, paper, body);
+
+  var rnd = mulberry32(cfg.seed + printCount*97 + 13);
+  var layer = renderStampLayer(Math.round(cnv.width*0.52), cfg, cfg.seed);
+  var rot = (rnd()-0.5)*0.26;
+  var pos = pressStamp(cnv.getContext('2d'), layer, cnv.width, cnv.height, rnd, 0.66, rot);
+
+  /* 墨点飞溅 */
+  var g = cnv.getContext('2d');
+  g.save();
+  g.globalCompositeOperation='multiply';
+  for(var i=0;i<26;i++){
+    var ang=rnd()*Math.PI*2, d=rnd()*cnv.width*0.30;
+    var x=pos.x+pos.w/2+Math.cos(ang)*d, y=pos.y+pos.h/2+Math.sin(ang)*d;
+    g.fillStyle=inkColor(); g.globalAlpha=0.25+rnd()*0.4;
+    g.beginPath(); g.arc(x,y,1.5+rnd()*6,0,Math.PI*2); g.fill();
+  }
+  g.restore();
+
+  printCount++;
+  var serial = nextSerial();
+  var quip = pickQuip(paper.id, cfg.seed + printCount*31);
+  if(secret){ quip = EGG_QUIPS.secret; }
+  if(printCount>=9){ quip = quip + '　' + EGG_QUIPS.nine; }
+
+  lastPrint = {
+    serial: serial, paper: paper.id, paperName: paper.name,
+    text: cfg.text, sub: cfg.sub, shape: cfg.shape, ink: cfg.ink,
+    motif: cfg.motif, font: cfg.font, style: cfg.style,
+    quip: quip, date: ISSUE_DATE
+  };
+
+  $('printNo').textContent = serial;
+  $('verdictBox').innerHTML = '印文：<b>' + esc(lastPrint.text) + '</b>' +
+    (lastPrint.sub ? '　副文：<b>' + esc(lastPrint.sub) + '</b>' : '') +
+    '<br/>评语：' + esc(quip);
+  var meta = $('printMeta');
+  meta.innerHTML = '';
+  [['形状', shapeById(cfg.shape).name],
+   ['墨色', inkColorName(cfg.ink)],
+   ['内纹', motifId(cfg.motif).name],
+   ['字体', fontById(cfg.font).name],
+   ['印面', cfg.style==='solid'?'实底白字':'空底墨字'],
+   ['纸张', paper.name],
+   ['编号', serial]].forEach(function(p){
+    var s=document.createElement('span'); s.textContent=p[0]+'：'+p[1]; meta.appendChild(s);
+  });
+
+  saveToGallery(lastPrint);
+  show('screenPrint');
+  if(secret) setTimeout(function(){ toast('章里藏了一句话，你发现了'); },400);
+  if(printCount===9) setTimeout(function(){ toast('满版红成就达成'); },700);
+  if(Object.keys(galShapes).length>=5 && !localStorage.getItem(STORE_KEY+'_master')){
+    localStorage.setItem(STORE_KEY+'_master','1');
+    setTimeout(function(){ toast('全能章师成就解锁'); },1100);
+  }
+}
+function inkColorName(id){ return INKS.filter(function(x){return x.id===id})[0].name; }
+
+/* ---------------- 编号与收藏 ---------------- */
+function nextSerial(){
+  var n = parseInt(localStorage.getItem(COUNTER_KEY)||'0',10)+1;
+  localStorage.setItem(COUNTER_KEY, String(n));
+  return 'No.' + ('000'+n).slice(-4);
+}
+function saveToGallery(item){
+  gal.unshift(item);
+  if(gal.length>60) gal.pop();
+  galShapes[item.shape]=1;
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(gal)); }catch(e){}
+  renderGallery();
+}
+function loadGallery(){
+  try{
+    var raw = localStorage.getItem(STORE_KEY);
+    gal = raw ? (JSON.parse(raw)||[]) : [];
+    if(!Array.isArray(gal)) gal=[];
+  }catch(e){ gal=[]; }
+  gal.forEach(function(g){ galShapes[g.shape]=1; });
+}
+function renderGallery(){
+  var grid=$('galGrid');
+  grid.innerHTML='';
+  $('galCount').textContent = gal.length + ' 枚';
+  $('galEmpty').style.display = gal.length? 'none':'block';
+  var got = Object.keys(galShapes).length;
+  $('galBadge').innerHTML = '已集章形 <b>' + got + ' / 5</b>' +
+    (got>=5 ? '　★ 全能章师已解锁' : '　集齐 5 种章形解锁「全能章师」');
+  gal.forEach(function(item){
+    var fig=document.createElement('figure');
+    var c=document.createElement('canvas');
+    c.width=240;c.height=240;
+    var g=c.getContext('2d');
+    g.fillStyle='#fffdf7'; g.fillRect(0,0,240,240);
+    var subCfg = {shape:item.shape, ink:item.ink, motif:item.motif, font:item.font, style:item.style,
+                  text:item.text, sub:item.sub, seed: hashStr(item.serial)};
+    var layer=renderStampLayer(200, subCfg, hashStr(item.serial));
+    g.globalCompositeOperation='multiply';
+    g.drawImage(layer, 20, 20, 200, 200);
+    fig.appendChild(c);
+    var cap=document.createElement('figcaption');
+    cap.innerHTML='<b>'+esc(item.text||'空')+'</b>'+esc(item.serial)+'　'+esc(item.date);
+    fig.appendChild(cap);
+    grid.appendChild(fig);
+  });
+}
+
+/* ---------------- 分享语 ---------------- */
+function shareText(){
+  if(!lastPrint) return '';
+  return '我在「橡皮章工厂」刻了一枚章：' +
+    shapeById(lastPrint.shape).name + '章 · ' + inkColorName(lastPrint.ink) + '墨 · ' +
+    (lastPrint.sub ? '副文「'+lastPrint.sub+'」 · ' : '') +
+    '编号 ' + lastPrint.serial + '。\n' +
+    '印文写着「'+lastPrint.text+'」，评语是：' + lastPrint.quip + '\n' +
+    '来盖一枚属于你的：https://hulinkang9527.github.io/daily-mini-apps/' + ISSUE_DATE + '.html';
+}
+function copyText(txt){
+  var done=function(){ toast('已复制，去发给朋友吧'); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done, function(){ fallbackCopy(txt, done); });
+  }else fallbackCopy(txt, done);
+}
+function fallbackCopy(txt, cb){
+  try{
+    var ta=document.createElement('textarea');
+    ta.value=txt; ta.style.position='fixed'; ta.style.left='-9999px';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta); cb();
+  }catch(e){ toast('复制失败，长按选中文字吧'); }
+}
+
+/* ---------------- 导出明信片 ---------------- */
+function exportCard(){
+  if(!lastPrint) return;
+  var out=document.createElement('canvas');
+  out.width=1080; out.height=1350;
+  var g=out.getContext('2d');
+  g.fillStyle='#f2eee4'; g.fillRect(0,0,1080,1350);
+  /* 网点底 */
+  g.fillStyle='rgba(27,26,23,.07)';
+  for(var yy=0;yy<1350;yy+=9){ for(var xx=0;xx<1080;xx+=9){ g.fillRect(xx+((yy/9)%2?4.5:0),yy,2,2); } }
+  /* 顶部色条 */
+  g.fillStyle=inkColor(); g.fillRect(0,0,1080,16);
+  g.fillStyle='#1b1a17';
+  g.font='900 44px "PingFang SC","Microsoft YaHei",sans-serif';
+  g.textAlign='left'; g.textBaseline='middle';
+  g.fillText('橡皮章工厂', 60, 82);
+  g.fillStyle=inkColor();
+  g.font='700 30px "PingFang SC","Microsoft YaHei",sans-serif';
+  g.textAlign='right';
+  g.fillText(lastPrint.serial, 1020, 82);
+  /* 纸（按画布比例缩放，保证底部文字区留得下） */
+  var pc=$('paperCanvas');
+  var pw=760, ph=pw*pc.height/pc.width;
+  var px=(1080-pw)/2, py=112;
+  g.save();
+  g.fillStyle='rgba(27,26,23,.16)'; g.fillRect(px+7,py+7,pw,ph);
+  g.drawImage(pc, px, py, pw, ph);
+  g.strokeStyle='#1b1a17'; g.lineWidth=3; g.strokeRect(px,py,pw,ph);
+  g.restore();
+  /* 底部文字 */
+  var by = py+ph+40;
+  g.textAlign='left'; g.fillStyle='#1b1a17';
+  g.font='700 28px "PingFang SC","Microsoft YaHei",sans-serif';
+  g.fillText('印文：'+(lastPrint.text||'空'), 60, by);
+  g.font='400 22px "Kaiti SC","KaiTi",serif';
+  var ql = wrapText(g, lastPrint.quip, 960);
+  for(var i=0;i<ql.length && i<2;i++){
+    g.fillStyle='rgba(27,26,23,.82)';
+    g.fillText(ql[i], 60, by+38+i*30);
+  }
+  g.fillStyle='rgba(27,26,23,.55)';
+  g.font='400 19px "PingFang SC","Microsoft YaHei",sans-serif';
+  g.fillText(lastPrint.date + '　' + shapeById(lastPrint.shape).name + '·' + inkColorName(lastPrint.ink) + '·' + (lastPrint.sub||'无副文'), 60, 1350-34);
+
+  try{
+    var a=document.createElement('a');
+    a.download='stamp-'+lastPrint.serial.replace(/[^0-9A-Za-z]/g,'')+'.png';
+    a.href=out.toDataURL('image/png');
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    toast('明信片已导出');
+  }catch(e){ toast('导出失败，换个浏览器试试'); }
+}
+
+/* ---------------- 随机一枚 ---------------- */
+function randomize(){
+  var rnd = mulberry32((Date.now()%1000000)+Math.floor(Math.random()*100000));
+  cfg.shape = SHAPES[Math.floor(rnd()*SHAPES.length)].id;
+  cfg.ink   = INKS[Math.floor(rnd()*INKS.length)].id;
+  cfg.motif = MOTIFS[Math.floor(rnd()*MOTIFS.length)].id;
+  cfg.font  = FONTS[Math.floor(rnd()*FONTS.length)].id;
+  cfg.style = STYLES[Math.floor(rnd()*STYLES.length)].id;
+  cfg.seed  = 1000 + Math.floor(rnd()*89999);
+  var pool=['好好上班','日进斗金','摸鱼协会','今日事今日毕','人间清醒','一拳一个小朋友','允许一切发生','别问，问就是加班','睡了睡了','干饭人'];
+  if(rnd()<0.55) cfg.text = pool[Math.floor(rnd()*pool.length)];
+  if(rnd()<0.5) cfg.sub = ['工坊出品','仅此一份','限量刻制','手作·非卖品'][Math.floor(rnd()*4)];
+  $('inText').value = cfg.text;
+  $('inSub').value = cfg.sub;
+  syncChips(); drawPreview();
+  toast('随机一枚章');
+}
+
+/* ---------------- 事件绑定 ---------------- */
+function bind(){
+  $('btnStart').addEventListener('click', function(){
+    show('screenStudio');
+    $('serialNo').textContent = 'No.' + ('000'+(parseInt(localStorage.getItem(COUNTER_KEY)||'0',10)+1)).slice(-4);
+  });
+  $('btnRandom').addEventListener('click', randomize);
+  $('btnStamp').addEventListener('click', function(){
+    cfg.text = ($('inText').value||'').trim() || '空';
+    cfg.sub  = ($('inSub').value||'').trim();
+    doStamp();
+  });
+  $('inText').addEventListener('input', function(){ cfg.text=($('inText').value||'').trim(); drawPreview(); });
+  $('inSub').addEventListener('input', function(){ cfg.sub=($('inSub').value||'').trim(); drawPreview(); });
+  $('btnExport').addEventListener('click', exportCard);
+  $('btnCopy').addEventListener('click', function(){ copyText(shareText()); });
+  $('btnAgain').addEventListener('click', function(){ show('screenStudio'); drawPreview(); });
+  $('btnBackStudio').addEventListener('click', function(){ show('screenStudio'); drawPreview(); });
+  $('btnGallery').addEventListener('click', function(){ renderGallery(); show('screenGallery'); });
+  $('btnGallery2').addEventListener('click', function(){ renderGallery(); show('screenGallery'); });
+  $('btnGalBack').addEventListener('click', function(){ show('screenStudio'); });
+  $('btnClearGal').addEventListener('click', function(){
+    if(!confirm('确定清空收藏册？')) return;
+    gal=[]; galShapes={};
+    try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+    renderGallery(); toast('册子空了');
+  });
+  $('stampBig').addEventListener('click', function(){
+    stampTaps++;
+    if(stampTaps===5){ cfg.sub='日进斗金'; drawStampBig(); toast('这枚章有话要说'); }
+  });
+}
+
+/* ---------------- 初始化 ---------------- */
+function init(){
+  loadGallery();
+  buildChips();
+  bind();
+  drawStampBig();
+  drawPreview();
+  renderGallery();
+  $('paperTextWrap').style.display = (cfg.paper==='blank')?'block':'none';
+
+  /* 测试钩子 */
+  window.__stamp = {
+    cfg: cfg,
+    renderStampLayer: renderStampLayer,
+    pickQuip: pickQuip,
+    shareText: shareText,
+    QUIPS: QUIPS,
+    PAPER_QUIPS: PAPER_QUIPS,
+    EGG_QUIPS: EGG_QUIPS,
+    setCfg: function(o){ for(var k in o){ if(Object.prototype.hasOwnProperty.call(o,k)) cfg[k]=o[k]; } drawPreview(); },
+    state: function(){ return {printCount:printCount, gal:gal.length, shapes:Object.keys(galShapes).length, last:lastPrint}; }
+  };
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
+else init();
+})();
+</script>
+</body>
+</html>
