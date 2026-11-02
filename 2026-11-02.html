@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>心情花园 · 今日一朵</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='14' r='7' fill='%23d98c8c'/%3E%3Ccircle cx='16' cy='14' r='3' fill='%23e0b15e'/%3E%3Crect x='15' y='20' width='2' height='9' fill='%237c9a78'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --paper:#f4ecd8;
+    --paper2:#ece0c6;
+    --ink:#3b3326;
+    --ink2:#6b5f49;
+    --sage:#7c9a78;
+    --rose:#d98c8c;
+    --mustard:#e0b15e;
+    --sky:#8fb8c9;
+    --plum:#9a7bb0;
+    --line:#cdbf9d;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 18% 12%, rgba(217,140,140,.10), transparent 40%),
+      radial-gradient(circle at 82% 22%, rgba(143,184,201,.12), transparent 42%),
+      radial-gradient(circle at 50% 92%, rgba(124,154,120,.14), transparent 46%),
+      var(--paper);
+    background-attachment:fixed;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  /* faint paper grain */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:radial-gradient(rgba(120,100,60,.05) 1px, transparent 1px);
+    background-size:6px 6px;opacity:.6;
+  }
+  .wrap{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:18px 16px 40px;}
+  header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;}
+  .brand{font-size:19px;font-weight:800;letter-spacing:.5px;display:flex;align-items:center;gap:8px;}
+  .brand .leaf{font-size:20px;}
+  .topbtns{display:flex;gap:8px;}
+  .ghost{
+    border:1.5px solid var(--line);background:rgba(255,255,255,.45);
+    color:var(--ink2);border-radius:14px;padding:0 14px;min-height:44px;
+    font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;
+  }
+  .ghost:active{transform:translateY(1px);}
+  .sub{color:var(--ink2);font-size:13px;margin:0 0 14px;line-height:1.5;}
+  .screen{display:none;}
+  .screen.on{display:block;}
+
+  /* mood chips */
+  .moodgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:6px 0 16px;}
+  .mood{
+    border:1.6px solid var(--line);background:rgba(255,255,255,.5);border-radius:16px;
+    min-height:64px;padding:8px 4px;cursor:pointer;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:5px;font-size:13px;font-weight:700;color:var(--ink);
+    transition:transform .12s, box-shadow .12s, border-color .12s, background .12s;
+  }
+  .mood .emo{font-size:22px;line-height:1;}
+  .mood:active{transform:scale(.96);}
+  .mood.on{border-color:var(--sage);background:#fff;box-shadow:0 6px 16px rgba(124,154,120,.28);}
+  .randomrow{display:flex;gap:10px;margin-bottom:14px;}
+  .note{
+    width:100%;border:1.6px solid var(--line);border-radius:16px;background:rgba(255,255,255,.6);
+    padding:12px 14px;min-height:84px;font-size:15px;color:var(--ink);resize:none;line-height:1.5;
+    font-family:inherit;
+  }
+  .note:focus{outline:none;border-color:var(--sage);}
+  .notelabel{font-size:12px;color:var(--ink2);margin:0 0 6px;display:flex;justify-content:space-between;}
+  .plant-btn{
+    width:100%;margin-top:16px;border:none;border-radius:18px;min-height:56px;font-size:18px;font-weight:800;
+    color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--sage),#6b8a66);
+    box-shadow:0 8px 20px rgba(124,154,120,.4);letter-spacing:1px;
+  }
+  .plant-btn:active{transform:translateY(1px);}
+
+  /* bloom stage */
+  .stage{
+    width:100%;aspect-ratio:4/5;border-radius:22px;overflow:hidden;display:block;
+    background:#fff;box-shadow:0 10px 30px rgba(90,70,40,.18);margin:4px 0 4px;
+  }
+  .stage canvas{width:100%;height:100%;display:block;}
+  .result{margin:14px 0 4px;}
+  .result .moodtag{display:inline-block;font-size:13px;font-weight:700;color:#fff;background:var(--sage);
+    border-radius:999px;padding:4px 14px;margin-bottom:10px;}
+  .result .lang{font-size:19px;font-weight:800;line-height:1.5;margin:0 0 8px;}
+  .result .note-show{font-size:15px;color:var(--ink2);line-height:1.6;margin:0 0 6px;
+    padding:10px 14px;background:rgba(255,255,255,.55);border-radius:14px;border:1px dashed var(--line);}
+  .result .date{font-size:12px;color:var(--ink2);letter-spacing:1px;}
+  .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;}
+  .act{
+    border:none;border-radius:16px;min-height:50px;font-size:15px;font-weight:700;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;color:var(--ink);
+    background:rgba(255,255,255,.7);border:1.6px solid var(--line);
+  }
+  .act:active{transform:translateY(1px);}
+  .act.primary{background:linear-gradient(135deg,var(--rose),#c9747a);color:#fff;border:none;}
+  .act.full{grid-column:1/3;}
+
+  /* garden */
+  .garden-head{display:flex;align-items:baseline;justify-content:space-between;margin:4px 0 12px;}
+  .garden-head h2{font-size:18px;margin:0;}
+  .garden-stats{font-size:13px;color:var(--ink2);}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  .cell{background:rgba(255,255,255,.6);border:1.6px solid var(--line);border-radius:16px;overflow:hidden;
+    cursor:pointer;aspect-ratio:4/5;display:flex;flex-direction:column;}
+  .cell canvas{width:100%;flex:1;display:block;}
+  .cell .cap{font-size:11px;color:var(--ink2);text-align:center;padding:4px 2px 6px;line-height:1.2;}
+  .empty{margin:40px 0;text-align:center;color:var(--ink2);font-size:15px;line-height:1.8;}
+  .empty .big{font-size:46px;display:block;margin-bottom:10px;}
+  .gbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;}
+
+  /* modal */
+  .modal{position:fixed;inset:0;z-index:50;background:rgba(40,32,18,.55);display:none;
+    align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(3px);}
+  .modal.on{display:flex;}
+  .modal .box{background:var(--paper);border-radius:22px;max-width:420px;width:100%;padding:16px;
+    box-shadow:0 20px 50px rgba(0,0,0,.3);max-height:92vh;overflow:auto;}
+  .modal .box h3{margin:2px 0 12px;font-size:18px;}
+  .modal canvas{width:100%;aspect-ratio:4/5;border-radius:16px;display:block;background:#fff;
+    box-shadow:0 8px 22px rgba(90,70,40,.2);}
+  .modal .mlang{font-size:17px;font-weight:800;margin:12px 0 6px;}
+  .modal .mnote{font-size:14px;color:var(--ink2);line-height:1.6;background:rgba(255,255,255,.6);
+    border-radius:12px;padding:10px 12px;border:1px dashed var(--line);}
+  .modal .mdate{font-size:12px;color:var(--ink2);margin-top:8px;letter-spacing:1px;}
+  .modal .mclose{margin-top:14px;width:100%;border:none;border-radius:14px;min-height:48px;font-size:16px;
+    font-weight:700;color:#fff;background:var(--sage);cursor:pointer;}
+  .modal .mclose:active{transform:translateY(1px);}
+  .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);
+    background:rgba(59,51,38,.94);color:#fff;padding:11px 20px;border-radius:999px;font-size:14px;
+    opacity:0;pointer-events:none;transition:.25s;z-index:80;font-weight:600;}
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+  .night-badge{font-size:12px;color:var(--plum);font-weight:700;}
+  footer{margin-top:26px;text-align:center;color:var(--ink2);font-size:12px;line-height:1.7;}
+  footer a{color:var(--sage);text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand" id="brand"><span class="leaf">🌿</span><span>心情花园</span></div>
+    <div class="topbtns">
+      <button class="ghost" id="goGarden">🌷 我的花园</button>
+    </div>
+  </header>
+  <p class="sub" id="subtitle">今天选一种心情，种一朵只属于你的花。它会慢慢绽开，开成你此刻的样子。</p>
+
+  <!-- HOME -->
+  <section class="screen on" id="screenHome">
+    <div class="moodgrid" id="moodGrid"></div>
+    <div class="randomrow">
+      <button class="ghost" id="randMood" style="flex:1;">🎲 让风替我选</button>
+    </div>
+    <p class="notelabel"><span>给它写一句话（花语便签，可留空）</span><span id="cnt">0/40</span></p>
+    <textarea class="note" id="note" maxlength="40" placeholder="例如：希望明天能睡个好觉"></textarea>
+    <button class="plant-btn" id="plantBtn">把今天种进土里 🌱</button>
+  </section>
+
+  <!-- BLOOM / RESULT -->
+  <section class="screen" id="screenBloom">
+    <div class="stage" id="stage"><canvas id="bloomCanvas"></canvas></div>
+    <div class="result" id="result" style="display:none;">
+      <span class="moodtag" id="rMood"></span>
+      <p class="lang" id="rLang"></p>
+      <p class="note-show" id="rNote" style="display:none;"></p>
+      <p class="date" id="rDate"></p>
+      <div class="actions">
+        <button class="act primary" id="dlBtn">⬇ 存花卡</button>
+        <button class="act" id="cpBtn">🔗 复制分享语</button>
+        <button class="act" id="saveBtn">🌷 收进花园</button>
+        <button class="act" id="againBtn">🌱 再种一朵</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- GARDEN -->
+  <section class="screen" id="screenGarden">
+    <div class="garden-head">
+      <h2>🌷 我的花园</h2>
+      <span class="garden-stats" id="gStats"></span>
+    </div>
+    <div id="gList" class="grid"></div>
+    <div class="gbtns">
+      <button class="act primary full" id="backHome">🌱 去种一朵</button>
+      <button class="act full" id="expGarden" style="display:none;">🖼 导出花园卡片</button>
+    </div>
+  </section>
+</div>
+
+<!-- modal -->
+<div class="modal" id="modal">
+  <div class="box">
+    <h3 id="mTitle">这朵花</h3>
+    <canvas id="mCanvas"></canvas>
+    <p class="mlang" id="mLang"></p>
+    <p class="mnote" id="mNote"></p>
+    <p class="mdate" id="mDate"></p>
+    <button class="mclose" id="mClose">收起来</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<footer>
+  每日有趣小应用 · <a href="index.html">回到目录</a><br>
+  你种下的每一朵，都留在这台设备上（localStorage）。
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var GH='hulinkang9527', REPO='daily-mini-apps', ISSUE_DATE='2026-11-02';
+
+  /* ---------- moods ---------- */
+  var MOODS={
+    happy:{label:'开心',emo:'😄',forms:['sun','daisy'],hue:[42,54],sat:78,light:60,
+      langs:['今天的光，够晒一整年的懒。','把嘴角上扬，当成今天的正经事。','快乐不用讲理由，就像花不用解释。']},
+    calm:{label:'平静',emo:'😌',forms:['daisy'],hue:[196,212],sat:46,light:72,
+      langs:['风停了，心也跟着停了。','像水面的涟漪，慢慢散开。','不争不抢，也是一种圆满。']},
+    blue:{label:'低落',emo:'🌧',forms:['bell'],hue:[224,246],sat:52,light:56,
+      langs:['允许自己，今天先不开心。','乌云会走，花还在等你。','慢一点，真的没关系。']},
+    love:{label:'恋爱',emo:'😍',forms:['rose'],hue:[334,352],sat:66,light:64,
+      langs:['心动这件事，从来不讲道理。','你是我今天，最想种下的那朵。','喜欢是花，爱是等它开。']},
+    tired:{label:'疲惫',emo:'😮‍💨',forms:['tulip'],hue:[96,120],sat:30,light:56,
+      langs:['今天先当一朵，关了灯的郁金香。','累就歇歇，花也会午睡。','电量 1%，但它仍在开着。']},
+    hope:{label:'期待',emo:'✨',forms:['star','daisy'],hue:[74,96],sat:62,light:62,
+      langs:['明天的事，先种进土里。','希望是那朵，还没开的花。','等一个，值得的好消息。']},
+    angry:{label:'愤怒',emo:'😤',forms:['daisy'],hue:[0,8],sat:72,light:56,
+      langs:['火气也是一种，很诚实的能量。','先炸开，再慢慢谢。','不爽就说，花也替你红。']},
+    chill:{label:'躺平',emo:'🍃',forms:['daisy'],hue:[150,170],sat:40,light:66,
+      langs:['躺平不是认输，是换个姿势开花。','今天唯一的目标：活着就行。','随它去，像野花随春风。']}
+  };
+  var MOOD_KEYS=Object.keys(MOODS);
+  var ALL_FORMS=['daisy','sun','rose','star','tulip','bell'];
+
+  function rnd(a,b){return a+Math.random()*(b-a);}
+  function ri(a,b){return Math.floor(rnd(a,b+1));}
+  function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+  function clamp(v,a,b){return v<a?a:(v>b?b:v);}
+  function ease(t){return t<0?0:(t>1?1:t);}
+  function easeOut(t){return 1-Math.pow(1-t,3);}
+  function back(t){var s=1.7;return 1+ (s+1)*Math.pow(t-1,3)+s*Math.pow(t-1,2);}
+
+  /* ---------- flower model ---------- */
+  function makeFlower(moodKey, note){
+    var m = MOODS[moodKey] || MOODS[pick(MOOD_KEYS)];
+    var form = pick(m.forms.length?m.forms:ALL_FORMS);
+    var hue = rnd(m.hue[0],m.hue[1]);
+    var sat = clamp(m.sat + rnd(-8,8),20,90);
+    var light = clamp(m.light + rnd(-6,6),40,76);
+    var gold = /(生日|birthday|周岁|诞辰)/i.test(note||'');
+    if(gold){hue=45;sat=72;light=60;}
+    var f={
+      uid: Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36),
+      date: todayStr(),
+      mood: m.label,
+      moodKey: moodKey,
+      note: (note||'').trim(),
+      form: form,
+      hue: hue, sat: sat, light: light,
+      petalLen: rnd(0.15,0.205),
+      petalWid: rnd(0.05,0.072),
+      centerR: rnd(0.05,0.085),
+      stemCurve: rnd(-0.05,0.05),
+      leafSide: Math.random()<0.5?-1:1,
+      leafSize: rnd(0.07,0.11),
+      rot: rnd(0,Math.PI*2),
+      gold: gold,
+      lang: pick(m.langs)
+    };
+    if(form==='daisy') f.petalCount=ri(12,16);
+    else if(form==='sun') f.petalCount=ri(18,22);
+    else if(form==='star') f.petalCount=5;
+    else if(form==='bell') f.petalCount=ri(4,6);
+    else if(form==='tulip') f.petalCount=3;
+    else if(form==='rose') f.petalCount=ri(10,13);
+    return f;
+  }
+
+  function todayStr(){
+    var d=new Date();
+    function p(n){return (n<10?'0':'')+n;}
+    return d.getFullYear()+'.'+p(d.getMonth()+1)+'.'+p(d.getDate());
+  }
+
+  /* ---------- drawing ---------- */
+  function hsl(h,s,l,a){return 'hsla('+h+','+s+'%,'+l+'%,'+(a==null?1:a)+')';}
+
+  function drawScene(ctx,W,H,f,prog,night){
+    ctx.clearRect(0,0,W,H);
+    // background
+    var sky=ctx.createLinearGradient(0,0,0,H);
+    if(night){sky.addColorStop(0,'#1b2440');sky.addColorStop(.55,'#243056');sky.addColorStop(1,'#16203a');}
+    else{sky.addColorStop(0,'#eaf2f4');sky.addColorStop(.5,'#f6efe0');sky.addColorStop(1,'#efe6cf');}
+    ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+
+    if(night){
+      // stars
+      ctx.save();
+      for(var i=0;i<40;i++){
+        var sx=(i*97.3)%W, sy=(i*53.7)%(H*0.6);
+        var tw=0.4+0.6*Math.abs(Math.sin(i*1.7+prog*3));
+        ctx.globalAlpha=tw*0.8;ctx.fillStyle='#dfe7ff';
+        ctx.beginPath();ctx.arc(sx,sy,1.4,0,7);ctx.fill();
+      }
+      ctx.restore();
+    } else {
+      // watercolor blooms behind, fade in with prog
+      var blobs=[[0.22,0.30,'rgba(217,140,140,0.16)'],[0.78,0.24,'rgba(143,184,201,0.16)'],[0.5,0.5,'rgba(224,177,94,0.12)']];
+      for(var b=0;b<blobs.length;b++){
+        var bx=blobs[b][0]*W, by=blobs[b][1]*H, br=W*0.32;
+        var rg=ctx.createRadialGradient(bx,by,0,bx,by,br);
+        rg.addColorStop(0,blobs[b][2]);rg.addColorStop(1,'rgba(255,255,255,0)');
+        ctx.globalAlpha=ease(prog);ctx.fillStyle=rg;
+        ctx.beginPath();ctx.arc(bx,by,br,0,7);ctx.fill();
+      }
+      ctx.globalAlpha=1;
+    }
+
+    // ground hill
+    var gy=H*0.80;
+    var gg=ctx.createLinearGradient(0,gy,0,H);
+    if(night){gg.addColorStop(0,'#2c3a2a');gg.addColorStop(1,'#1c271c');}
+    else{gg.addColorStop(0,'#bcd0a6');gg.addColorStop(1,'#a7c08c');}
+    ctx.fillStyle=gg;
+    ctx.beginPath();
+    ctx.moveTo(0,H);
+    ctx.lineTo(0,gy);
+    ctx.quadraticCurveTo(W*0.5,gy-H*0.05,W,gy);
+    ctx.lineTo(W,H);ctx.closePath();ctx.fill();
+
+    // flower geometry
+    var baseX=W*0.5;
+    var topY=H*0.40;
+    var stemH=(gy-topY)*ease(prog);
+    var tipX=baseX+f.stemCurve*W*(stemH/(gy-topY));
+    var tipY=gy-stemH;
+
+    // stem
+    ctx.strokeStyle=night?'#5e8a55':'#6f9a5e';
+    ctx.lineWidth=Math.max(2,W*0.012);
+    ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.moveTo(baseX,gy);
+    ctx.quadraticCurveTo((baseX+tipX)/2, gy-stemH*0.55, tipX,tipY);
+    ctx.stroke();
+
+    // leaf
+    if(prog>0.25){
+      var lp=ease((prog-0.25)/0.4);
+      var lx=(baseX+tipX)/2, ly=gy-stemH*0.5;
+      drawLeaf(ctx,lx,ly,f.leafSide*(Math.PI*0.5+0.5),stemH*f.leafSize*1.4,stemH*f.leafSize*0.7,
+        night?'#4f7d49':'#7c9a6e',lp);
+    }
+
+    // bloom
+    var pp=easeOut(clamp((prog-0.4)/0.6,0,1));
+    if(pp>0){
+      drawBloom(ctx,tipX,tipY,f,pp,night);
+    }
+  }
+
+  function drawLeaf(ctx,x,y,ang,len,wid,color,scale){
+    ctx.save();ctx.translate(x,y);ctx.rotate(ang);ctx.scale(scale,scale);
+    ctx.fillStyle=color;
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.quadraticCurveTo(len*0.5,-wid,len,0);
+    ctx.quadraticCurveTo(len*0.5,wid,0,0);
+    ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,0.12)';ctx.lineWidth=Math.max(1,len*0.02);
+    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(len,0);ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawBloom(ctx,cx,cy,f,p,night){
+    var scale=back(p);
+    if(scale<0)scale=0;
+    var H=fixH; // reference height for fractions (set before draw)
+    var len=f.petalLen*fixH*scale;
+    var wid=f.petalWid*fixH*scale;
+    var glow=night||f.gold;
+    ctx.save();
+    if(glow){ctx.shadowColor=f.gold?'rgba(255,210,90,0.9)':'rgba(180,230,255,0.85)';ctx.shadowBlur=fixH*0.05;}
+    var petalBase=hsl(f.hue,f.sat,f.light+10);
+    var petalTip=hsl(f.hue,f.sat,f.light-12);
+    var i,ang;
+
+    if(f.form==='rose'){
+      // layered rings
+      var rings=[{r:0.0,n:0,len:fixH*0.06},
+                 {r:fixH*0.055,n:6,len:fixH*0.06},
+                 {r:fixH*0.10,n:9,len:fixH*0.07},
+                 {r:fixH*0.145,n:12,len:fixH*0.075}];
+      for(var r=0;r<rings.length;r++){
+        var ring=rings[r];
+        if(ring.n===0){
+          drawCenter(ctx,cx,cy,fixH*0.045,f,1);
+        } else {
+          for(i=0;i<ring.n;i++){
+            ang=f.rot + i*(Math.PI*2/ring.n) + r*0.4;
+            petalAt(ctx,cx,cy,ang,ring.len*scale,ring.len*0.5*scale,f,0.5);
+          }
+        }
+      }
+      drawCenter(ctx,cx,cy,fixH*0.035,f,1);
+    } else if(f.form==='tulip'){
+      drawTulip(ctx,cx,cy,f);
+    } else if(f.form==='bell'){
+      for(i=0;i<f.petalCount;i++){
+        ang=Math.PI/2 + (i-(f.petalCount-1)/2)*0.36;
+        petalAt(ctx,cx,cy,ang,len*0.95,wid*1.1,f,0.6,'bell');
+      }
+      drawCenter(ctx,cx,cy,fixH*0.022,f,0.9);
+    } else {
+      // radial: daisy / sun / star
+      for(i=0;i<f.petalCount;i++){
+        ang=f.rot + i*(Math.PI*2/f.petalCount);
+        var sh=(f.form==='sun')?'narrow':(f.form==='star'?'star':'oval');
+        var plen=(f.form==='star')?len*0.78:len;
+        petalAt(ctx,cx,cy,ang,plen,wid,f,1,sh);
+      }
+      var cr=f.centerR*fixH*scale*(f.form==='sun'?1.5:(f.form==='star'?0.62:1));
+      drawCenter(ctx,cx,cy,cr,f,1,f.form==='sun');
+    }
+    ctx.restore();
+
+    // gold sparkles
+    if(f.gold && p>0.6){
+      ctx.save();ctx.globalAlpha=(p-0.6)/0.4;
+      for(var s=0;s<6;s++){
+        var sa=s*1.3+f.rot, sr=len*1.3;
+        sparkle(ctx,cx+Math.cos(sa)*sr,cy+Math.sin(sa)*sr,fixH*0.012);
+      }
+      ctx.restore();
+    }
+  }
+
+  function drawTulip(ctx,cx,cy,f){
+    var w=fixH*f.petalWid*2.3, h=fixH*f.petalLen*1.15;
+    ctx.save();
+    ctx.translate(cx,cy);
+    var g=ctx.createLinearGradient(0,-h,0,0);
+    g.addColorStop(0,hsl(f.hue,f.sat,f.light+10));
+    g.addColorStop(1,hsl(f.hue,f.sat,f.light-8));
+    ctx.fillStyle=g;
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.bezierCurveTo(-w*0.7,-h*0.10,-w*1.02,-h*0.50,-w*0.80,-h*0.92); // left side -> left tip
+    ctx.quadraticCurveTo(-w*0.52,-h*0.76,-w*0.30,-h*0.70);            // notch left
+    ctx.quadraticCurveTo(-w*0.16,-h*0.88,0,-h*1.0);                   // -> center tip
+    ctx.quadraticCurveTo(w*0.16,-h*0.88,w*0.30,-h*0.70);              // notch right
+    ctx.quadraticCurveTo(w*0.52,-h*0.76,w*0.80,-h*0.92);              // -> right tip
+    ctx.bezierCurveTo(w*1.02,-h*0.50,w*0.7,-h*0.10,0,0);
+    ctx.closePath();ctx.fill();
+    // inner petal seams
+    ctx.strokeStyle=hsl(f.hue,f.sat,f.light-18,0.5);
+    ctx.lineWidth=Math.max(1.5,w*0.05);
+    ctx.beginPath();ctx.moveTo(0,-h*0.06);ctx.quadraticCurveTo(-w*0.22,-h*0.4,-w*0.30,-h*0.70);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,-h*0.06);ctx.quadraticCurveTo(w*0.22,-h*0.4,w*0.30,-h*0.70);ctx.stroke();
+    ctx.restore();
+  }
+
+  var fixH=1080; // updated per canvas
+  function petalAt(ctx,cx,cy,ang,len,wid,f,alpha,shape,loff){
+    ctx.save();
+    ctx.translate(cx,cy);ctx.rotate(ang);
+    var lo=loff||0;
+    var g=ctx.createLinearGradient(0,0,len,0);
+    g.addColorStop(0,hsl(f.hue,f.sat,f.light+12+lo,alpha));
+    g.addColorStop(1,hsl(f.hue,f.sat,f.light-10+lo,alpha));
+    ctx.fillStyle=g;
+    ctx.beginPath();
+    if(shape==='star'){
+      star(ctx,len*0.5,len*0.5,5,len*0.5,len*0.22);
+    } else if(shape==='narrow'){
+      ctx.ellipse(len*0.5,0,len*0.5,wid*0.5,0,0,7);
+    } else if(shape==='cup'){
+      // upright teardrop, base at center pointing +x
+      ctx.moveTo(0,0);
+      ctx.quadraticCurveTo(len*0.55,-wid*0.5,len,0);
+      ctx.quadraticCurveTo(len*0.55,wid*0.5,0,0);
+    } else if(shape==='bell'){
+      ctx.moveTo(0,0);
+      ctx.quadraticCurveTo(len*0.5,-wid*0.3,len, wid*0.2);
+      ctx.quadraticCurveTo(len*0.5, wid*0.55, 0,0);
+    } else {
+      ctx.ellipse(len*0.5,0,len*0.5,wid*0.5,0,0,7);
+    }
+    ctx.fill();
+    ctx.restore();
+  }
+  function star(ctx,cx,cy,n,outer,inner){
+    ctx.beginPath();
+    for(var i=0;i<n*2;i++){
+      var r=i%2?inner:outer;var a=Math.PI/n*i - Math.PI/2;
+      var x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r;
+      if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+  }
+  function drawCenter(ctx,cx,cy,r,f,alpha,sun){
+    ctx.save();
+    if(sun){
+      var g=ctx.createRadialGradient(cx,cy,0,cx,cy,r);
+      g.addColorStop(0,hsl(45,80,62,alpha));g.addColorStop(1,hsl(38,75,46,alpha));
+      ctx.fillStyle=g;
+    } else if(f.form==='star'){
+      var g2=ctx.createRadialGradient(cx,cy,0,cx,cy,r);
+      g2.addColorStop(0,hsl(45,78,64,alpha));g2.addColorStop(1,hsl(40,70,48,alpha));
+      ctx.fillStyle=g2;
+    } else {
+      ctx.fillStyle=hsl(f.hue, f.sat*0.5, f.light-26, alpha);
+    }
+    ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.fill();
+    if(!sun){
+      // seed dots
+      ctx.fillStyle=hsl(f.hue,f.sat*0.4,f.light-38,alpha*0.8);
+      for(var i=0;i<7;i++){
+        var a=i*0.9, rr=r*0.55;
+        ctx.beginPath();ctx.arc(cx+Math.cos(a)*rr*0.5,cy+Math.sin(a)*rr*0.5,r*0.12,0,7);ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+  function sparkle(ctx,x,y,r){
+    ctx.save();ctx.fillStyle='rgba(255,225,120,0.95)';
+    ctx.beginPath();
+    for(var i=0;i<4;i++){
+      var a=i*Math.PI/2;
+      ctx.moveTo(x,y);
+      ctx.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r);
+      ctx.lineTo(x+Math.cos(a+0.4)*r*0.3,y+Math.sin(a+0.4)*r*0.3);
+    }
+    ctx.fill();ctx.restore();
+  }
+
+  /* ---------- canvases ---------- */
+  function fitCanvas(canvas,cssW,cssH){
+    var dpr=window.devicePixelRatio||1;
+    canvas.width=Math.round(cssW*dpr);
+    canvas.height=Math.round(cssH*dpr);
+    var ctx=canvas.getContext('2d');
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    return ctx;
+  }
+
+  /* ---------- state & screens ---------- */
+  var curMood=null, curFlower=null, night=false;
+  var $ = function(id){return document.getElementById(id);};
+
+  function showScreen(id){
+    var ss=document.querySelectorAll('.screen');
+    for(var i=0;i<ss.length;i++) ss[i].classList.remove('on');
+    $(id).classList.add('on');
+    window.scrollTo(0,0);
+  }
+
+  // build mood chips
+  (function(){
+    var grid=$('moodGrid');
+    MOOD_KEYS.forEach(function(k){
+      var m=MOODS[k];
+      var el=document.createElement('button');
+      el.className='mood';el.setAttribute('data-k',k);
+      el.innerHTML='<span class="emo">'+m.emo+'</span><span>'+m.label+'</span>';
+      el.addEventListener('click',function(){
+        curMood=k;
+        var all=grid.querySelectorAll('.mood');
+        for(var i=0;i<all.length;i++) all[i].classList.remove('on');
+        el.classList.add('on');
+      });
+      grid.appendChild(el);
+    });
+  })();
+
+  $('randMood').addEventListener('click',function(){
+    curMood=pick(MOOD_KEYS);
+    var all=$('moodGrid').querySelectorAll('.mood');
+    for(var i=0;i<all.length;i++) all[i].classList.toggle('on', all[i].getAttribute('data-k')===curMood);
+    toast('风选了：'+MOODS[curMood].label);
+  });
+
+  $('note').addEventListener('input',function(){
+    $('cnt').textContent=this.value.length+'/40';
+  });
+
+  $('plantBtn').addEventListener('click',function(){
+    if(!curMood){toast('先选一种心情，或让风替你选 🌬');return;}
+    var note=$('note').value;
+    curFlower=makeFlower(curMood,note);
+    startBloom(curFlower);
+  });
+
+  /* bloom animation */
+  var bloomAnim=null;
+  function startBloom(f){
+    showScreen('screenBloom');
+    $('result').style.display='none';
+    var stage=$('stage');
+    var cw=stage.clientWidth, ch=stage.clientHeight;
+    fixH=ch;
+    var ctx=fitCanvas($('bloomCanvas'),cw,ch);
+    var start=null, dur=1500;
+    if(bloomAnim)cancelAnimationFrame(bloomAnim);
+    function frame(ts){
+      if(start===null)start=ts;
+      var prog=clamp((ts-start)/dur,0,1);
+      drawScene(ctx,cw,ch,f,prog,night);
+      if(prog<1){bloomAnim=requestAnimationFrame(frame);}
+      else{showResult(f);}
+    }
+    bloomAnim=requestAnimationFrame(frame);
+  }
+
+  function showResult(f){
+    $('rMood').textContent='今日心情 · '+f.mood+(f.gold?' ✨金花':'');
+    $('rLang').textContent='「'+f.lang+'」';
+    if(f.note){$('rNote').style.display='block';$('rNote').textContent='便签：'+f.note;}
+    else{$('rNote').style.display='none';}
+    $('rDate').textContent='种于 '+f.date+(night?' · 夜光花园':'');
+    $('result').style.display='block';
+    window.scrollTo(0,$('result').offsetTop-10);
+  }
+
+  /* actions */
+  $('dlBtn').addEventListener('click',function(){
+    if(!curFlower)return;
+    var url=buildPoster(curFlower);
+    var a=document.createElement('a');
+    a.href=url;a.download='心情花园-'+curFlower.date+'.png';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    toast('花卡已保存到下载 🌸');
+  });
+
+  $('cpBtn').addEventListener('click',function(){
+    if(!curFlower)return;
+    var txt='今天我种了一朵【'+curFlower.mood+'】的花。\n花语：「'+curFlower.lang+'」'
+      +(curFlower.note?('\n便签：'+curFlower.note):'')
+      +'\n—— 来自「心情花园」🌿';
+    copyText(txt);
+  });
+
+  $('saveBtn').addEventListener('click',function(){
+    if(!curFlower)return;
+    var g=loadGarden();
+    g.unshift(curFlower);
+    if(g.length>60)g.length=60;
+    saveGarden(g);
+    toast('已收进花园 🌷');
+    refreshStats();
+  });
+
+  $('againBtn').addEventListener('click',function(){
+    curMood=null;
+    var all=$('moodGrid').querySelectorAll('.mood');
+    for(var i=0;i<all.length;i++) all[i].classList.remove('on');
+    $('note').value='';$('cnt').textContent='0/40';
+    showScreen('screenHome');
+  });
+
+  /* night easter egg: tap brand 5 times */
+  var tapCount=0,tapTimer=null;
+  $('brand').addEventListener('click',function(){
+    tapCount++;clearTimeout(tapTimer);
+    tapTimer=setTimeout(function(){tapCount=0;},1100);
+    if(tapCount>=5){
+      tapCount=0;night=!night;
+      document.body.style.filter=night?'':'';
+      toast(night?'🌙 夜光花园已点亮':'☀ 回到白天');
+      if($('screenBloom').classList.contains('on')&&curFlower){
+        startBloom(curFlower);
+      }
+      refreshStats();
+    }
+  });
+
+  /* ---------- garden ---------- */
+  function loadGarden(){
+    try{var v=JSON.parse(localStorage.getItem('mgGarden')||'[]');return Array.isArray(v)?v:[];}
+    catch(e){return [];}
+  }
+  function saveGarden(g){localStorage.setItem('mgGarden',JSON.stringify(g));}
+
+  function refreshStats(){
+    var g=loadGarden();
+    var days={};g.forEach(function(f){days[f.date]=1;});
+    var dk=Object.keys(days).length;
+    $('gStats').textContent='共 '+g.length+' 朵 · 连续 '+dk+' 天';
+    $('expGarden').style.display = g.length? 'block':'none';
+  }
+
+  function renderGarden(){
+    refreshStats();
+    var g=loadGarden();
+    var list=$('gList');list.innerHTML='';
+    if(!g.length){
+      list.innerHTML='<div class="empty"><span class="big">🌱</span>花园还是空的。<br>去种下你的第一朵花吧。</div>';
+      return;
+    }
+    g.forEach(function(f,idx){
+      var cell=document.createElement('div');cell.className='cell';
+      var cv=document.createElement('canvas');cell.appendChild(cv);
+      var cap=document.createElement('div');cap.className='cap';
+      cap.textContent=f.mood+(f.gold?' ✨':'');cell.appendChild(cap);
+      list.appendChild(cell);
+      cell.addEventListener('click',function(){openFlower(f);});
+      // draw thumbnail
+      var cw=cell.clientWidth||120, ch=cell.clientHeight||150;
+      fixH=ch;
+      var ctx=fitCanvas(cv,cw,ch);
+      drawScene(ctx,cw,ch,f,1,night);
+    });
+  }
+
+  $('goGarden').addEventListener('click',function(){renderGarden();showScreen('screenGarden');});
+  $('backHome').addEventListener('click',function(){showScreen('screenHome');});
+
+  $('expGarden').addEventListener('click',function(){
+    var g=loadGarden().slice(0,6);
+    if(!g.length)return;
+    var url=buildGardenPoster(g);
+    var a=document.createElement('a');a.href=url;a.download='我的心情花园.png';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    toast('花园卡片已保存 🖼');
+  });
+
+  /* modal */
+  function openFlower(f){
+    $('mTitle').textContent=f.mood+(f.gold?' · 金花 ✨':'');
+    $('mLang').textContent='「'+f.lang+'」';
+    $('mNote').textContent=f.note?('便签：'+f.note):'（这朵花没有便签）';
+    $('mDate').textContent='种于 '+f.date+(night?' · 夜光花园':'');
+    $('modal').classList.add('on');
+    var box=document.querySelector('#modal .box');
+    var cw=Math.max(120,box.clientWidth-32), ch=cw*1.25;
+    fixH=ch;
+    var ctx=fitCanvas($('mCanvas'),cw,ch);
+    drawScene(ctx,cw,ch,f,1,night);
+  }
+  $('mClose').addEventListener('click',function(){$('modal').classList.remove('on');});
+
+  /* ---------- posters ---------- */
+  function buildPoster(f){
+    var W=1080,H=1350;
+    var cv=document.createElement('canvas');cv.width=W;cv.height=H;
+    var ctx=cv.getContext('2d');
+    fixH=H;
+    drawScene(ctx,W,H,f,1,night);
+    // text strip
+    ctx.fillStyle=night?'rgba(20,28,52,0.82)':'rgba(255,255,255,0.86)';
+    roundRect(ctx,60,H-290,W-120,224,22);ctx.fill();
+    ctx.fillStyle=night?'#e7ecff':'#3b3326';
+    ctx.font='700 40px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillText('今日心情 · '+f.mood+(f.gold?' ✨':''),90,H-222);
+    ctx.font='700 34px "PingFang SC","Microsoft YaHei",sans-serif';
+    wrapText(ctx,'「'+f.lang+'」',90,H-172,W-180,44);
+    if(f.note){
+      ctx.font='400 28px "PingFang SC","Microsoft YaHei",sans-serif';
+      ctx.fillStyle=night?'#aab6e0':'#6b5f49';
+      wrapText(ctx,'便签：'+f.note,90,H-122,W-180,36);
+    }
+    // top date
+    ctx.font='600 26px "PingFang SC",sans-serif';
+    ctx.fillStyle=night?'rgba(200,210,255,0.7)':'rgba(107,95,73,0.8)';
+    ctx.textAlign='right';
+    ctx.fillText(f.date+(night?'  🌙':''),W-60,70);
+    ctx.textAlign='left';
+    // footer
+    ctx.font='600 26px "PingFang SC",sans-serif';
+    ctx.fillStyle=night?'rgba(200,210,255,0.6)':'rgba(107,95,73,0.7)';
+    ctx.fillText('🌿 心情花园 · 今日一朵',90,H-32);
+    return cv.toDataURL('image/png');
+  }
+
+  function buildGardenPoster(g){
+    var W=1080,H=1350;
+    var cv=document.createElement('canvas');cv.width=W;cv.height=H;
+    var ctx=cv.getContext('2d');
+    var bg=ctx.createLinearGradient(0,0,0,H);
+    bg.addColorStop(0,'#eef4f0');bg.addColorStop(1,'#dfe9d6');
+    ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#3b3326';
+    ctx.font='800 52px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillText('🌷 我的心情花园',60,110);
+    ctx.font='500 28px "PingFang SC",sans-serif';ctx.fillStyle='#6b5f49';
+    ctx.fillText('共 '+g.length+' 朵 · 每一朵都是某一天的自己',60,160);
+    var cols=3, gap=24, mx=60, my=210;
+    var cw=(W-mx*2-gap*(cols-1))/cols, ch=cw*1.25;
+    g.forEach(function(f,i){
+      var r=Math.floor(i/cols),c=i%cols;
+      var x=mx+c*(cw+gap), y=my+r*(ch+gap);
+      // card
+      ctx.fillStyle='#fff';roundRect(ctx,x,y,cw,ch,18);ctx.fill();
+      ctx.save();
+      roundRect(ctx,x,y,cw,ch,18);ctx.clip();
+      ctx.translate(x,y);
+      fixH=ch;
+      drawScene(ctx,cw,ch,f,1,night);
+      ctx.restore();
+      ctx.fillStyle='#6b5f49';ctx.font='600 24px "PingFang SC",sans-serif';
+      ctx.fillText(f.mood+' · '+f.date, x+14, y+ch-16);
+    });
+    return cv.toDataURL('image/png');
+  }
+
+  function roundRect(ctx,x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+  }
+  function wrapText(ctx,text,x,y,maxW,lh){
+    var chars=text.split('');var line='';var yy=y;
+    for(var i=0;i<chars.length;i++){
+      var test=line+chars[i];
+      if(ctx.measureText(test).width>maxW && line){
+        ctx.fillText(line,x,yy);line=chars[i];yy+=lh;
+      } else line=test;
+    }
+    if(line)ctx.fillText(line,x,yy);
+  }
+
+  /* ---------- utils ---------- */
+  function toast(msg){
+    var t=$('toast');t.textContent=msg;t.classList.add('on');
+    clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('on');},1800);
+  }
+  function copyText(txt){
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(function(){toast('分享语已复制 🔗');},
+        function(){fallbackCopy(txt);});
+    } else fallbackCopy(txt);
+  }
+  function fallbackCopy(txt){
+    try{
+      var ta=document.createElement('textarea');ta.value=txt;
+      ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);
+      ta.select();document.execCommand('copy');document.body.removeChild(ta);
+      toast('分享语已复制 🔗');
+    }catch(e){toast('复制失败，请手动选择');}
+  }
+
+  /* expose for testing */
+  window.__mg={makeFlower:makeFlower,buildPoster:buildPoster,buildGardenPoster:buildGardenPoster,
+    drawScene:drawScene,loadGarden:loadGarden,saveGarden:saveGarden,MOODS:MOODS,drawTulip:drawTulip,setNight:function(v){night=v;}};
+
+  // init stats
+  refreshStats();
+})();
+</script>
+</body>
+</html>
