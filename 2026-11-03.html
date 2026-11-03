@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>工资刺客 · 你的真实时薪到底多少</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23b23a2e'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white' font-family='serif' font-weight='bold'>%C2%A5</text></svg>">
+<style>
+  :root{
+    --paper:#f3e7cc;
+    --paper2:#ecdcb8;
+    --ink:#2c2418;
+    --ink2:#5a4d36;
+    --red:#b23a2e;
+    --red2:#8f2c1b;
+    --green:#3a6b5e;
+    --line:#cbb285;
+    --shadow:rgba(60,40,10,.28);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:"Songti SC","STSong","SimSun","Noto Serif CJK SC",serif;
+    background:
+      radial-gradient(circle at 20% 10%, rgba(255,255,255,.35), transparent 40%),
+      radial-gradient(circle at 80% 90%, rgba(180,140,80,.12), transparent 45%),
+      #d9c79c;
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;flex-direction:column;align-items:center;
+    padding:14px 12px 40px;
+  }
+  .mono{font-family:"Courier New",ui-monospace,monospace;}
+  /* perforated envelope top */
+  .env{
+    width:100%;max-width:480px;position:relative;
+    background:
+      repeating-linear-gradient(90deg, transparent 0 14px, rgba(178,58,46,.05) 14px 15px),
+      linear-gradient(180deg,var(--paper),var(--paper2));
+    border:1px solid var(--line);
+    border-radius:10px;
+    box-shadow:0 10px 30px var(--shadow);
+    padding:18px 18px 22px;
+    margin-top:6px;
+  }
+  .env::before{
+    content:"";position:absolute;left:0;right:0;top:-9px;height:10px;
+    background:
+      radial-gradient(circle at 6px 10px, transparent 0 5px, var(--paper) 5px 6px) repeat-x;
+    background-size:14px 10px;
+    filter:drop-shadow(0 -1px 0 var(--line));
+  }
+  header{width:100%;max-width:480px;text-align:center;margin-bottom:2px;}
+  .logo{
+    display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none;
+    font-size:26px;font-weight:bold;color:var(--red);letter-spacing:2px;
+    text-shadow:1px 1px 0 rgba(255,255,255,.5);
+    padding:6px 14px;min-height:46px;border-radius:10px;
+  }
+  .logo .blade{
+    width:34px;height:34px;border-radius:50%;border:3px solid var(--red);
+    display:flex;align-items:center;justify-content:center;color:var(--red);
+    font-family:"Courier New",monospace;font-weight:bold;font-size:17px;transform:rotate(-8deg);
+  }
+  .sub{font-size:12.5px;color:var(--ink2);margin-top:4px;letter-spacing:1px;}
+  .hint{font-size:11px;color:var(--ink2);opacity:.7;margin-top:3px;}
+
+  h2.sect{
+    font-size:15px;color:var(--red2);border-bottom:2px dashed var(--line);
+    padding-bottom:6px;margin:18px 0 12px;letter-spacing:1px;
+  }
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:13.5px;color:var(--ink2);margin-bottom:5px;letter-spacing:.5px;}
+  .field label .u{font-size:11px;color:var(--ink2);opacity:.7;margin-left:4px;}
+  .inp{
+    width:100%;min-height:48px;font-size:16px;padding:0 12px;
+    background:#fffaf0;border:1.5px solid var(--line);border-radius:8px;
+    color:var(--ink);font-family:"Courier New",monospace;
+  }
+  .inp:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px rgba(178,58,46,.15);}
+  .row{display:flex;gap:10px;}
+  .row .field{flex:1;}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    min-height:50px;padding:0 18px;border:none;border-radius:9px;cursor:pointer;
+    font-family:inherit;font-size:16px;font-weight:bold;letter-spacing:1px;
+    transition:transform .06s ease, filter .15s ease;
+  }
+  .btn:active{transform:translateY(1px) scale(.99);}
+  .btn-red{background:linear-gradient(180deg,#c2463a,#9c2f22);color:#fff7ec;box-shadow:0 4px 0 #6f2017;}
+  .btn-red:active{box-shadow:0 1px 0 #6f2017;}
+  .btn-ghost{background:#fffaf0;color:var(--red2);border:1.5px solid var(--line);box-shadow:0 3px 0 #c9b48a;}
+  .btn-block{width:100%;}
+  .btn-sm{min-height:46px;font-size:14px;padding:0 14px;}
+  .actions{display:flex;flex-direction:column;gap:10px;margin-top:16px;}
+  .actions .row2{display:flex;gap:10px;}
+  .actions .row2 .btn{flex:1;}
+
+  .link{background:none;border:none;color:var(--green);font-size:13px;cursor:pointer;
+    text-decoration:underline;padding:6px 8px;min-height:44px;font-family:inherit;}
+
+  /* result screen */
+  .hidden{display:none !important;}
+  .payslip{
+    position:relative;border:2px solid var(--ink);border-radius:8px;
+    background:
+      repeating-linear-gradient(0deg, transparent 0 26px, rgba(90,77,54,.10) 26px 27px),
+      #fbf3df;
+    padding:16px 16px 18px;margin-top:6px;overflow:hidden;
+  }
+  .payslip .ps-head{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:4px;
+    border-bottom:2px solid var(--ink);padding-bottom:8px;}
+  .ps-title{font-size:15px;font-weight:bold;color:var(--ink);letter-spacing:.5px;white-space:nowrap;}
+  .ps-no{font-size:10px;color:var(--ink2);font-family:"Courier New",monospace;text-align:right;white-space:nowrap;}
+  .big{text-align:center;margin:14px 0 6px;}
+  .big .num{font-family:"Courier New",monospace;font-size:52px;font-weight:bold;color:var(--red);line-height:1;}
+  .big .lab{font-size:12px;color:var(--ink2);letter-spacing:2px;margin-top:4px;}
+  .kv{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin:10px 0;font-size:13px;}
+  .kv .k{color:var(--ink2);}
+  .kv .v{font-family:"Courier New",monospace;text-align:right;font-weight:bold;}
+  .netline{font-size:12.5px;color:var(--green);text-align:left;flex:1;line-height:1.45;}
+
+  .bottomrow{display:flex;align-items:center;gap:10px;border-top:1px dashed var(--line);padding-top:9px;margin-top:8px;}
+  .stamp{
+    position:static;flex:0 0 auto;pointer-events:none;font-weight:bold;color:var(--red);
+    border:3px solid var(--red);border-radius:50%;display:flex;align-items:center;justify-content:center;
+    text-align:center;font-size:15px;line-height:1.15;letter-spacing:1px;
+    transform:rotate(-10deg);opacity:.85;width:84px;height:84px;
+    box-shadow:inset 0 0 0 2px rgba(178,58,46,.3);
+    text-shadow:0 0 1px rgba(178,58,46,.4);
+  }
+  .stamp.green{color:var(--green);border-color:var(--green);box-shadow:inset 0 0 0 2px rgba(58,107,94,.3);}
+
+  .live{
+    margin-top:14px;background:var(--ink);color:#ffe9c2;border-radius:10px;
+    padding:12px 14px;text-align:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+  }
+  .live .t{font-size:12px;color:#e7c79a;letter-spacing:1px;}
+  .live .v{font-family:"Courier New",monospace;font-size:30px;font-weight:bold;color:#ffd479;margin-top:2px;}
+  .live .s{font-size:12px;color:#e7c79a;margin-top:3px;}
+
+  .bench{margin-top:14px;}
+  .bench .brow{display:flex;justify-content:space-between;align-items:center;
+    border-bottom:1px dotted var(--line);padding:9px 2px;font-size:14px;}
+  .bench .brow .bn{color:var(--ink);}
+  .bench .brow .bv{font-family:"Courier New",monospace;color:var(--red2);font-weight:bold;}
+
+  .posterwrap{margin-top:16px;text-align:center;}
+  #posterImg{max-width:100%;border-radius:8px;box-shadow:0 8px 22px var(--shadow);display:none;}
+  .posterwrap.show #posterImg{display:block;}
+
+  /* freedom egg overlay */
+  .overlay{position:fixed;inset:0;background:rgba(20,14,4,.82);display:flex;align-items:center;
+    justify-content:center;padding:18px;z-index:50;}
+  .freecard{width:100%;max-width:430px;background:linear-gradient(180deg,#fff7e6,#ffe9c2);
+    border:2px solid var(--gold,#caa24a);border-radius:14px;padding:22px 20px;text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,.5);}
+  .freecard h3{margin:0 0 6px;color:var(--red2);font-size:20px;letter-spacing:1px;}
+  .freecard p{font-size:13px;color:var(--ink2);margin:6px 0;}
+  .freecard input[type=range]{width:100%;margin:14px 0 6px;accent-color:var(--red);}
+  .freebig{font-family:"Courier New",monospace;font-size:34px;color:var(--red);font-weight:bold;margin:6px 0;}
+  .freeout{font-size:14px;color:var(--ink);min-height:22px;font-weight:bold;}
+
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:#ffe9c2;padding:11px 18px;border-radius:24px;font-size:14px;
+    opacity:0;pointer-events:none;transition:all .25s ease;z-index:80;max-width:90vw;text-align:center;}
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  footer{width:100%;max-width:480px;text-align:center;margin-top:18px;
+    font-size:11px;color:var(--ink2);opacity:.7;line-height:1.6;}
+  @media (max-width:360px){.big .num{font-size:44px;}}
+  @media print{.env{box-shadow:none;}}
+</style>
+</head>
+<body>
+  <header>
+    <div class="logo" id="logo" title="连点 5 下有惊喜"><span class="blade">¥</span>工资刺客</div>
+    <div class="sub">时薪鉴定事务所 · 专治「我以为我赚得挺多」</div>
+    <div class="hint">点标题 5 下，解锁隐藏功能 →</div>
+  </header>
+
+  <!-- 表单屏 -->
+  <section class="env" id="screenForm">
+    <h2 class="sect">① 填一下你的打工参数</h2>
+    <div class="field">
+      <label>月薪（税前，元）<span class="u">老板画饼前的那个数</span></label>
+      <input class="inp" id="fSalary" type="number" inputmode="numeric" placeholder="例如 12000" value="12000">
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>每月工作日<span class="u">天</span></label>
+        <input class="inp" id="fDays" type="number" inputmode="numeric" placeholder="22" value="22">
+      </div>
+      <div class="field">
+        <label>每日工时<span class="u">小时</span></label>
+        <input class="inp" id="fHours" type="number" inputmode="numeric" placeholder="8" value="8.5">
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>单程通勤<span class="u">分钟</span></label>
+        <input class="inp" id="fCommute" type="number" inputmode="numeric" placeholder="40" value="40">
+      </div>
+      <div class="field">
+        <label>每月额外开销<span class="u">元（午饭/咖啡）</span></label>
+        <input class="inp" id="fExtra" type="number" inputmode="numeric" placeholder="0" value="800">
+      </div>
+    </div>
+    <div style="text-align:right;margin-top:-4px;margin-bottom:10px;">
+      <button class="link" id="randBtn">🎲 替我随机生成一个打工人</button>
+    </div>
+    <button class="btn btn-red btn-block" id="calcBtn">② 鉴定我的真实时薪 →</button>
+  </section>
+
+  <!-- 结果屏 -->
+  <section class="env hidden" id="screenResult">
+    <h2 class="sect">③ 你的工资鉴定报告</h2>
+    <div class="payslip" id="payslip">
+      <div class="ps-head">
+        <div class="ps-title">工资刺客 · 时薪鉴定书</div>
+        <div class="ps-no" id="psNo">案号 —</div>
+      </div>
+      <div class="big">
+        <div class="num" id="rHourly">¥0</div>
+        <div class="lab">真实时薪（已扣通勤时间）/ 小时</div>
+      </div>
+      <div class="kv">
+        <div class="k">月薪</div><div class="v" id="rSalary">—</div>
+        <div class="k">每月工作</div><div class="v" id="rMonthH">—</div>
+        <div class="k">含通勤工时</div><div class="v" id="rWH">—</div>
+        <div class="k">每月净到手</div><div class="v" id="rNet">—</div>
+      </div>
+      <div class="bottomrow">
+        <div class="netline" id="rNetLine">扣掉每月额外开销后，净时薪 ¥0 / 小时</div>
+        <div class="stamp green" id="stampMain">已验真</div>
+      </div>
+    </div>
+
+    <div class="live">
+      <div class="t">你盯着这页发呆的工夫，已经摸鱼赚了</div>
+      <div class="v" id="liveEarn">¥0.00</div>
+      <div class="s" id="liveSub">≈ 0 口奶茶</div>
+    </div>
+
+    <div class="bench" id="bench"></div>
+
+    <div class="posterwrap" id="posterWrap">
+      <img id="posterImg" alt="工资鉴定海报">
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-red btn-block" id="posterBtn">📜 生成我的工资海报（可保存转发）</button>
+      <div class="row2">
+        <button class="btn btn-ghost btn-sm" id="copyBtn">📋 复制转发语</button>
+        <button class="btn btn-ghost btn-sm" id="againBtn">↺ 重新测算</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    本工具纯属娱乐，计算结果不构成任何理财/税务建议。<br>
+    你笑着算完的每一秒，都是被扣除的青春。
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- 财务自由模拟器彩蛋 -->
+  <div class="overlay hidden" id="freeOverlay">
+    <div class="freecard">
+      <h3>💰 财务自由模拟器</h3>
+      <p>把时薪拉到你想像中的数字，看看「自由」长什么样。</p>
+      <input type="range" id="freeRange" min="100" max="5000" step="10" value="800">
+      <div class="freebig" id="freeHourly">¥800 / 小时</div>
+      <div class="freeout" id="freeOut">每月只需工作 0 天就能覆盖原月薪</div>
+      <button class="btn btn-red btn-block" id="freeClose" style="margin-top:14px;">收下这份白日梦</button>
+    </div>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+  var ISSUE_DATE = "2026-11-03";
+  var REPO_URL = "https://hulinkang9527.github.io/daily-mini-apps/2026-11-03.html";
+
+  var $ = function(id){ return document.getElementById(id); };
+  var state = { data:null, startAt:0, timer:null, eggTaps:0, eggT:0 };
+
+  // ---- toast ----
+  var toastEl = $("toast"), toastTimer=null;
+  function toast(msg){
+    toastEl.textContent = msg; toastEl.classList.add("on");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove("on"); }, 1900);
+  }
+
+  // ---- parse & compute ----
+  function num(id){ var v = parseFloat($(id).value); return isNaN(v)?NaN:v; }
+
+  function compute(s){
+    var hoursWithCommute = s.hours + (s.commute*2)/60;
+    var monthHours = hoursWithCommute * s.days;
+    var grossHourly = monthHours>0 ? s.salary/monthHours : 0;
+    var netMonthly = Math.max(0, s.salary - (s.extra||0));
+    var netHourly = monthHours>0 ? netMonthly/monthHours : 0;
+    return {
+      hoursWithCommute:hoursWithCommute,
+      monthHours:monthHours,
+      grossHourly:grossHourly,
+      netMonthly:netMonthly,
+      netHourly:netHourly
+    };
+  }
+
+  function fmt(n, d){ d = d==null?2:d; if(!isFinite(n)) return "0"; return n.toFixed(d); }
+  function fmtInt(n){ return Math.round(n).toLocaleString("zh-CN"); }
+
+  // ---- benchmarks ----
+  var BENCH = [
+    {n:"一杯奶茶", p:18},
+    {n:"一包烟", p:30},
+    {n:"一顿外卖", p:35},
+    {n:"一个游戏皮肤", p:128},
+    {n:"一次按摩", p:298},
+    {n:"一箱车厘子", p:200}
+  ];
+
+  function buildBench(hourly){
+    var html = "";
+    for(var i=0;i<BENCH.length;i++){
+      var b = BENCH[i];
+      var mins = hourly>0 ? b.p/hourly : 0;
+      var minsTxt = mins>=60 ? (Math.floor(mins/60)+" 小时 "+(Math.round(mins%60))+" 分")
+                   : (mins<1 ? "不到 1 分钟" : Math.round(mins)+" 分钟");
+      html += '<div class="brow"><span class="bn">'+b.n+'（¥'+b.p+'）</span>'+
+              '<span class="bv">要熬 '+minsTxt+'</span></div>';
+    }
+    return html;
+  }
+
+  // ---- main calc ----
+  function doCalc(){
+    var salary = num("fSalary"), days = num("fDays"), hours = num("fHours"),
+        commute = num("fCommute"), extra = num("fExtra");
+    if(isNaN(salary)||salary<=0){ toast("月薪得填个正数呀～"); return; }
+    if(isNaN(days)||days<=0){ toast("每月工作日得填正数"); return; }
+    if(isNaN(hours)||hours<=0){ toast("每日工时得填正数"); return; }
+    if(isNaN(commute)||commute<0){ commute = 0; $("fCommute").value = 0; }
+    if(isNaN(extra)||extra<0){ extra = 0; $("fExtra").value = 0; }
+
+    var c = compute({salary:salary,days:days,hours:hours,commute:commute,extra:extra});
+    state.data = { salary:salary, days:days, hours:hours, commute:commute, extra:extra, c:c };
+
+    // fill report
+    $("psNo").textContent = "案号 GD-" + ISSUE_DATE.replace(/-/g,"") + "-" + (Math.floor(Math.random()*9000)+1000);
+    $("rHourly").textContent = "¥" + fmt(c.grossHourly, 1);
+    $("rSalary").textContent = "¥" + fmtInt(salary);
+    $("rMonthH").textContent = fmt(c.monthHours,0) + " 小时";
+    $("rWH").textContent = fmt(c.hoursWithCommute,1) + " 时/天";
+    $("rNet").textContent = "¥" + fmtInt(c.netMonthly);
+    $("rNetLine").textContent = (extra>0)
+      ? ("扣掉每月 ¥"+fmtInt(extra)+" 额外开销后，净时薪 ¥"+fmt(c.netHourly,1)+" / 小时")
+      : "还没算额外开销，净时薪 ¥"+fmt(c.netHourly,1)+" / 小时";
+
+    // stamp (always present; label switches by situation)
+    var st = $("stampMain");
+    st.classList.remove("green");
+    var seal;
+    if(salary>=100000){ seal = "老板本体"; }
+    else if(c.grossHourly>0 && c.grossHourly<20){ seal = "工资刺客"; }
+    else { seal = "已验真"; st.classList.add("green"); }
+    st.innerHTML = seal.length<=3 ? seal : seal.slice(0,2)+"<br>"+seal.slice(2);
+
+    $("bench").innerHTML = buildBench(c.grossHourly);
+
+    // hide any previous poster
+    $("posterWrap").classList.remove("show");
+
+    // switch screen
+    $("screenForm").classList.add("hidden");
+    $("screenResult").classList.remove("hidden");
+    window.scrollTo(0,0);
+
+    // live counter
+    state.startAt = Date.now();
+    if(state.timer) clearInterval(state.timer);
+    state.timer = setInterval(tickLive, 120);
+    tickLive();
+  }
+
+  function tickLive(){
+    if(!state.data) return;
+    var h = state.data.c.grossHourly;
+    var sec = (Date.now()-state.startAt)/1000;
+    var earned = h * sec/3600;
+    $("liveEarn").textContent = "¥" + fmt(earned,2);
+    var teas = h>0 ? earned/18 : 0;
+    $("liveSub").textContent = "≈ " + (teas<0.01?"0 口":fmt(teas,1)+" 口") + " 奶茶（按 ¥18/杯计）";
+  }
+
+  // ---- share text ----
+  function shareText(){
+    var d = state.data, c = d.c;
+    var sec = state.startAt? (Date.now()-state.startAt)/1000 : 0;
+    var earned = c.grossHourly * sec/3600;
+    return "【工资刺客】我真实时薪才 ¥"+fmt(c.grossHourly,1)+"/小时（通勤都算进去了）。"+
+           "盯着这页发了 "+Math.floor(sec)+" 秒呆，已经摸鱼赚到 ¥"+fmt(earned,2)+" ☕ 你也来挨一刀？ "+REPO_URL;
+  }
+
+  function copyShare(){
+    var txt = shareText();
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(function(){ toast("转发语已复制，去群里挨骂吧"); },
+        function(){ fallbackCopy(txt); });
+    } else { fallbackCopy(txt); }
+  }
+  function fallbackCopy(txt){
+    try{
+      var ta=document.createElement("textarea"); ta.value=txt; ta.style.position="fixed"; ta.style.opacity="0";
+      document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
+      toast("转发语已复制");
+    }catch(e){ toast("复制失败，长按手动选吧"); }
+  }
+
+  // ---- poster (1080x1350) ----
+  function drawPoster(){
+    var d = state.data, c = d.c;
+    var W=1080, H=1350, cv=document.createElement("canvas");
+    cv.width=W; cv.height=H;
+    var x=cv.getContext("2d");
+
+    // bg paper
+    x.fillStyle="#f3e7cc"; x.fillRect(0,0,W,H);
+    // subtle texture lines
+    x.strokeStyle="rgba(90,77,54,.08)"; x.lineWidth=1;
+    for(var yy=40; yy<H; yy+=30){ x.beginPath(); x.moveTo(0,yy); x.lineTo(W,yy); x.stroke(); }
+    // border
+    x.strokeStyle="#2c2418"; x.lineWidth=6; x.strokeRect(34,34,W-68,H-68);
+    x.strokeStyle="#b23a2e"; x.lineWidth=2; x.strokeRect(50,50,W-100,H-100);
+
+    // header
+    x.fillStyle="#b23a2e"; x.textAlign="center";
+    x.font="bold 54px 'Songti SC','SimSun',serif";
+    x.fillText("工 资 刺 客", W/2, 130);
+    x.fillStyle="#5a4d36"; x.font="22px 'Courier New',monospace";
+    x.fillText("时 薪 鉴 定 报 告 书", W/2, 170);
+
+    // case no
+    x.fillStyle="#5a4d36"; x.font="20px 'Courier New',monospace";
+    x.fillText("案号 GD-"+ISSUE_DATE.replace(/-/g,"")+"-"+(Math.floor(Math.random()*9000)+1000), W/2, 205);
+
+    // big hourly
+    x.fillStyle="#b23a2e"; x.font="bold 130px 'Courier New',monospace";
+    x.fillText("¥"+fmt(c.grossHourly,1), W/2, 340);
+    x.fillStyle="#5a4d36"; x.font="24px 'Songti SC',serif";
+    x.fillText("真实时薪 / 小时（通勤时间已扣除）", W/2, 385);
+
+    // table
+    var tx=120, ty=450, lh=64;
+    x.font="26px 'Songti SC',serif"; x.textAlign="left"; x.fillStyle="#2c2418";
+    var rows=[
+      ["月薪", "¥"+fmtInt(d.salary)],
+      ["每月工作日", d.days+" 天"],
+      ["每日工时", d.hours+" 小时"],
+      ["单程通勤", d.commute+" 分钟"],
+      ["含通勤工时", fmt(c.hoursWithCommute,1)+" 时/天"],
+      ["每月净到手", "¥"+fmtInt(c.netMonthly)],
+      ["净时薪", "¥"+fmt(c.netHourly,1)+" / 小时"]
+    ];
+    for(var i=0;i<rows.length;i++){
+      var ry=ty+i*lh;
+      x.strokeStyle="#cbb285"; x.lineWidth=1; x.beginPath(); x.moveTo(tx,ry+44); x.lineTo(W-tx,ry+44); x.stroke();
+      x.fillStyle="#5a4d36"; x.fillText(rows[i][0], tx, ry+34);
+      x.fillStyle="#b23a2e"; x.font="bold 28px 'Courier New',monospace"; x.textAlign="right";
+      x.fillText(rows[i][1], W-tx, ry+34); x.textAlign="left"; x.font="26px 'Songti SC',serif";
+    }
+
+    // benchmark one-liner
+    var mins = c.grossHourly>0 ? (18/c.grossHourly) : 0;
+    var mtxt = mins>=60 ? (Math.floor(mins/60)+" 小时"+Math.round(mins%60)+" 分")
+              : (mins<1 ? "不到 1 分钟" : Math.round(mins)+" 分钟");
+    x.fillStyle="#3a6b5e"; x.textAlign="center"; x.font="24px 'Songti SC',serif";
+    x.fillText("一杯 ¥18 奶茶 = 出卖 "+ mtxt +" 生命", W/2, ty+rows.length*lh+30);
+
+    // 鉴定结论
+    var vtxt;
+    if(c.grossHourly<20) vtxt="结论：工资刺客已实锤。";
+    else if(c.grossHourly<50) vtxt="结论：标准打工人，卖得不贵也不便宜。";
+    else if(c.grossHourly<100) vtxt="结论：中产预备役，通勤正在偷偷扣血。";
+    else vtxt="结论：你的时间，比大多数人都金贵。";
+    var vy = ty + rows.length*lh + 96;
+    x.strokeStyle="#cbb285"; x.lineWidth=2; x.setLineDash([6,8]);
+    x.beginPath(); x.moveTo(160,vy-34); x.lineTo(W-160,vy-34); x.stroke(); x.setLineDash([]);
+    x.textAlign="center"; x.fillStyle="#5a4d36"; x.font="20px 'Courier New',monospace";
+    x.fillText("· 鉴 定 结 论 ·", W/2, vy);
+    x.fillStyle="#2c2418"; x.font="26px 'Songti SC',serif";
+    x.fillText("每月你为工作 + 通勤，付出 "+Math.round(c.monthHours)+" 小时生命", W/2, vy+48);
+    x.fillStyle="#b23a2e"; x.font="bold 26px 'Songti SC',serif";
+    x.fillText(vtxt, W/2, vy+92);
+
+    // stamp
+    if(c.grossHourly>0 && c.grossHourly<20){
+      drawSeal(x, W-180, 300, "工资刺客", "#b23a2e");
+    } else if(d.salary>=100000){
+      drawSeal(x, W-180, 300, "老板本体", "#b23a2e");
+    } else {
+      drawSeal(x, W-180, 300, "已验真", "#3a6b5e");
+    }
+
+    // footer share line
+    x.fillStyle="#5a4d36"; x.font="20px 'Songti SC',serif"; x.textAlign="center";
+    x.fillText("扫码挨一刀 → "+REPO_URL, W/2, H-90);
+    x.fillStyle="#b23a2e"; x.font="bold 22px 'Songti SC',serif";
+    x.fillText("—— 你笑着算完的每一秒，都是被扣除的青春 ——", W/2, H-55);
+
+    var url = cv.toDataURL("image/png");
+    $("posterImg").src = url;
+    $("posterWrap").classList.add("show");
+    window.scrollTo(0, document.body.scrollHeight);
+    return url;
+  }
+
+  function drawSeal(x, cx, cy, text, color){
+    x.save();
+    x.translate(cx,cy); x.rotate(-0.22);
+    x.strokeStyle=color; x.lineWidth=6;
+    x.beginPath(); x.arc(0,0,72,0,Math.PI*2); x.stroke();
+    x.beginPath(); x.arc(0,0,62,0,Math.PI*2); x.stroke();
+    x.fillStyle=color; x.textAlign="center"; x.font="bold 38px 'Songti SC',serif";
+    var parts = text.split("");
+    // up to 3 chars on one line; 4 chars split 2+2
+    if(parts.length<=3){ x.fillText(text,0,14); }
+    else {
+      var l1=text.slice(0,2), l2=text.slice(2);
+      x.fillText(l1,0,-12); x.fillText(l2,0,34);
+    }
+    x.restore();
+  }
+
+  function downloadPoster(){
+    var url = drawPoster();
+    try{
+      var a=document.createElement("a");
+      a.href=url; a.download="工资刺客-"+ISSUE_DATE+".png";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      toast("海报已生成，长按/另存即可转发");
+    }catch(e){ toast("生成完成，长按图片保存"); }
+  }
+
+  // ---- freedom egg ----
+  function openFree(){
+    $("freeOverlay").classList.remove("hidden");
+    updateFree();
+  }
+  function updateFree(){
+    var h = parseFloat($("freeRange").value);
+    $("freeHourly").textContent = "¥"+fmtInt(h)+" / 小时";
+    var base = state.data ? state.data.c.grossHourly : 50;
+    var salary = state.data ? state.data.salary : 12000;
+    if(h<=0){ $("freeOut").textContent="这梦也太便宜了"; return; }
+    var hoursToCover = salary/h;
+    var days = hoursToCover/8;
+    var txt;
+    if(days < 1){ txt = "每天只需工作 "+fmt(days*8,1)+" 小时就能覆盖原月薪，剩下全是自由！"; }
+    else if(days <= 22){ txt = "每月只需工作 "+fmt(days,1)+" 天就能覆盖原月薪。"; }
+    else { txt = "嗯…这个数，好像还没你现在自由。"; }
+    if(h>=3000) txt += "（梦里啥都有）";
+    $("freeOut").textContent = txt;
+  }
+
+  function tapLogo(){
+    var now = Date.now();
+    if(now - state.eggT > 1200) state.eggTaps = 0;
+    state.eggT = now; state.eggTaps++;
+    if(state.eggTaps>=5){ state.eggTaps=0; openFree(); }
+  }
+
+  // ---- random sample ----
+  function randSample(){
+    var sal = [6000,8000,10000,12000,15000,20000,35000,5000][Math.floor(Math.random()*8)];
+    $("fSalary").value=sal;
+    $("fDays").value=[21,22,24,26][Math.floor(Math.random()*4)];
+    $("fHours").value=[8,8.5,9,10,11][Math.floor(Math.random()*5)];
+    $("fCommute").value=[20,40,60,80,90][Math.floor(Math.random()*5)];
+    $("fExtra").value=[600,800,1000,1500,0][Math.floor(Math.random()*5)];
+    toast("已帮你随机生成一个倒霉蛋 🎲");
+  }
+
+  // ---- bind ----
+  $("calcBtn").addEventListener("click", doCalc);
+  $("againBtn").addEventListener("click", function(){
+    if(state.timer) clearInterval(state.timer);
+    state.data=null;
+    $("screenResult").classList.add("hidden");
+    $("screenForm").classList.remove("hidden");
+    window.scrollTo(0,0);
+  });
+  $("posterBtn").addEventListener("click", downloadPoster);
+  $("copyBtn").addEventListener("click", copyShare);
+  $("randBtn").addEventListener("click", randSample);
+  $("logo").addEventListener("click", tapLogo);
+  $("freeRange").addEventListener("input", updateFree);
+  $("freeClose").addEventListener("click", function(){ $("freeOverlay").classList.add("hidden"); });
+
+  // expose for testing
+  window.__app = {
+    compute:compute, buildBench:buildBench, doCalc:doCalc, shareText:shareText,
+    drawPoster:drawPoster, getState:function(){ return state; }
+  };
+})();
+</script>
+</body>
+</html>
