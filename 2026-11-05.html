@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>泡泡潮 · 你能撑几秒</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230d1024'/%3E%3Ccircle cx='26' cy='28' r='12' fill='%234dd6ff'/%3E%3Ccircle cx='42' cy='38' r='9' fill='%23ff5d8f'/%3E%3Ccircle cx='22' cy='24' r='3.5' fill='%23fff'/%3E%3Ccircle cx='39' cy='35' r='2.6' fill='%23fff'/%3E%3C/svg%3E" />
+<style>
+  :root{
+    --bg1:#0d1024; --bg2:#1a1140; --ink:#eaf0ff; --dim:#9aa6cf;
+    --cyan:#4dd6ff; --coral:#ff6b6b; --gold:#ffd166; --line:rgba(120,160,255,.16);
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    background:radial-gradient(120% 90% at 50% -10%,#241a52 0%,var(--bg1) 55%,#070912 100%);
+    color:var(--ink); min-height:100vh; display:flex; flex-direction:column; align-items:center;
+    overflow-x:hidden; padding:10px 0 22px; user-select:none;
+  }
+  #stage{width:100%; flex:1; display:flex; align-items:center; justify-content:center;}
+  #stage{width:100%; flex:1; display:flex; align-items:center; justify-content:center;}
+  .titlebar{width:100%; max-width:560px; padding:6px 14px 10px; display:flex; align-items:center; justify-content:space-between;}
+  .brand{font-weight:800; letter-spacing:.5px; font-size:15px; color:var(--ink);}
+  .brand b{color:var(--cyan);}
+  .tag{font-size:11px; color:var(--dim);}
+  .nohud #hud{display:none;}
+  #stage{width:100%; display:flex; justify-content:center;}
+  #field{
+    position:relative; width:100%; max-width:560px; border-radius:18px; overflow:hidden;
+    background:linear-gradient(180deg,#0e1230,#0a0e22);
+    box-shadow:0 18px 50px rgba(0,0,0,.55), inset 0 0 0 1px var(--line);
+    touch-action:none;
+  }
+  #cv{display:block; width:100%; height:100%;}
+  /* ---- HUD ---- */
+  #hud{position:absolute; left:0; right:0; top:0; padding:10px 12px 26px; display:flex; flex-direction:column; gap:8px; pointer-events:none;
+    background:linear-gradient(180deg,rgba(5,8,20,.72) 0%,rgba(5,8,20,.35) 60%,rgba(5,8,20,0) 100%);}
+  #hudTop{display:flex; align-items:center; gap:10px;}
+  #hpWrap{flex:1; height:16px; border-radius:9px; background:rgba(255,255,255,.08); overflow:hidden; position:relative; box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);}
+  #hpFill{position:absolute; left:0; top:0; bottom:0; width:100%; background:linear-gradient(90deg,#5ce1a6,#4dd6ff); transition:width .12s linear;}
+  #hpTxt{position:absolute; right:8px; top:50%; transform:translateY(-50%); font-size:10px; font-weight:700; color:#04121a; mix-blend-mode:screen;}
+  #stats{font-size:12px; color:var(--ink); font-weight:700; white-space:nowrap; text-shadow:0 1px 2px #000;}
+  #hudBtns{display:flex; gap:8px; pointer-events:auto;}
+  .ibtn{width:44px; height:44px; border:none; border-radius:12px; background:rgba(20,26,55,.78); color:var(--ink); font-size:19px; cursor:pointer; box-shadow:inset 0 0 0 1px var(--line);}
+  .ibtn:active{transform:scale(.94);}
+  /* ---- overlays ---- */
+  .ovl{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:22px; text-align:center; background:linear-gradient(180deg,rgba(8,11,28,.86),rgba(8,11,28,.94)); backdrop-filter:blur(3px);}
+  .ovl.hide{display:none;}
+  .gameTitle{font-size:40px; font-weight:900; letter-spacing:2px; cursor:pointer;
+    background:linear-gradient(90deg,var(--cyan),#9b8cff,var(--coral)); -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 0 26px rgba(77,214,255,.25);}
+  .sub{font-size:14px; color:var(--dim); max-width:340px; line-height:1.7;}
+  .big-btn{min-width:200px; min-height:54px; padding:0 26px; border:none; border-radius:16px; cursor:pointer;
+    font-size:19px; font-weight:800; color:#0a0e22; background:linear-gradient(90deg,var(--cyan),#5ce1a6);
+    box-shadow:0 10px 26px rgba(77,214,255,.35);}
+  .big-btn:active{transform:translateY(1px) scale(.98);}
+  .btn2{min-width:150px; min-height:48px; padding:0 20px; border:1px solid var(--line); border-radius:14px; cursor:pointer; font-size:15px; font-weight:700; color:var(--ink); background:rgba(30,38,75,.7);}
+  .btn2:active{transform:scale(.97);}
+  .row{display:flex; gap:12px; flex-wrap:wrap; justify-content:center;}
+  .hint{font-size:12px; color:var(--dim); max-width:330px; line-height:1.7;}
+  .kbd{display:inline-block; padding:1px 7px; border-radius:6px; background:rgba(255,255,255,.1); border:1px solid var(--line); font-size:11px; margin:0 1px;}
+  /* level up cards */
+  #ovLevel .lvt{font-size:22px; font-weight:900; color:var(--gold);}
+  .cards{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; width:100%;}
+  .upcard{width:150px; min-height:130px; padding:16px 12px; border-radius:16px; cursor:pointer; text-align:left;
+    background:linear-gradient(180deg,rgba(34,42,84,.95),rgba(20,26,55,.95)); box-shadow:inset 0 0 0 1px var(--line); display:flex; flex-direction:column; gap:8px; transition:transform .1s;}
+  .upcard:active{transform:scale(.96);}
+  .upcard .uc-ic{font-size:26px;}
+  .upcard .uc-name{font-size:16px; font-weight:800; color:var(--cyan);}
+  .upcard .uc-desc{font-size:13px; color:var(--dim); line-height:1.5;}
+  /* game over */
+  #ovOver .ot{font-size:26px; font-weight:900; color:var(--coral);}
+  #ovOver .rank{font-size:20px; font-weight:900;}
+  .poster{width:200px; border-radius:14px; box-shadow:0 12px 30px rgba(0,0,0,.5); display:none;}
+  .statLine{font-size:14px; color:var(--ink);}
+  .statLine b{color:var(--gold);}
+  #toast{position:absolute; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px); opacity:0; transition:.25s;
+    background:rgba(20,26,55,.95); color:var(--ink); padding:10px 16px; border-radius:30px; font-size:13px; font-weight:700; box-shadow:0 8px 24px rgba(0,0,0,.4); pointer-events:none; max-width:90%;}
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  .footer{margin-top:14px; font-size:11px; color:var(--dim); text-align:center; line-height:1.7;}
+  .footer a{color:var(--cyan);}
+</style>
+</head>
+<body>
+  <div class="titlebar">
+    <div class="brand">泡泡潮 <b>·</b> 你能撑几秒</div>
+    <div class="tag">每日有趣小应用</div>
+  </div>
+
+  <div id="stage">
+    <div id="field" class="nohud">
+      <canvas id="cv"></canvas>
+
+      <div id="hud">
+        <div id="hudTop">
+          <div id="hpWrap"><div id="hpFill"></div><span id="hpTxt"></span></div>
+          <div id="stats"><span id="timeTxt">0.0s</span> · Lv<span id="lvTxt">1</span> · <span id="killTxt">0</span>杀</div>
+          <div id="hudBtns">
+            <button id="btnMute" class="ibtn" aria-label="声音">🔊</button>
+            <button id="btnPause" class="ibtn" aria-label="暂停">⏸</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- intro -->
+      <div id="ovIntro" class="ovl">
+        <div class="gameTitle" id="gameTitle">泡泡潮</div>
+        <div class="sub">潮水般的<b style="color:var(--cyan)">泡泡怪</b>从四面涌来。<br/>你自动开火，只需走位躲闪、捡经验升级进化——<br/>看你能撑几秒！</div>
+        <button class="big-btn" id="startBtn">开始生存</button>
+        <div class="hint">
+          手机：<b>按住屏幕拖动</b>控制方向&nbsp;·&nbsp;电脑：<span class="kbd">W A S D</span> 或 <span class="kbd">方向键</span><br/>
+          升级时从三张卡里挑一张强化自己
+        </div>
+      </div>
+
+      <!-- level up -->
+      <div id="ovLevel" class="ovl hide">
+        <div class="lvt">⚡ 升级！选一张强化</div>
+        <div class="cards" id="cards"></div>
+      </div>
+
+      <!-- pause -->
+      <div id="ovPause" class="ovl hide">
+        <div class="lvt" style="color:var(--cyan)">已暂停</div>
+        <button class="big-btn" id="btnResume">继续</button>
+        <button class="btn2" id="btnQuit">放弃这局</button>
+      </div>
+
+      <!-- game over -->
+      <div id="ovOver" class="ovl hide">
+        <div class="ot">被吞没了…</div>
+        <div class="rank" id="rankTxt"></div>
+        <div class="statLine">撑了 <b id="overTime">0</b> 秒&nbsp;·&nbsp;击杀 <b id="overKill">0</b> 只&nbsp;·&nbsp;Lv <b id="overLv">1</b></div>
+        <img class="poster" id="posterImg" alt="战报海报" />
+        <div class="row">
+          <button class="btn2" id="btnCopy">复制战绩</button>
+          <button class="btn2" id="btnDown">下载海报</button>
+        </div>
+        <button class="big-btn" id="btnAgain">再来一局</button>
+      </div>
+
+      <div id="toast"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    每天自动生成并发布到 GitHub · <a href="https://github.com/hulinkang9527/daily-mini-apps">仓库地址</a>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+  var ISSUE_URL = "https://hulinkang9527.github.io/daily-mini-apps/2026-11-05.html";
+  var PAL = ['#ff5d8f','#4dd6ff','#9b8cff','#5ce1a6','#ffb74d','#ff7eb6'];
+
+  var field = document.getElementById('cv').parentElement;
+  var canvas = document.getElementById('cv');
+  var ctx = canvas.getContext('2d');
+  var dpr = Math.min(window.devicePixelRatio||1, 2);
+  var W=0, H=0;
+
+  function layout(){
+    var maxW = Math.min(window.innerWidth-20, 560);
+    var maxH = window.innerHeight - 130;
+    var w = maxW;
+    var h = Math.min(maxH, w*1.5);
+    if(h<420) h=420;
+    W=Math.max(280,Math.floor(w)); H=Math.max(360,Math.floor(h));
+    field.style.width=W+'px'; field.style.height=H+'px';
+    canvas.style.width=W+'px'; canvas.style.height=H+'px';
+    canvas.width=Math.floor(W*dpr); canvas.height=Math.floor(H*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    if(G.player){ G.player.x=clamp(G.player.x,G.player.r,W-G.player.r); G.player.y=clamp(G.player.y,G.player.r,H-G.player.r); }
+  }
+
+  function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+  function rand(a,b){ return a+Math.random()*(b-a); }
+  function ri(a,b){ return Math.floor(rand(a,b+1)); }
+  function dist2(ax,ay,bx,by){ var dx=ax-bx,dy=ay-by; return dx*dx+dy*dy; }
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  // ---------- game state ----------
+  var G = { state:'intro', time:0, kills:0, level:1, xp:0, xpNext:6,
+    player:null, enemies:[], bullets:[], orbs:[], parts:[],
+    spawnT:0, bigT:0, shake:0, bulletsFired:0, god:false, over:null };
+
+  var UPG = [
+    {ic:'🔥',name:'火力强化',desc:'子弹伤害 +1',apply:function(p){p.damage+=1;}},
+    {ic:'⚡',name:'极速射击',desc:'射速 +18%',apply:function(p){p.fireRate*=0.82;}},
+    {ic:'🎯',name:'多重弹幕',desc:'额外 +1 发子弹',apply:function(p){p.multi+=1;}},
+    {ic:'➹',name:'穿透弹',desc:'子弹多穿透 +1',apply:function(p){p.pierce+=1;}},
+    {ic:'👟',name:'疾风步',desc:'移动速度 +12%',apply:function(p){p.speed*=1.12;}},
+    {ic:'🛡',name:'加固护盾',desc:'生命上限 +25 并回满',apply:function(p){p.maxHp+=25;p.hp=p.maxHp;}},
+    {ic:'🩸',name:'吸血核心',desc:'每击杀回 1 生命',apply:function(p){p.lifesteal+=1;}},
+    {ic:'💨',name:'弹道加速',desc:'子弹速度 +20%',apply:function(p){p.bulletSpeed*=1.2;}},
+    {ic:'⚪',name:'巨型弹',desc:'子弹体积 +30%',apply:function(p){p.bulletR*=1.3;}},
+    {ic:'🧲',name:'磁力场',desc:'经验拾取范围 +35%',apply:function(p){p.pickup*=1.35;}}
+  ];
+
+  function newPlayer(){
+    return { x:W/2, y:H/2, r:14, speed:165, hp:100, maxHp:100, level:1,
+      damage:1, fireRate:0.42, fireT:0, multi:1, pierce:0, bulletSpeed:340, bulletR:4.5,
+      pickup:70, lifesteal:0, iframe:0, aim:0 };
+  }
+
+  function startGame(){
+    layout();
+    G.player = newPlayer();
+    if(G.god){ G.player.maxHp=99999; G.player.hp=99999; }
+    G.time=0; G.kills=0; G.level=1; G.xp=0; G.xpNext=6;
+    G.enemies.length=0; G.bullets.length=0; G.orbs.length=0; G.parts.length=0;
+    G.spawnT=0.35; G.bigT=0; G.shake=0; G.bulletsFired=0; G.over=null;
+    for(var i=0;i<3;i++) spawnEnemy(false);
+    G.state='play';
+    hudOn(true);
+    show('ovIntro',false); show('ovLevel',false); show('ovPause',false); show('ovOver',false);
+    ensureAudio();
+  }
+
+  // ---------- spawning ----------
+  function spawnEnemy(big){
+    var edge=ri(0,3), x,y;
+    if(edge===0){ x=rand(0,W); y=-24; }
+    else if(edge===1){ x=W+24; y=rand(0,H); }
+    else if(edge===2){ x=rand(0,W); y=H+24; }
+    else { x=-24; y=rand(0,H); }
+    var t = G.time;
+    var e = { x:x, y:y, vx:0, vy:0, type:ri(0,PAL.length-1), r:big?34:rand(12,20),
+      hp:(big?42:2+Math.floor(t/16))*(big?1:1), maxhp:(big?42:2+Math.floor(t/16)),
+      baseSpeed:(big?26:38+t*0.55), dmg:big?16:8, boss:!!big, hit:0, dead:false };
+    e.hp=Math.max(e.hp,1); e.maxhp=e.hp;
+    G.enemies.push(e);
+  }
+
+  function fire(){
+    var p=G.player; if(!p) return;
+    // nearest enemy
+    var best=null, bd=1e18;
+    for(var i=0;i<G.enemies.length;i++){ var e=G.enemies[i]; var d=dist2(p.x,p.y,e.x,e.y); if(d<bd){bd=d;best=e;} }
+    if(!best) return;
+    var ang = Math.atan2(best.y-p.y, best.x-p.x);
+    p.aim = ang;
+    var n=p.multi, step=0.18;
+    for(var k=0;k<n;k++){
+      var a = ang + (k-(n-1)/2)*step;
+      G.bullets.push({ x:p.x+Math.cos(a)*p.r, y:p.y+Math.sin(a)*p.r,
+        vx:Math.cos(a)*p.bulletSpeed, vy:Math.sin(a)*p.bulletSpeed,
+        dmg:p.damage, pierce:p.pierce, life:1.3, r:p.bulletR, dead:false });
+    }
+    G.bulletsFired += n;
+    // muzzle particles
+    for(var m=0;m<3;m++){ G.parts.push(part(p.x+Math.cos(ang)*p.r, p.y+Math.sin(ang)*p.r, ang, '#ffd166', 2)); }
+    beep(660,0.04,'square',0.05);
+  }
+
+  function part(x,y,ang,color,size){
+    var sp=rand(40,160);
+    return { x:x, y:y, vx:Math.cos(ang)*sp+rand(-30,30), vy:Math.sin(ang)*sp+rand(-30,30),
+      life:rand(.25,.6), max:.6, color:color, size:size||3 };
+  }
+
+  // ---------- update ----------
+  function update(dt){
+    var p=G.player; if(!p) return;
+    G.time += dt;
+
+    // movement input
+    var dx=0, dy=0;
+    if(keys.x||keys.y){ dx=keys.x; dy=keys.y; }
+    else if(pointer.active){
+      var pdx=pointer.x-p.x, pdy=pointer.y-p.y, d=Math.hypot(pdx,pdy);
+      if(d>6){ dx=pdx/d; dy=pdy/d; }
+    }
+    var ml=Math.hypot(dx,dy);
+    if(ml>1){ dx/=ml; dy/=ml; }
+    p.x = clamp(p.x+dx*p.speed*dt, p.r, W-p.r);
+    p.y = clamp(p.y+dy*p.speed*dt, p.r, H-p.r);
+
+    // fire
+    p.fireT -= dt;
+    if(p.fireT<=0){ p.fireT=p.fireRate; fire(); }
+
+    if(p.iframe>0) p.iframe-=dt;
+
+    // spawn
+    G.spawnT -= dt;
+    var interval = Math.max(0.22, 1.05 - G.time*0.011);
+    if(G.spawnT<=0 && G.enemies.length<135){ G.spawnT=interval; spawnEnemy(false); }
+    G.bigT -= dt;
+    if(G.bigT<=0 && G.time>22){ G.bigT=Math.max(14, 34-G.time*0.08); spawnEnemy(true); }
+
+    // enemies move
+    for(var i=0;i<G.enemies.length;i++){
+      var e=G.enemies[i];
+      var a=Math.atan2(p.y-e.y, p.x-e.x);
+      e.x += Math.cos(a)*e.baseSpeed*dt;
+      e.y += Math.sin(a)*e.baseSpeed*dt;
+      if(e.hit>0) e.hit-=dt;
+      // contact
+      var rr=e.r+p.r;
+      if(dist2(e.x,e.y,p.x,p.y) < rr*rr){
+        if(p.iframe<=0 && !G.god){
+          p.hp -= e.dmg; p.iframe=0.55; G.shake=Math.min(14,G.shake+8);
+          // knockback
+          p.x=clamp(p.x-Math.cos(a)*14, p.r, W-p.r); p.y=clamp(p.y-Math.sin(a)*14, p.r, H-p.r);
+          beep(150,0.12,'sawtooth',0.08);
+          for(var k=0;k<6;k++) G.parts.push(part(p.x,p.y,rand(0,6.28),'#ff6b6b',3));
+          if(p.hp<=0){ p.hp=0; endGame(); return; }
+        }
+      }
+    }
+
+    // bullets
+    for(var b=0;b<G.bullets.length;b++){
+      var bl=G.bullets[b]; if(bl.dead) continue;
+      bl.x+=bl.vx*dt; bl.y+=bl.vy*dt; bl.life-=dt;
+      if(bl.life<=0 || bl.x<-20||bl.x>W+20||bl.y<-20||bl.y>H+20){ bl.dead=true; continue; }
+      for(var j=0;j<G.enemies.length;j++){
+        var en=G.enemies[j]; if(en.dead) continue;
+        var br=bl.r+en.r;
+        if(dist2(bl.x,bl.y,en.x,en.y)<br*br){
+          en.hp-=bl.dmg; en.hit=0.08;
+          for(var q=0;q<3;q++) G.parts.push(part(bl.x,bl.y,rand(0,6.28),PAL[en.type],2.4));
+          if(en.hp<=0){ killEnemy(en); }
+          if(bl.pierce>0){ bl.pierce--; } else { bl.dead=true; break; }
+        }
+      }
+    }
+
+    // orbs
+    for(var o=0;o<G.orbs.length;o++){
+      var ob=G.orbs[o]; if(ob.dead) continue;
+      var d2=dist2(ob.x,ob.y,p.x,p.y);
+      if(d2 < p.pickup*p.pickup){
+        var a2=Math.atan2(p.y-ob.y,p.x-ob.x);
+        var pull=(1-Math.sqrt(d2)/p.pickup)*260+60;
+        ob.x+=Math.cos(a2)*pull*dt; ob.y+=Math.sin(a2)*pull*dt;
+      }
+      if(d2 < (p.r+8)*(p.r+8)){ ob.dead=true; gainXp(ob.v); }
+    }
+
+    // particles
+    for(var s=0;s<G.parts.length;s++){
+      var pt=G.parts[s]; if(pt.dead) continue;
+      pt.x+=pt.vx*dt; pt.y+=pt.vy*dt; pt.vx*=0.92; pt.vy*=0.92; pt.life-=dt;
+      if(pt.life<=0) pt.dead=true;
+    }
+
+    // cleanup
+    if(G.bullets.length>360) G.bullets=G.bullets.filter(function(x){return !x.dead;});
+    if(G.parts.length>500) G.parts=G.parts.filter(function(x){return !x.dead;});
+    G.enemies=G.enemies.filter(function(x){return !x.dead;});
+    G.orbs=G.orbs.filter(function(x){return !x.dead;});
+    G.bullets=G.bullets.filter(function(x){return !x.dead;});
+    G.parts=G.parts.filter(function(x){return !x.dead;});
+
+    if(G.shake>0) G.shake-=dt*30; if(G.shake<0) G.shake=0;
+  }
+
+  function killEnemy(e){
+    e.dead=true; G.kills++;
+    if(G.player && G.player.lifesteal>0 && !G.god){ G.player.hp=Math.min(G.player.maxHp, G.player.hp+G.player.lifesteal); }
+    var n = e.boss?6:1;
+    for(var i=0;i<n;i++){ var a=rand(0,6.28); G.orbs.push({x:e.x+Math.cos(a)*rand(0,e.r), y:e.y+Math.sin(a)*rand(0,e.r), v:1, dead:false}); }
+    for(var k=0;k<(e.boss?16:7);k++) G.parts.push(part(e.x,e.y,rand(0,6.28),PAL[e.type],e.boss?4:3));
+    beep(e.boss?110:320,0.05,'triangle',0.06);
+  }
+
+  function gainXp(v){
+    G.xp+=v;
+    while(G.xp>=G.xpNext){
+      G.xp-=G.xpNext; G.level++; G.xpNext=Math.floor(6+G.level*3.2);
+      doLevelUp();
+    }
+  }
+
+  function doLevelUp(){
+    G.state='levelup';
+    hudOn(false);
+    beep(880,0.1,'sine',0.07);
+    var pool=UPG.slice(); var chosen=[];
+    for(var i=0;i<3 && pool.length;i++){ var idx=ri(0,pool.length-1); chosen.push(pool.splice(idx,1)[0]); }
+    var box=document.getElementById('cards'); box.innerHTML='';
+    chosen.forEach(function(u){
+      var c=document.createElement('button'); c.className='upcard';
+      c.innerHTML='<div class="uc-ic">'+u.ic+'</div><div class="uc-name">'+u.name+'</div><div class="uc-desc">'+u.desc+'</div>';
+      c.addEventListener('click', function(){ u.apply(G.player); show('ovLevel',false); G.state='play'; hudOn(true); ensureAudio(); });
+      box.appendChild(c);
+    });
+    show('ovLevel',true);
+  }
+
+  function endGame(){
+    G.state='over';
+    hudOn(false);
+    G.over={ time:G.time, kills:G.kills, level:G.level };
+    beep(200,0.4,'sawtooth',0.09);
+    setTimeout(function(){ beep(120,0.5,'sine',0.07); },120);
+    document.getElementById('overTime').textContent=G.time.toFixed(1);
+    document.getElementById('overKill').textContent=G.kills;
+    document.getElementById('overLv').textContent=G.level;
+    var r=rankOf(G.time);
+    var rt=document.getElementById('rankTxt'); rt.textContent='称号 · '+r.t; rt.style.color=r.c;
+    var url=buildPoster(r);
+    var img=document.getElementById('posterImg'); img.src=url; img.style.display='block';
+    show('ovOver',true);
+  }
+
+  function rankOf(t){
+    if(t>=120) return {t:'天选打工人',c:'#ffd166',line:'泡泡见了你都绕道走，这波稳了。'};
+    if(t>=90) return {t:'时间管理带师',c:'#9b8cff',line:'你把这波潮水当成了午休背景音。'};
+    if(t>=60) return {t:'摸鱼宗师',c:'#4dd6ff',line:'泡泡怪表示：这人我们惹不起。'};
+    if(t>=40) return {t:'资深卷王',c:'#5ce1a6',line:'稳如老狗，潮水退去你还在。'};
+    if(t>=20) return {t:'普通打工人',c:'#ff7eb6',line:'勉强及格，下次能更久。'};
+    return {t:'实习萌新',c:'#ff6b6b',line:'别慌，多撑几秒就熟了。'};
+  }
+
+  function buildShare(r){
+    r=r||rankOf(G.time);
+    return '我在《泡泡潮》里撑了 '+G.time.toFixed(1)+' 秒，干掉 '+G.kills+' 只泡泡怪，升到 '+G.level+' 级，拿下【'+r.t+'】称号！你能撑几秒？ '+ISSUE_URL;
+  }
+
+  function buildPoster(r){
+    r=r||rankOf(G.time);
+    var c=document.createElement('canvas'); c.width=1080; c.height=1350;
+    var x=c.getContext('2d');
+    var g=x.createLinearGradient(0,0,0,1350); g.addColorStop(0,'#1a1140'); g.addColorStop(1,'#070912');
+    x.fillStyle=g; x.fillRect(0,0,1080,1350);
+    // bubbles deco
+    for(var i=0;i<14;i++){ var bx=rand(60,1020),by=rand(60,1290),br=rand(16,54);
+      x.beginPath(); x.arc(bx,by,br,0,6.2832); x.fillStyle=PAL[i%PAL.length]; x.globalAlpha=0.16; x.fill(); x.globalAlpha=1; }
+    // title
+    x.textAlign='center';
+    x.fillStyle='#eaf0ff'; x.font='900 84px "PingFang SC","Microsoft YaHei",sans-serif';
+    x.fillText('泡泡潮',540,200);
+    x.fillStyle='#9aa6cf'; x.font='600 34px "PingFang SC",sans-serif';
+    x.fillText('你能撑几秒',540,250);
+    // time big
+    x.fillStyle='#4dd6ff'; x.font='900 200px "PingFang SC",sans-serif';
+    x.fillText(G.time.toFixed(1),540,470);
+    x.fillStyle='#eaf0ff'; x.font='700 40px "PingFang SC",sans-serif';
+    x.fillText('秒',540,540);
+    // rank badge
+    x.fillStyle=r.c; roundRect(x,340,600,400,90,45); x.fill();
+    x.fillStyle='#0a0e22'; x.font='900 48px "PingFang SC",sans-serif';
+    x.fillText(r.t,540,658);
+    // stats
+    x.fillStyle='#eaf0ff'; x.font='700 40px "PingFang SC",sans-serif';
+    x.fillText('击杀 '+G.kills+' 只  ·  Lv '+G.level,540,800);
+    // line
+    x.fillStyle='#9aa6cf'; x.font='500 32px "PingFang SC",sans-serif';
+    wrapText(x,r.line,540,880,820,44);
+    // footer
+    x.fillStyle='#6b76a8'; x.font='500 28px "PingFang SC",sans-serif';
+    x.fillText(ISSUE_URL,540,1240);
+    x.fillStyle='#4dd6ff'; x.font='800 30px "PingFang SC",sans-serif';
+    x.fillText('每日有趣小应用 · 2026-11-05',540,1290);
+    return c.toDataURL('image/png');
+  }
+  function roundRect(x,rx,ry,rw,rh,rrad){ x.beginPath(); x.moveTo(rx+rrad,ry); x.arcTo(rx+rw,ry,rx+rw,ry+rh,rrad); x.arcTo(rx+rw,ry+rh,rx,ry+rh,rrad); x.arcTo(rx,ry+rh,rx,ry,rrad); x.arcTo(rx,ry,rx+rw,ry,rrad); x.closePath(); }
+  function wrapText(x,text,cx,y,maxw,lh){
+    var chars=text.split(''); var line=''; var yy=y;
+    for(var i=0;i<chars.length;i++){
+      var test=line+chars[i];
+      if(x.measureText(test).width>maxw && line){ x.fillText(line,cx,yy); line=chars[i]; yy+=lh; }
+      else line=test;
+    }
+    if(line) x.fillText(line,cx,yy);
+  }
+
+  // ---------- render ----------
+  function render(){
+    ctx.clearRect(0,0,W,H);
+    ctx.save();
+    if(G.shake>0){ ctx.translate(rand(-G.shake,G.shake),rand(-G.shake,G.shake)); }
+    // bg grid
+    ctx.strokeStyle='rgba(120,160,255,.06)'; ctx.lineWidth=1;
+    var gs=42;
+    ctx.beginPath();
+    for(var gx=0;gx<=W;gx+=gs){ ctx.moveTo(gx,0); ctx.lineTo(gx,H); }
+    for(var gy=0;gy<=H;gy+=gs){ ctx.moveTo(0,gy); ctx.lineTo(W,gy); }
+    ctx.stroke();
+    // vignette
+    var vg=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.2,W/2,H/2,Math.max(W,H)*0.75);
+    vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.45)');
+    ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
+
+    // orbs
+    for(var o=0;o<G.orbs.length;o++){ var ob=G.orbs[o]; ctx.beginPath(); ctx.arc(ob.x,ob.y,4,0,6.2832); ctx.fillStyle='rgba(120,255,200,.9)'; ctx.fill(); }
+
+    // bullets
+    for(var b=0;b<G.bullets.length;b++){ var bl=G.bullets[b]; if(bl.dead) continue;
+      ctx.beginPath(); ctx.arc(bl.x,bl.y,bl.r,0,6.2832);
+      ctx.fillStyle='#ffe27a'; ctx.shadowColor='#ffd166'; ctx.shadowBlur=10; ctx.fill(); ctx.shadowBlur=0;
+    }
+
+    // enemies (bubbles)
+    for(var i=0;i<G.enemies.length;i++){ drawBubble(G.enemies[i]); }
+
+    // player
+    if(G.player) drawPlayer(G.player);
+
+    // particles
+    for(var s=0;s<G.parts.length;s++){ var pt=G.parts[s]; if(pt.dead) continue;
+      ctx.globalAlpha=Math.max(0,pt.life/pt.max); ctx.beginPath(); ctx.arc(pt.x,pt.y,pt.size,0,6.2832); ctx.fillStyle=pt.color; ctx.fill(); ctx.globalAlpha=1; }
+
+    ctx.restore();
+  }
+
+  function drawBubble(e){
+    var col=PAL[e.type];
+    var r=e.r;
+    var g=ctx.createRadialGradient(e.x-r*0.3,e.y-r*0.3,r*0.1,e.x,e.y,r);
+    g.addColorStop(0,'#ffffff'); g.addColorStop(0.25,col); g.addColorStop(1,shade(col,-0.35));
+    ctx.beginPath(); ctx.arc(e.x,e.y,r,0,6.2832); ctx.fillStyle=g; ctx.fill();
+    if(e.hit>0){ ctx.beginPath(); ctx.arc(e.x,e.y,r,0,6.2832); ctx.fillStyle='rgba(255,255,255,.5)'; ctx.fill(); }
+    // eyes
+    var ex=r*0.32, ey=r*0.12, er=Math.max(2,r*0.13);
+    ctx.fillStyle='#0a0e22';
+    ctx.beginPath(); ctx.arc(e.x-ex,e.y-ey,er,0,6.2832); ctx.fill();
+    ctx.beginPath(); ctx.arc(e.x+ex,e.y-ey,er,0,6.2832); ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.beginPath(); ctx.arc(e.x-ex+er*0.3,e.y-ey-er*0.3,er*0.4,0,6.2832); ctx.fill();
+    ctx.beginPath(); ctx.arc(e.x+ex+er*0.3,e.y-ey-er*0.3,er*0.4,0,6.2832); ctx.fill();
+    if(e.boss){ ctx.strokeStyle='rgba(255,209,102,.9)'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(e.x,e.y,r+5,0,6.2832); ctx.stroke(); }
+    // hp bar for boss
+    if(e.boss){
+      var w=r*2, hp=Math.max(0,e.hp/e.maxhp);
+      ctx.fillStyle='rgba(0,0,0,.5)'; ctx.fillRect(e.x-w/2,e.y-r-14,w,5);
+      ctx.fillStyle='#ff6b6b'; ctx.fillRect(e.x-w/2,e.y-r-14,w*hp,5);
+    }
+  }
+  function shade(hex,amt){
+    var c=hex.replace('#',''); var n=parseInt(c,16);
+    var r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+    r=clamp(Math.round(r+255*amt),0,255); g=clamp(Math.round(g+255*amt),0,255); b=clamp(Math.round(b+255*amt),0,255);
+    return 'rgb('+r+','+g+','+b+')';
+  }
+
+  function drawPlayer(p){
+    var glow = G.god? '#ffd166' : '#4dd6ff';
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r+10,0,6.2832);
+    ctx.fillStyle=glow; ctx.globalAlpha=0.22; ctx.fill(); ctx.globalAlpha=1;
+    var g=ctx.createRadialGradient(p.x-4,p.y-4,2,p.x,p.y,p.r);
+    g.addColorStop(0,'#ffffff'); g.addColorStop(0.5,'#ffe9a8'); g.addColorStop(1, G.god?'#ffb703':'#7fd8ff');
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.2832); ctx.fillStyle=g; ctx.fill();
+    // aim indicator
+    ctx.strokeStyle=glow; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p.x+Math.cos(p.aim)*(p.r+12),p.y+Math.sin(p.aim)*(p.r+12)); ctx.stroke();
+    if(p.iframe>0 && Math.floor(p.iframe*20)%2===0){ ctx.beginPath(); ctx.arc(p.x,p.y,p.r+3,0,6.2832); ctx.strokeStyle='#ff6b6b'; ctx.lineWidth=2; ctx.stroke(); }
+  }
+
+  // ---------- HUD ----------
+  function syncHud(){
+    var p=G.player;
+    if(p){
+      var pct=Math.max(0,p.hp/p.maxHp*100);
+      document.getElementById('hpFill').style.width=pct+'%';
+      document.getElementById('hpTxt').textContent=Math.max(0,Math.ceil(p.hp));
+    }
+    document.getElementById('timeTxt').textContent=G.time.toFixed(1)+'s';
+    document.getElementById('lvTxt').textContent=G.level;
+    document.getElementById('killTxt').textContent=G.kills;
+  }
+
+  function show(id,on){ document.getElementById(id).classList.toggle('hide',!on); }
+  function hudOn(v){ field.classList.toggle('nohud',!v); }
+  function toast(msg){
+    var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+    clearTimeout(toast._t); toast._t=setTimeout(function(){ t.classList.remove('show'); },1800);
+  }
+
+  // ---------- audio ----------
+  var actx=null, muted=false;
+  function ensureAudio(){
+    if(actx) { if(actx.state==='suspended') actx.resume(); return; }
+    try{
+      var AC=window.AudioContext||window.webkitAudioContext;
+      if(AC) actx=new AC();
+    }catch(e){ actx=null; }
+  }
+  function beep(freq,dur,type,vol){
+    if(!actx||muted) return;
+    try{
+      var o=actx.createOscillator(), g=actx.createGain();
+      o.type=type||'sine'; o.frequency.value=freq;
+      g.gain.setValueAtTime(0.0001,actx.currentTime);
+      g.gain.exponentialRampToValueAtTime(vol||0.06,actx.currentTime+0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001,actx.currentTime+dur);
+      o.connect(g); g.connect(actx.destination);
+      o.start(); o.stop(actx.currentTime+dur+0.02);
+    }catch(e){}
+  }
+
+  // ---------- input ----------
+  var keys={x:0,y:0};
+  var keyMap={ ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1],
+    KeyA:[-1,0],KeyD:[1,0],KeyW:[0,-1],KeyS:[0,1] };
+  window.addEventListener('keydown',function(e){
+    if(keyMap[e.code]){ keys.x=keyMap[e.code][0]; keys.y=keyMap[e.code][1]; e.preventDefault(); }
+  });
+  window.addEventListener('keyup',function(e){
+    if(keyMap[e.code]){ keys.x=0; keys.y=0; }
+  });
+
+  var pointer={active:false,x:0,y:0};
+  function getPos(e){ var r=canvas.getBoundingClientRect(); return {x:e.clientX-r.left, y:e.clientY-r.top}; }
+  canvas.addEventListener('pointerdown',function(e){ if(G.state!=='play') return; pointer.active=true; var p=getPos(e); pointer.x=p.x; pointer.y=p.y; });
+  canvas.addEventListener('pointermove',function(e){ if(!pointer.active) return; var p=getPos(e); pointer.x=p.x; pointer.y=p.y; });
+  window.addEventListener('pointerup',function(){ pointer.active=false; });
+  window.addEventListener('pointercancel',function(){ pointer.active=false; });
+
+  // HUD buttons stop propagation so they don't move player
+  document.getElementById('btnMute').addEventListener('pointerdown',function(e){ e.stopPropagation(); });
+  document.getElementById('btnPause').addEventListener('pointerdown',function(e){ e.stopPropagation(); });
+  document.getElementById('hudBtns').addEventListener('pointerdown',function(e){ e.stopPropagation(); });
+
+  // ---------- buttons ----------
+  document.getElementById('startBtn').addEventListener('click',function(){ ensureAudio(); startGame(); });
+  document.getElementById('btnAgain').addEventListener('click',function(){ startGame(); });
+  document.getElementById('btnResume').addEventListener('click',function(){ if(G.state==='pause'){ G.state='play'; hudOn(true); show('ovPause',false); ensureAudio(); } });
+  document.getElementById('btnQuit').addEventListener('click',function(){ if(G.state==='pause'){ G.state='play'; endGame(); } });
+  document.getElementById('btnPause').addEventListener('click',function(){ if(G.state==='play'){ G.state='pause'; show('ovPause',true); } });
+  document.getElementById('btnMute').addEventListener('click',function(){ muted=!muted; document.getElementById('btnMute').textContent=muted?'🔇':'🔊'; });
+
+  document.getElementById('btnCopy').addEventListener('click',function(){
+    var txt=buildShare();
+    window.__lastShare=txt;
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(function(){ toast('已复制，去炫耀吧 ✨'); }).catch(function(){ toast('复制失败，长按文字手动复制'); });
+    } else { toast('请长按文字复制'); }
+  });
+  document.getElementById('btnDown').addEventListener('click',function(){
+    var a=document.createElement('a'); a.href=document.getElementById('posterImg').src; a.download='泡泡潮-战报.png';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  });
+
+  // title easter egg
+  var titleClicks=0;
+  document.getElementById('gameTitle').addEventListener('click',function(){
+    titleClicks++;
+    if(titleClicks>=5){ titleClicks=0; G.god=!G.god; toast(G.god?'开发者模式：光环护体 ✨（无敌）':'已关闭无敌模式'); }
+  });
+
+  // ---------- main loop ----------
+  var last=0;
+  function loop(ts){
+    if(!last) last=ts;
+    var dt=(ts-last)/1000; last=ts;
+    if(dt>0.05) dt=0.05;
+    if(G.state==='play'){ update(dt); }
+    syncHud();
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  // ---------- expose for testing ----------
+  window.__test={
+    state:function(){ return G.state; },
+    stats:function(){ return {time:G.time,kills:G.kills,level:G.level,enemies:G.enemies.length,bullets:G.bullets.length,fired:G.bulletsFired,hp:G.player?G.player.hp:0}; },
+    start:function(){ ensureAudio(); startGame(); },
+    forceLevelUp:function(){ if(G.state==='play'){ gainXp(G.xpNext); } },
+    forceGameOver:function(){ if(G.state==='play'||G.state==='levelup'){ if(G.player){G.player.hp=0;} endGame(); } },
+    setGod:function(v){ G.god=!!v; },
+    over:function(){ return G.over; },
+    share:function(){ return buildShare(); },
+    alive:function(){ return G.state==='play'; },
+    ppos:function(){ return G.player?{x:G.player.x,y:G.player.y,r:G.player.r}:null; },
+    nearest:function(){
+      if(!G.player) return null; var best=null,bd=1e18;
+      for(var i=0;i<G.enemies.length;i++){ var e=G.enemies[i]; var d=dist2(G.player.x,G.player.y,e.x,e.y); if(d<bd){bd=d;best=e;} }
+      return best?{x:best.x,y:best.y}:null;
+    }
+  };
+
+  layout();
+  window.addEventListener('resize',layout);
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
